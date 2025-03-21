@@ -1,5 +1,6 @@
-import { View, Text, Image, StyleSheet, Dimensions } from 'react-native';
-import { Book } from '../../data/books';
+import { Text, Image, StyleSheet, Dimensions, Pressable } from 'react-native';
+import { router } from 'expo-router';
+import type { Book } from "../../data/types";
 
 type Props = {
   book: Book;
@@ -13,7 +14,13 @@ const itemWidth = (width - (PADDING * 2 * COLUMN_COUNT)) / COLUMN_COUNT;
 
 export function BookItem({ book }: Props) {
   return (
-    <View style={styles.container}>
+    <Pressable 
+      style={styles.container}
+      onPress={() => router.push({
+        pathname: "/library/[book]",
+        params: { book: book._id }
+      })}
+    >
       <Image 
         source={{ uri: book.coverUrl }}
         style={styles.cover}
@@ -22,7 +29,7 @@ export function BookItem({ book }: Props) {
       <Text style={styles.title} numberOfLines={2}>
         {book.title}
       </Text>
-    </View>
+    </Pressable>
   );
 }
 

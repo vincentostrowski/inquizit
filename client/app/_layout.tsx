@@ -16,7 +16,15 @@ export default function RootLayout() {
           paddingBottom: 10,
           paddingTop: 10,
         }
-      }}>
+      }}
+      initialRouteName="library"
+    >
+      <Tabs.Screen
+        name="index"
+        options={{
+          href: null,
+        }}
+      />
       <Tabs.Screen 
         name="library" 
         options={{ 

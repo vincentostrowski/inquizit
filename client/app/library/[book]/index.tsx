@@ -1,17 +1,106 @@
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, Image, ScrollView, Dimensions } from "react-native";
+import { router, useLocalSearchParams } from "expo-router";
+import { QuizitButton } from "../../../components/QuizitButton";
+import { InsightList } from "../../../components/insights/InsightList";
+import { getBookById } from "../../../data/books";
+import { getRootInsights } from "../../../data/insights";
+import type { Book, Insight } from "../../../data/types";
+import { useState, useEffect } from "react";
+
+const { width } = Dimensions.get('window');
+const COVER_WIDTH = width * 0.5; // Half the screen width
+const COVER_HEIGHT = COVER_WIDTH * 1.5; // 3:2 aspect ratio to match explore view
 
 export default function BookScreen() {
+  const { book: bookId } = useLocalSearchParams();
+  const [book, setBook] = useState<Book | null>(null);
+  const [insights, setInsights] = useState<Insight[]>([]);
+
+  useEffect(() => {
+    if (typeof bookId === 'string') {
+      const foundBook = getBookById(bookId);
+      setBook(foundBook || null);
+      
+      if (foundBook) {
+        const bookInsights = getRootInsights(foundBook._id);
+        setInsights(bookInsights);
+      }
+    }
+  }, [bookId]);
+
+  const handleInsightPress = (insight: Insight) => {
+    if (book?._id) {
+      router.push({
+        pathname: "/library/[book]/[insight]",
+        params: { book: book._id, insight: insight._id }
+      });
+    }
+  };
+
+  if (!book) {
+    return (
+      <View style={styles.wrapper}>
+        <Text style={styles.title}>Book not found</Text>
+      </View>
+    );
+  }
+
   return (
-    <View style={styles.container}>
-      <Text>This is the Book screen.</Text>
+    <View style={styles.wrapper}>
+      <QuizitButton />
+      <ScrollView style={styles.container}>
+        <View style={styles.coverContainer}>
+          <Image 
+            source={{ uri: book.coverUrl }}
+            style={styles.cover}
+            resizeMode="cover"
+          />
+        </View>
+        
+        <Text style={styles.title}>{book.title}</Text>
+        
+        <Text style={styles.description}>{book.description}</Text>
+        
+        <InsightList 
+          insights={insights}
+          onInsightPress={handleInsightPress}
+        />
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  wrapper: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
   container: {
     flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
+    padding: 10,
+    paddingTop: 60,
+  },
+  coverContainer: {
+    alignItems: 'center',
+    paddingVertical: 20,
+  },
+  cover: {
+    width: COVER_WIDTH,
+    height: COVER_HEIGHT,
+    borderRadius: 8,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    paddingHorizontal: 20,
+    paddingBottom: 10,
+    textAlign: 'center',
+  },
+  description: {
+    fontSize: 16,
+    lineHeight: 24,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+    color: '#333',
   },
 });
