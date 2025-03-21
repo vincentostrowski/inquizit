@@ -1,9 +1,10 @@
-import { View, Text, StyleSheet } from "react-native";
+import { View, StyleSheet } from "react-native";
+import { BookGrid } from "../../components/library/BookGrid";
 
 export default function LibraryScreen() {
   return (
     <View style={styles.container}>
-      <Text>This is the Library screen.</Text>
+      <BookGrid />
     </View>
   );
 }
@@ -13,5 +14,6 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
+    paddingTop: 60,
   },
 });
