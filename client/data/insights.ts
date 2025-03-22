@@ -61,7 +61,7 @@ const createInsights = () => {
     bookId: books[0]._id,
     order: 4,
     prompt: "How can you make people feel important?"
-  };
+  };  
 
   const A11: Insight = {
     _id: generateId(),

@@ -32,7 +32,7 @@ export default function BookScreen() {
     if (book?._id) {
       router.push({
         pathname: "/library/[book]/[insight]",
-        params: { book: book._id, insight: insight._id }
+        params: { book: book._id, insight: insight._id}
       });
     }
   };
@@ -73,16 +73,15 @@ export default function BookScreen() {
 const styles = StyleSheet.create({
   wrapper: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   container: {
     flex: 1,
     padding: 10,
-    paddingTop: 60,
+    paddingTop: 80,
   },
   coverContainer: {
     alignItems: 'center',
-    paddingVertical: 20,
+    marginBottom: 20,
   },
   cover: {
     width: COVER_WIDTH,
