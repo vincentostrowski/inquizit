@@ -12,6 +12,7 @@ export type Insight = {
   body: string[];
   parentId: string;  // Could be bookId or insightId
   parentType: 'book' | 'insight';
+  leaf: boolean;
   bookId: string;    // Direct reference to book for easier querying
   order: number;     // For ordering within same parent
   prompt?: string;   // Optional prompt

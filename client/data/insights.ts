@@ -3,7 +3,7 @@ import { books } from './books';
 import type { Insight } from './types';
 
 // Mock Insights
-const createInsights = () => {
+const HowToWinFriendsAndInfluencePeople = () => {
   
   const A1: Insight = {
     _id: generateId(),
@@ -16,6 +16,7 @@ const createInsights = () => {
     parentId: books[0]._id,
     parentType: 'book',
     bookId: books[0]._id,
+    leaf: false,
     order: 1,
     prompt: "How does criticism affect human behavior according to Carnegie?"
   };
@@ -31,7 +32,8 @@ const createInsights = () => {
     parentId: books[0]._id,
     parentType: 'book',
     bookId: books[0]._id,
-    order: 2,
+    leaf: false,
+      order: 2,
     prompt: "What's the key difference between appreciation and flattery?"
   };
 
@@ -45,6 +47,7 @@ const createInsights = () => {
     parentId: books[0]._id,
     parentType: 'book',
     bookId: books[0]._id,
+    leaf: false,
     order: 3,
     prompt: "How can you make people feel important?"
   };
@@ -59,6 +62,7 @@ const createInsights = () => {
     parentId: books[0]._id,
     parentType: 'book',
     bookId: books[0]._id,
+    leaf: false,
     order: 4,
     prompt: "How can you make people feel important?"
   };  
@@ -75,6 +79,7 @@ const createInsights = () => {
     parentType: 'insight',
     bookId: books[0]._id,
     order: 1,
+    leaf: true,
     prompt: "What makes appreciation feel genuine?"
   };
 
@@ -89,6 +94,7 @@ const createInsights = () => {
     parentType: 'insight',
     bookId: books[0]._id,
     order: 2,
+    leaf: true,
     prompt: "What makes appreciation feel genuine?"
   };
 
@@ -103,13 +109,19 @@ const createInsights = () => {
     parentType: 'insight',
     bookId: books[0]._id,
     order: 3,
+    leaf: true,
     prompt: "What makes appreciation feel genuine?"
   };
+
   
   return [A1, A2, A3, A4, A11, A12, A13];
 };
 
-export const insights = createInsights();
+const Originals = () => {
+  return [];
+};
+
+export const insights = [...HowToWinFriendsAndInfluencePeople(), ...Originals()];
 
 // Helper functions to mimic MongoDB queries
 export const getInsightsByBookId = (bookId: string) => 

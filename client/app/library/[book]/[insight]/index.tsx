@@ -5,13 +5,14 @@ import type { Insight } from "../../../../data/types";
 import { QuizitButton } from "../../../../components/QuizitButton";
 import { useState, useEffect } from "react";
 import { InsightList } from "../../../../components/insights/InsightList";
-
+import { SaveIcon } from "@/components/insights/SaveIcon";
 export default function InsightScreen() {
   const params = useLocalSearchParams();
   const bookId = Array.isArray(params.book) ? params.book[0] : params.book;
   const insightId = params.insight;
   const insight = insights.find((i: Insight) => i._id === insightId);
   const [childInsights, setChildInsights] = useState<Insight[]>([]);
+  const [isSelected, setIsSelected] = useState(false);
 
   useEffect(() => {
     if (insight?._id) {
@@ -30,6 +31,10 @@ export default function InsightScreen() {
       },);
     };
 
+  const handleSavePress = () => {
+    setIsSelected(!isSelected);
+  };
+
   if (!insight) {
     return (
       <View style={styles.container}>
@@ -42,7 +47,18 @@ export default function InsightScreen() {
     <View style={styles.wrapper}>
       <QuizitButton />
       <ScrollView style={styles.container}>
-        <Text style={styles.title}>{insight.title}</Text>
+        <View style={styles.titleContainer}>
+          <Text style={styles.title}>{insight.title}</Text>
+          {insight.leaf && (
+            <View style={styles.saveContainer}>
+            <SaveIcon
+              isSelected={isSelected}
+              onToggle={handleSavePress}
+              size={30}
+            />
+            </View>
+          )}
+        </View>
         {insight.body.map((paragraph: string, index: number) => (
           <Text key={index} style={styles.paragraph}>{paragraph}</Text>
         ))}
@@ -62,11 +78,23 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 10,
-    paddingTop: 60,
+    paddingTop: 70,
+  },
+  saveContainer: {
+    height: 50,
+    width: 50,
   },
   title: {
     fontSize: 20,
     fontWeight: 'bold',
+    marginBottom: 0,
+    paddingHorizontal: 60,
+    textAlign: 'center',
+  },
+  titleContainer: {
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: 20,
   },
   paragraph: {
@@ -74,5 +102,6 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     marginBottom: 16,
     color: '#333',
+    paddingHorizontal: 20,
   },
 });
