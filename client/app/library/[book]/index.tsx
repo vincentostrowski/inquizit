@@ -6,6 +6,7 @@ import { getBookById } from "../../../data/books";
 import { getRootInsights } from "../../../data/insights";
 import type { Book, Insight } from "../../../data/types";
 import { useState, useEffect } from "react";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const { width } = Dimensions.get('window');
 const COVER_WIDTH = width * 0.5; // Half the screen width
@@ -46,7 +47,7 @@ export default function BookScreen() {
   }
 
   return (
-    <View style={styles.wrapper}>
+    <SafeAreaView style={{ flex: 1 }}>
       <QuizitButton />
       <ScrollView style={styles.container}>
         <View style={styles.coverContainer}>
@@ -56,28 +57,22 @@ export default function BookScreen() {
             resizeMode="cover"
           />
         </View>
-        
         <Text style={styles.title}>{book.title}</Text>
-        
         <Text style={styles.description}>{book.description}</Text>
-        
         <InsightList 
           insights={insights}
           onInsightPress={handleInsightPress}
         />
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  wrapper: {
-    flex: 1,
-  },
   container: {
     flex: 1,
     padding: 10,
-    paddingTop: 80,
+    paddingTop: 20,
   },
   coverContainer: {
     alignItems: 'center',

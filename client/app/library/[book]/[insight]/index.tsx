@@ -6,6 +6,8 @@ import { QuizitButton } from "../../../../components/QuizitButton";
 import { useState, useEffect } from "react";
 import { InsightList } from "../../../../components/insights/InsightList";
 import { SaveIcon } from "@/components/insights/SaveIcon";
+import { SafeAreaView } from "react-native-safe-area-context";
+
 export default function InsightScreen() {
   const params = useLocalSearchParams();
   const bookId = Array.isArray(params.book) ? params.book[0] : params.book;
@@ -44,7 +46,7 @@ export default function InsightScreen() {
   }
 
   return (
-    <View style={styles.wrapper}>
+    <SafeAreaView style={{ flex: 1 }}>
       <QuizitButton />
       <ScrollView style={styles.container}>
         <View style={styles.titleContainer}>
@@ -67,18 +69,15 @@ export default function InsightScreen() {
           onInsightPress={handleInsightPress}
         />
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  wrapper: {
-    flex: 1,
-  },
   container: {
     flex: 1,
     padding: 10,
-    paddingTop: 70,
+    paddingTop: 20,
   },
   saveContainer: {
     height: 50,

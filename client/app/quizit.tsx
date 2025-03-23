@@ -1,17 +1,22 @@
-import { View, Text, StyleSheet } from "react-native";
+import { StyleSheet } from "react-native";
+import Deck from "../components/quizits/Deck";
+import ScopeBar from "../components/quizits/ScopeBar";
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function QuizitScreen() {
   return (
-    <View style={styles.container}>
-      <Text>This is the Quizit screen.</Text>
-    </View>
+    <SafeAreaView style={styles.container}>
+      <ScopeBar />
+      <Deck />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
+    height: '100%',
+    display: 'flex',
+    flexDirection: 'column',
   },
 });
