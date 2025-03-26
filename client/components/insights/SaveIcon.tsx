@@ -8,8 +8,6 @@ interface SaveIconProps {
   size?: number;
 }
 
-const ICON_COLOR = '#999999'; // Medium gray
-
 export function SaveIcon({ isSelected, onToggle, size = 24 }: SaveIconProps) {
   return (
     <TouchableOpacity 
@@ -17,9 +15,9 @@ export function SaveIcon({ isSelected, onToggle, size = 24 }: SaveIconProps) {
       style={styles.container}
     >
       {isSelected ? (
-        <Ionicons name="bookmark" size={size} color={ICON_COLOR} />
+        <Ionicons name="bookmark" size={size} color={'black'} />
       ) : (
-        <Ionicons name="bookmark-outline" size={size} color={ICON_COLOR} />
+        <Ionicons name="bookmark-outline" size={size} color={'#999999'} />
       )}
     </TouchableOpacity>
   );
@@ -30,6 +28,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     height: '100%',
-    width: '100%'
+    width: '100%',
   },
 }); 

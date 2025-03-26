@@ -64,9 +64,11 @@ export default function InsightScreen() {
         {insight.body.map((paragraph: string, index: number) => (
           <Text key={index} style={styles.paragraph}>{paragraph}</Text>
         ))}
+        <View style={styles.separator} />
         <InsightList 
           insights={childInsights}
           onInsightPress={handleInsightPress}
+          indent={0}
         />
       </ScrollView>
     </SafeAreaView>
@@ -102,5 +104,10 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     color: '#333',
     paddingHorizontal: 20,
+  },
+  separator: {
+    height: 1,
+    backgroundColor: '#E5E5E5',
+    marginLeft: 5,
   },
 });

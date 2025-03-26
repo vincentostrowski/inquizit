@@ -3,7 +3,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { QuizitButton } from "../../../components/QuizitButton";
 import { InsightList } from "../../../components/insights/InsightList";
 import { getBookById } from "../../../data/books";
-import { getRootInsights } from "../../../data/insights";
+import { getInsightsByBookIdStructured } from "../../../data/insights";
 import type { Book, Insight } from "../../../data/types";
 import { useState, useEffect } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -23,7 +23,7 @@ export default function BookScreen() {
       setBook(foundBook || null);
       
       if (foundBook) {
-        const bookInsights = getRootInsights(foundBook._id);
+        const bookInsights = getInsightsByBookIdStructured(foundBook._id);
         setInsights(bookInsights);
       }
     }
@@ -40,14 +40,14 @@ export default function BookScreen() {
 
   if (!book) {
     return (
-      <View style={styles.wrapper}>
+      <View style={styles.container}>
         <Text style={styles.title}>Book not found</Text>
       </View>
     );
   }
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
+    <SafeAreaView style={{ flex: 1 , position: 'relative' }}>
       <QuizitButton />
       <ScrollView style={styles.container}>
         <View style={styles.coverContainer}>
@@ -59,9 +59,11 @@ export default function BookScreen() {
         </View>
         <Text style={styles.title}>{book.title}</Text>
         <Text style={styles.description}>{book.description}</Text>
+        <View style={styles.separator} />
         <InsightList 
           insights={insights}
           onInsightPress={handleInsightPress}
+          indent={0}
         />
       </ScrollView>
     </SafeAreaView>
@@ -72,7 +74,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 10,
-    paddingTop: 20,
+    paddingTop: 50,
   },
   coverContainer: {
     alignItems: 'center',
@@ -94,7 +96,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 24,
     paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingBottom: 10,
     color: '#333',
+  },
+  separator: {
+    height: 1,
+    backgroundColor: '#E5E5E5',
+    marginLeft: 5,
   },
 });

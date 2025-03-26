@@ -133,3 +133,14 @@ export const getInsightsByParentId = (parentId: string) =>
 export const getRootInsights = (bookId: string) =>
   insights.filter(insight => insight.parentType === 'book' && insight.bookId === bookId)
     .sort((a, b) => a.order - b.order); 
+
+export const getInsightsByBookIdStructured = (bookId: string) => {
+  const rootInsights = getRootInsights(bookId);
+  return rootInsights.map(rootInsight => {
+    const children = getInsightsByParentId(rootInsight._id);
+    return {
+      ...rootInsight,
+      children,
+    };
+  });
+}

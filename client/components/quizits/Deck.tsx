@@ -40,7 +40,7 @@ export default function Deck() {
 const styles = StyleSheet.create({
   container: {
     height: '100%',
-    position: 'relative',
+    zIndex: 100,
   },
   cardContainer: {
     width: SCREEN_WIDTH * 0.9,
@@ -49,6 +49,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     position: "absolute",
-    top: -50,
+    top: 0,
   },
 });
