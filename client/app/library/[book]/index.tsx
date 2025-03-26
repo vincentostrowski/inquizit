@@ -1,6 +1,7 @@
-import { View, Text, StyleSheet, Image, ScrollView, Dimensions } from "react-native";
+import { View, Text, StyleSheet, Image, ScrollView, Dimensions} from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { QuizitButton } from "../../../components/QuizitButton";
+import { ExpandCollapse } from "../../../components/book/ExpandCollapse";
 import { InsightList } from "../../../components/insights/InsightList";
 import { getBookById } from "../../../data/books";
 import { getInsightsByBookIdStructured } from "../../../data/insights";
@@ -16,6 +17,7 @@ export default function BookScreen() {
   const { book: bookId } = useLocalSearchParams();
   const [book, setBook] = useState<Book | null>(null);
   const [insights, setInsights] = useState<Insight[]>([]);
+  const [expandedRows, setExpandedRows] = useState<number>(1);
 
   useEffect(() => {
     if (typeof bookId === 'string') {
@@ -28,6 +30,14 @@ export default function BookScreen() {
       }
     }
   }, [bookId]);
+
+  const collapseRows = () => {
+    setExpandedRows(1);
+  }
+
+  const expandRows = () => {
+    setExpandedRows(2);
+  }
 
   const handleInsightPress = (insight: Insight) => {
     if (book?._id) {
@@ -49,6 +59,7 @@ export default function BookScreen() {
   return (
     <SafeAreaView style={{ flex: 1 , position: 'relative' }}>
       <QuizitButton />
+      <ExpandCollapse collapse={collapseRows} expand={expandRows}/>
       <ScrollView style={styles.container}>
         <View style={styles.coverContainer}>
           <Image 
@@ -64,6 +75,8 @@ export default function BookScreen() {
           insights={insights}
           onInsightPress={handleInsightPress}
           indent={0}
+          expand={expandedRows}
+          setExpandedStart={setExpandedRows}
         />
       </ScrollView>
     </SafeAreaView>

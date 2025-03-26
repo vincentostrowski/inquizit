@@ -113,8 +113,98 @@ const HowToWinFriendsAndInfluencePeople = () => {
     prompt: "What makes appreciation feel genuine?"
   };
 
+  const A21: Insight = {
+    _id: generateId(),
+    title: "Become genuinely interested in other people", 
+    body: [
+      "People like to feel important. They like to feel that they are needed.",
+      "Arouse in the other person an eager want.",
+    ],
+    parentId: A2._id,
+    parentType: 'insight',
+    bookId: books[0]._id,
+    order: 1,
+    leaf: true,
+    prompt: "What makes appreciation feel genuine?"
+  };
+
+  const A22: Insight = {
+    _id: generateId(),
+    title: "Smile",
+    body: [
+      "People like to feel important. They like to feel that they are needed.",
+      "Arouse in the other person an eager want.",
+    ],
+    parentId: A2._id,
+    parentType: 'insight',
+    bookId: books[0]._id,
+    order: 2,
+    leaf: true,
+    prompt: "What makes appreciation feel genuine?"
+  };  
+
+  const A23: Insight = {
+    _id: generateId(),
+    title: "A Person’s name is the sweetest sound", 
+    body: [
+      "People like to feel important. They like to feel that they are needed.",
+      "Arouse in the other person an eager want.",
+    ],
+    parentId: A2._id,
+    parentType: 'insight',
+    bookId: books[0]._id,
+    order: 3,
+    leaf: true,
+    prompt: "What makes appreciation feel genuine?"
+  };
+
+  const A24: Insight = {
+    _id: generateId(),
+    title: "Be a good listener. Encourage others to talk about themselves",
+    body: [
+      "People like to feel important. They like to feel that they are needed.",
+      "Arouse in the other person an eager want.",
+    ],
+    parentId: A2._id,
+    parentType: 'insight',
+    bookId: books[0]._id,
+    order: 4,
+    leaf: true,
+    prompt: "What makes appreciation feel genuine?"
+  };
+
+  const A25: Insight = {
+    _id: generateId(),
+    title: "Talk in terms of the other person’s interests",
+    body: [
+      "People like to feel important. They like to feel that they are needed.",
+      "Arouse in the other person an eager want.",
+    ],
+    parentId: A2._id,
+    parentType: 'insight',
+    bookId: books[0]._id,
+    order: 5,
+    leaf: true,
+    prompt: "What makes appreciation feel genuine?"
+  };
+
+  const A26: Insight = {
+    _id: generateId(),
+    title: "Make the other person feel important – and do it sincerely",
+    body: [
+      "People like to feel important. They like to feel that they are needed.",
+      "Arouse in the other person an eager want.",
+    ],
+    parentId: A2._id,
+    parentType: 'insight',
+    bookId: books[0]._id,
+    order: 6,
+    leaf: true,
+    prompt: "What makes appreciation feel genuine?"
+  };
+
   
-  return [A1, A2, A3, A4, A11, A12, A13];
+  return [A1, A2, A3, A4, A11, A12, A13, A21, A22, A23, A24, A25, A26];
 };
 
 const Originals = () => {

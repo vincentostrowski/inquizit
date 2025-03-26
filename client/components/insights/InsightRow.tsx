@@ -1,7 +1,7 @@
 import { Pressable, Text, View, StyleSheet, GestureResponderEvent } from 'react-native';
 import type { Insight } from '../../data/types';
 import { SaveIcon } from './SaveIcon';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
 
@@ -10,18 +10,17 @@ interface InsightRowProps {
   onPress: (insight: Insight) => void;
   onToggle: () => void;
   indent: number;
+  expand: boolean;
 }
 
-export function InsightRow({ insight, onPress, indent, onToggle }: InsightRowProps) {
+export function InsightRow({ insight, onPress, indent, onToggle, expand }: InsightRowProps) {
   const [isSaved, setIsSaved] = useState(false);
-  const [expanded, setExpanded] = useState(false);
 
   const handleSavePress = () => {
     setIsSaved(!isSaved);
   };
 
   const handleToggle = () => {
-    setExpanded(!expanded);
     onToggle();
   };
 
@@ -43,7 +42,7 @@ export function InsightRow({ insight, onPress, indent, onToggle }: InsightRowPro
         )}
         {!insight.leaf && (
           <Pressable style={styles.expandContainer} onPress={handleToggle}>
-            <Icon name={expanded ? "arrow-drop-up" : "arrow-drop-down"} size={30} color="black" style={styles.expand} />
+            <Icon name={expand ? "arrow-drop-up" : "arrow-drop-down"} size={30} color="black" style={styles.expand} />
           </Pressable>
         )}
       </View>
