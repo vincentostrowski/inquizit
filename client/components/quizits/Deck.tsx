@@ -1,8 +1,8 @@
 import React, { useRef, useState } from 'react';
-import { View, Text, StyleSheet, PanResponder, Animated, Dimensions } from 'react-native';
+import { View, StyleSheet, PanResponder, Animated, Dimensions } from 'react-native';
 import { Card } from './Card';
 
-export default function Deck({ cards }) {
+export default function Deck({ cards, onGestureStart, onGestureEnd }) {
   const [deck, setDeck] = useState(cards);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const { width } = Dimensions.get('window');
@@ -14,46 +14,66 @@ export default function Deck({ cards }) {
   // Threshold for swipe acceptance
   const SWIPE_THRESHOLD = -50; // Negative value: swipe left
 
+  const gestureStarted = useRef(false);
+  // re-enable vertical scrolling when gesture ends
+
+  // Helper function that finalizes the gesture
+  const finalizeGesture = (gestureState) => {
+    onGestureEnd(); // re-enable vertical scrolling, etc.
+    gestureStarted.current = false;
+
+    if (gestureState.dx <= SWIPE_THRESHOLD) {
+      // Animate card off-screen
+      Animated.timing(position, {
+        toValue: { x: OFF_SCREEN_X, y: 0 },
+        duration: 300,
+        useNativeDriver: false,
+      }).start(() => {
+        // Animate offScreen card into position
+        Animated.timing(offScreenPosition, {
+          toValue: { x: 8, y: 8 },
+          duration: 200,
+          useNativeDriver: false,
+        }).start(() => {
+          setIsTransitioning(true);
+          rotateDeck();
+          // Delay resetting animated values to allow re-render with new deck state
+          setTimeout(() => {
+            offScreenPosition.setValue({ x: OFF_SCREEN_X, y: 0 });
+            position.setValue({ x: 0, y: 0 });
+            setIsTransitioning(false);
+          }, 10); // adjust delay as needed
+        });
+      });
+    } else {
+      // Snap back if swipe doesn't meet threshold
+      Animated.spring(position, {
+        toValue: { x: 0, y: 0 },
+        useNativeDriver: false,
+      }).start();
+    }
+  };
+
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponderCapture: (evt, gestureState) => {
+        return Math.abs(gestureState.dx) > Math.abs(gestureState.dy);
+      },
       onPanResponderMove: (evt, gestureState) => {
+        if (!gestureStarted.current && Math.abs(gestureState.dx) > Math.abs(gestureState.dy)) {
+          gestureStarted.current = true;
+          onGestureStart();
+        }
         // Move the card with the user's finger
         const dx = gestureState.dx < 0 ? gestureState.dx : 0;
         position.setValue({ x: dx, y: 0 });
       },
       onPanResponderRelease: (evt, gestureState) => {
-        if (gestureState.dx <= SWIPE_THRESHOLD) {
-          // If swipe passes threshold, animate card off-screen
-          Animated.timing(position, {
-            toValue: { x: OFF_SCREEN_X, y: 0 },
-            duration: 300,
-            useNativeDriver: false,
-          }).start(() => {
-            // When animation finishes, rotate the deck
-            Animated.timing(offScreenPosition, {
-              toValue: { x: 8, y: 8 },
-              duration: 200,
-              useNativeDriver: false,
-            }).start(() => {
-              // After animation, reset offScreenPosition and the drag position for next swipe
-              setIsTransitioning(true);
-              rotateDeck();
-              setTimeout(() => {
-                // Reset animated values
-                offScreenPosition.setValue({ x: OFF_SCREEN_X, y: 0 });
-                position.setValue({ x: 0, y: 0 });
-                setIsTransitioning(false); // show the new top card
-              }, 10); // adjust delay as needed
-            });
-          });
-        } else {
-          // Otherwise, spring back to original position
-          Animated.spring(position, {
-            toValue: { x: 0, y: 0 },
-            useNativeDriver: false,
-          }).start();
-        }
+        finalizeGesture(gestureState);
+      },
+      onPanResponderTerminate: (evt, gestureState) => {
+        finalizeGesture(gestureState);
       },
     })
   ).current;
@@ -137,7 +157,7 @@ export default function Deck({ cards }) {
         <Animated.View
           style={[
             styles.card,
-            { zIndex: 4 },
+            { zIndex: 100 },
             {
               transform: [
                 { translateX: position.x },

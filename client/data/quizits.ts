@@ -70,5 +70,40 @@ export const decks: Deck[] = [
         'London is the capital of the United Kingdom'
       ]
     }
+  ], 
+  [
+    {
+      _id: '7',
+      type: 'quizit',
+      body: [
+        'What is the capital of Italy?',
+        'What is the capital of the United Kingdom?',
+        'What is the capital of the United States?'
+      ]
+    },
+    {
+      _id: '8',
+      type: 'explanation',
+      insightId: '4',
+      title: 'Rome',
+      summary: 'Rome is the capital of Italy',
+      explanations: [
+        'Rome is the capital of Italy',
+        'Rome is the capital of Italy',
+        'Rome is the capital of Italy'
+      ]
+    },
+    {
+      _id: '9',
+      type: 'explanation',
+      insightId: '5',
+      title: 'London',
+      summary: 'London is the capital of the United Kingdom',
+      explanations: [
+        'London is the capital of the United Kingdom',
+        'London is the capital of the United Kingdom',
+        'London is the capital of the United Kingdom'
+      ]
+    }
   ]
 ];
