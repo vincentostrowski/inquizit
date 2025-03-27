@@ -2,6 +2,7 @@ import { View, StyleSheet } from "react-native";
 import Deck from "../components/quizits/Deck";
 import ScopeBar from "../components/quizits/ScopeBar";
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { decks } from "../data/quizits";
 
 export default function QuizitScreen() {
   return (
@@ -10,7 +11,7 @@ export default function QuizitScreen() {
         <ScopeBar />
       </View>
       <View style={styles.deckContainer}>
-        <Deck />
+        <Deck cards={decks[0]}/>
       </View>
     </SafeAreaView>
   );

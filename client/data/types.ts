@@ -17,3 +17,25 @@ export type Insight = {
   order: number;     // For ordering within same parent
   prompt?: string;   // Optional prompt
 } 
+
+export interface Card {
+  _id: string;
+  type: 'quizit' | 'explanation';
+}
+
+export interface Explanation extends Card {
+  type: 'explanation';
+  insightId: string;
+  title: string;
+  summary: string;
+  explanations: string[];
+}
+
+export interface Quizit extends Card {
+  type: 'quizit';
+  body: string[];
+}
+
+export type DeckCard = Quizit | Explanation;
+
+export type Deck = DeckCard[];

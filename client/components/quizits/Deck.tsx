@@ -1,10 +1,10 @@
 import React, { useRef, useState } from 'react';
 import { View, Text, StyleSheet, PanResponder, Animated, Dimensions } from 'react-native';
+import { Card } from './Card';
 
-export default function Deck() {
-  const [deck, setDeck] = useState(['SKFLJS:FJ:S', 'B', '_________']);
+export default function Deck({ cards }) {
+  const [deck, setDeck] = useState(cards);
   const [isTransitioning, setIsTransitioning] = useState(false);
-
   const { width } = Dimensions.get('window');
   const OFF_SCREEN_X = -width * 1.1;
 
@@ -12,7 +12,7 @@ export default function Deck() {
 
   const offScreenPosition = useRef(new Animated.ValueXY({ x: OFF_SCREEN_X, y: 0 })).current;
   // Threshold for swipe acceptance
-  const SWIPE_THRESHOLD = -100; // Negative value: swipe left
+  const SWIPE_THRESHOLD = -50; // Negative value: swipe left
 
   const panResponder = useRef(
     PanResponder.create({
@@ -108,6 +108,8 @@ export default function Deck() {
     ],
   };
 
+  const cardStyles = [cardBStyle, cardCStyle];
+
   return (
     <View style={styles.container}>
       {/* Dummy Card */}
@@ -122,42 +124,43 @@ export default function Deck() {
           ],
         },
       ]}>
-      <Text style={styles.cardText}>{deck[0]}</Text>
-    </Animated.View>
-
-      {/* Back card (animated with interpolation) */}
-      <Animated.View style={[styles.card, { zIndex: 2 }, cardCStyle]}>
-        <Text style={styles.cardText}>{deck[2]}</Text>
+        <Card card={deck[0]} />
       </Animated.View>
 
-      {/* Middle card (animated with interpolation) */}
-      <Animated.View style={[styles.card, { zIndex: 3 }, cardBStyle]}>
-        <Text style={styles.cardText}>{deck[1]}</Text>
-      </Animated.View>
-
-      {/* Top card (fully draggable) */}
+      {/* Front card */}
       {isTransitioning && (
         <View style={[styles.card, { zIndex: 5 }]}>
-          <Text style={styles.cardText}>{deck[0]}</Text>
+          <Card card={deck[0]} />
         </View>
       )}
       {!isTransitioning && (
-      <Animated.View
-        style={[
-          styles.card,
-          { zIndex: 4 },
-          {
-            transform: [
-              { translateX: position.x },
-              { translateY: position.y },
-            ],
-          },
-        ]}
-        {...panResponder.panHandlers}
-      >
-        <Text style={styles.cardText}>{deck[0]}</Text>
-      </Animated.View>
+        <Animated.View
+          style={[
+            styles.card,
+            { zIndex: 4 },
+            {
+              transform: [
+                { translateX: position.x },
+                { translateY: position.y },
+              ],
+            },
+          ]}
+          {...panResponder.panHandlers}
+        >
+          <Card card={deck[0]} />
+        </Animated.View>
       )}
+
+      {
+        deck.slice(1).map((card, index) => (
+          <Animated.View
+            key={index}
+            style={[styles.card, { zIndex: 3 - index }, cardStyles[index]]}
+          >
+            <Card card={card} />
+          </Animated.View>
+        ))
+      }
     </View>
   );
 }
@@ -173,17 +176,10 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     borderRadius: 5,
-    backgroundColor: 'beige',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: '#fff1e1',
     shadowColor: 'black',
     shadowOffset: { width: 1, height: 1 },
-    shadowOpacity: 0.5,
-    shadowRadius: 2,
-    elevation: 5,
-  },
-  cardText: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    shadowOpacity: 0.2,
+    shadowRadius: 1,
   },
 });
