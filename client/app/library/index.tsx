@@ -10,11 +10,9 @@ export default function LibraryScreen() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate network delay for now
     const loadBooks = async () => {
       try {
         setIsLoading(true);
-        // In real implementation, this would be an API call
         const fetchedBooks = getAllBooks;
         setBooks(fetchedBooks);
       } catch (error) {
@@ -36,7 +34,7 @@ export default function LibraryScreen() {
   }
 
   return (
-    <SafeAreaView style={{flex: 1}}>
+    <SafeAreaView style={{flex: 1, }} edges={['top']}>
       <View style={styles.container}>
         <BookGrid books={books} />
       </View>

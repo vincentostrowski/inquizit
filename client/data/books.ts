@@ -58,6 +58,27 @@ export const books: Book[] = [
     author: "Noam Chomsky & Edward S. Herman",
     description: "An analysis of the ways in which the mass media of the United States serve as a system for communicating messages and symbols to the general populace.",
     coverUrl: "https://m.media-amazon.com/images/I/71Xnit90WIL.jpg"
+  }, 
+  {
+    _id: generateId(),
+    title: "The Art of War",
+    author: "Sun Tzu",
+    description: "The Art of War is an ancient Chinese military treatise attributed to Sun Tzu, a military strategist, and philosopher.",
+    coverUrl: "https://m.media-amazon.com/images/I/71MizulW5AL.jpg"
+  }, 
+  {
+    _id: generateId(),
+    title: "Zero to One", 
+    author: "Peter Thiel",
+    description: "Zero to One presents at once an optimistic view of the future of progress in America and a new way of thinking about innovation: it starts by learning to ask the questions that lead you to find value in unexpected places.",
+    coverUrl: "https://m.media-amazon.com/images/I/51zGCdRQXOL.jpg"
+  }, 
+  {
+    _id: generateId(),
+    title: "Thinking Fast and Slow",
+    author: "Daniel Kahneman",
+    description: "In Thinking, Fast and Slow, Kahneman takes us on a groundbreaking tour of the mind and explains the two systems that drive the way we think.",
+    coverUrl: "https://m.media-amazon.com/images/I/61fdrEuPJwL._AC_UF1000,1000_QL80_.jpg"
   }
 ];
 

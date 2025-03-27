@@ -3,24 +3,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function ScopeBar() {
     return (
-        <SafeAreaView style={styles.container}>
-            <View style={styles.bar}>
-                <Text>How To Wi... / Arouse in the other person an eager want </Text>
-            </View> 
-        </SafeAreaView>
+        <View style={styles.bar}>
+            <Text>How To Wi... / Arouse in the other person an eager want </Text>
+        </View> 
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        height: 'auto',
-        paddingHorizontal: 20,
-        paddingVertical: 10,
-        zIndex: 0,
-        position: 'absolute',
-        top: 0,
-        width: '100%',
-    },
     bar: {
         height: 30,
         justifyContent: 'center',
