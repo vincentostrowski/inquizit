@@ -1,8 +1,9 @@
 import React, { useRef, useState } from 'react';
 import { View, Text, StyleSheet, PanResponder, Animated, Dimensions } from 'react-native';
 
-export default function ThreeCardDeck() {
+export default function Deck() {
   const [deck, setDeck] = useState(['SKFLJS:FJ:S', 'B', '_________']);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   const { width } = Dimensions.get('window');
   const OFF_SCREEN_X = -width * 1.1;
@@ -36,9 +37,14 @@ export default function ThreeCardDeck() {
               useNativeDriver: false,
             }).start(() => {
               // After animation, reset offScreenPosition and the drag position for next swipe
+              setIsTransitioning(true);
               rotateDeck();
-              offScreenPosition.setValue({ x: OFF_SCREEN_X, y: 0 });
-              position.setValue({ x: 0, y: 0 });
+              setTimeout(() => {
+                // Reset animated values
+                offScreenPosition.setValue({ x: OFF_SCREEN_X, y: 0 });
+                position.setValue({ x: 0, y: 0 });
+                setIsTransitioning(false); // show the new top card
+              }, 10); // adjust delay as needed
             });
           });
         } else {
@@ -130,6 +136,12 @@ export default function ThreeCardDeck() {
       </Animated.View>
 
       {/* Top card (fully draggable) */}
+      {isTransitioning && (
+        <View style={[styles.card, { zIndex: 5 }]}>
+          <Text style={styles.cardText}>{deck[0]}</Text>
+        </View>
+      )}
+      {!isTransitioning && (
       <Animated.View
         style={[
           styles.card,
@@ -145,6 +157,7 @@ export default function ThreeCardDeck() {
       >
         <Text style={styles.cardText}>{deck[0]}</Text>
       </Animated.View>
+      )}
     </View>
   );
 }
