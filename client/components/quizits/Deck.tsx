@@ -5,6 +5,7 @@ import { Card } from './Card';
 export default function Deck({ cards, onGestureStart, onGestureEnd }) {
   const [deck, setDeck] = useState(cards);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const { width } = Dimensions.get('window');
   const OFF_SCREEN_X = -width * 1.1;
 
@@ -24,6 +25,7 @@ export default function Deck({ cards, onGestureStart, onGestureEnd }) {
 
     if (gestureState.dx <= SWIPE_THRESHOLD) {
       // Animate card off-screen
+      setCurrentIndex(prevIndex => (prevIndex + 1) % deck.length);
       Animated.timing(position, {
         toValue: { x: OFF_SCREEN_X, y: 0 },
         duration: 300,
@@ -56,7 +58,7 @@ export default function Deck({ cards, onGestureStart, onGestureEnd }) {
 
   const panResponder = useRef(
     PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
+      onStartShouldSetPanResponder: (evt, gestureState) => Math.abs(gestureState.dx) > Math.abs(gestureState.dy),
       onMoveShouldSetPanResponderCapture: (evt, gestureState) => {
         return Math.abs(gestureState.dx) > Math.abs(gestureState.dy);
       },
@@ -170,7 +172,6 @@ export default function Deck({ cards, onGestureStart, onGestureEnd }) {
           <Card card={deck[0]} />
         </Animated.View>
       )}
-
       {
         deck.slice(1).map((card, index) => (
           <Animated.View
@@ -181,6 +182,17 @@ export default function Deck({ cards, onGestureStart, onGestureEnd }) {
           </Animated.View>
         ))
       }
+      <View style={styles.dotContainer}>
+        {deck.map((_, index) => (
+          <View
+            key={index}
+            style={[
+              styles.dot,
+              currentIndex === index ? styles.activeDot : null,
+            ]}
+          />
+        ))}
+      </View>
     </View>
   );
 }
@@ -201,5 +213,25 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 1, height: 1 },
     shadowOpacity: 0.2,
     shadowRadius: 1,
+  },
+  dotContainer: {
+    position: 'absolute',
+    width: '100%',
+    bottom: 10,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 100,
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: 'black',
+    marginHorizontal: 4,
+    opacity: 0.1,
+  },
+  activeDot: {
+    opacity: 0.25,
   },
 });
