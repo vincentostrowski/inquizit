@@ -46,9 +46,9 @@ export default function InsightScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <QuizitButton />
+    <SafeAreaView style={{flex: 1}} edges={['top']}>
       <ScrollView style={styles.container}>
+        <QuizitButton />
         <View style={styles.titleContainer}>
           <Text style={styles.title}>{insight.title}</Text>
           {insight.leaf && (
@@ -64,7 +64,7 @@ export default function InsightScreen() {
         {insight.body.map((paragraph: string, index: number) => (
           <Text key={index} style={styles.paragraph}>{paragraph}</Text>
         ))}
-        <View style={styles.separator} />
+        {!insight.leaf && <View style={styles.separator} />}
         <InsightList 
           insights={childInsights}
           onInsightPress={handleInsightPress}
@@ -78,8 +78,7 @@ export default function InsightScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 10,
-    paddingTop: 20,
+    position: 'relative',
   },
   saveContainer: {
     height: 50,
@@ -89,7 +88,6 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 0,
-    paddingHorizontal: 60,
     textAlign: 'center',
   },
   titleContainer: {
@@ -97,17 +95,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
+    marginTop: 70,
+    paddingHorizontal:70,
   },
   paragraph: {
     fontSize: 16,
     lineHeight: 24,
     marginBottom: 16,
     color: '#333',
-    paddingHorizontal: 20,
+    paddingHorizontal: 30,
   },
   separator: {
     height: 1,
     backgroundColor: '#E5E5E5',
-    marginLeft: 5,
   },
 });

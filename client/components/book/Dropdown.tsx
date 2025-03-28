@@ -4,20 +4,20 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 export function Dropdown({onPress}) {
   return (
     <Pressable style={styles.click} onPress={onPress}>
-        <View style={styles.icon}>
-            <Icon name="arrow-drop-down" size={24} color="white"/>
-        </View>
+        <Icon name="arrow-drop-down" size={24} color="black"/>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
     click: {
-        width: 50,
-        height: 50,
+        width: 40,
+        height: 40,
         display: 'flex',
         justifyContent: 'center',
-        alignItems: 'center',
+        alignItems: 'flex-end',
+        paddingRight: 3,
+        top: -1,
     },
     icon: {
         width: 24,

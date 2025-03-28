@@ -57,10 +57,9 @@ export default function BookScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1 , position: 'relative' }}>
-      <QuizitButton />
-      <ExpandCollapse collapse={collapseRows} expand={expandRows}/>
+    <SafeAreaView style={{flex: 1 }} edges={['top']}>
       <ScrollView style={styles.container}>
+        <QuizitButton />
         <View style={styles.coverContainer}>
           <Image 
             source={{ uri: book.coverUrl }}
@@ -70,6 +69,7 @@ export default function BookScreen() {
         </View>
         <Text style={styles.title}>{book.title}</Text>
         <Text style={styles.description}>{book.description}</Text>
+        <ExpandCollapse collapse={collapseRows} expand={expandRows} />
         <View style={styles.separator} />
         <InsightList 
           insights={insights}
@@ -86,11 +86,11 @@ export default function BookScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 10,
-    paddingTop: 50,
+    position: 'relative',
   },
   coverContainer: {
     alignItems: 'center',
+    marginTop: 60,
     marginBottom: 20,
   },
   cover: {
@@ -101,20 +101,19 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    paddingHorizontal: 20,
+    paddingHorizontal: 60,
     paddingBottom: 10,
     textAlign: 'center',
   },
   description: {
     fontSize: 16,
     lineHeight: 24,
-    paddingHorizontal: 20,
-    paddingBottom: 10,
+    paddingHorizontal: 30,
     color: '#333',
+    textAlign: 'center',
   },
   separator: {
     height: 1,
     backgroundColor: '#E5E5E5',
-    marginLeft: 5,
   },
 });

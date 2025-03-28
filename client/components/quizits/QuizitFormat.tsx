@@ -1,7 +1,8 @@
-import React from 'react';
+import {useState} from 'react';
 import { View, StyleSheet, Text } from 'react-native';
 
 export function QuizitFormat({ card }) {
+
   return (
     <View style={styles.container}>
       {

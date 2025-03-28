@@ -4,21 +4,18 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 export function Collapse({onPress}) {
   return (
     <Pressable style={styles.click} onPress={onPress}>
-        <View style={styles.icon}>
-            <Icon name="arrow-drop-up" size={24} color="white"/>
-        </View>
+        <Icon name="arrow-drop-up" size={24} color="black"/>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
     click: {
-        width: 50,
-        height: 50,
+        width: 40,
+        height: 40,
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 5,
     },
     icon: {
         width: 24,

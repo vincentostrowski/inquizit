@@ -58,12 +58,12 @@ export default function Deck({ cards, onGestureStart, onGestureEnd }) {
 
   const panResponder = useRef(
     PanResponder.create({
-      onStartShouldSetPanResponder: (evt, gestureState) => Math.abs(gestureState.dx) > Math.abs(gestureState.dy),
+      onStartShouldSetPanResponder: (evt, gestureState) => Math.abs(gestureState.dx) * 2 > Math.abs(gestureState.dy),
       onMoveShouldSetPanResponderCapture: (evt, gestureState) => {
-        return Math.abs(gestureState.dx) > Math.abs(gestureState.dy);
+        return Math.abs(gestureState.dx) * 2 > Math.abs(gestureState.dy);
       },
       onPanResponderMove: (evt, gestureState) => {
-        if (!gestureStarted.current && Math.abs(gestureState.dx) > Math.abs(gestureState.dy)) {
+        if (!gestureStarted.current && Math.abs(gestureState.dx) * 2 > Math.abs(gestureState.dy)) {
           gestureStarted.current = true;
           onGestureStart();
         }

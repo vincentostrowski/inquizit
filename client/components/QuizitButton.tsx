@@ -20,7 +20,7 @@ export function QuizitButton() {
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    top: 60,
+    top: 5,
     right: 20,
     width: 40,
     height: 40,

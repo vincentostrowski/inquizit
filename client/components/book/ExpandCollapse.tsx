@@ -13,14 +13,11 @@ export function ExpandCollapse({collapse, expand}) {
 
 const styles = StyleSheet.create({
   container: {
-    position: 'absolute',
     display: 'flex',
-    flexDirection: 'column',
+    flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    top: 120,
-    right: 20,
-    width: 40,
     zIndex: 1000,
+    opacity: 0.3,
   },
 }); 
