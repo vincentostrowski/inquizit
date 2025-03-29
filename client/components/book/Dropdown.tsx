@@ -11,21 +11,12 @@ export function Dropdown({onPress}) {
 
 const styles = StyleSheet.create({
     click: {
-        width: 40,
+        width: 70,
         height: 40,
+        paddingRight: 30,
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'flex-end',
-        paddingRight: 3,
         top: -1,
     },
-    icon: {
-        width: 24,
-        height: 24,
-        borderRadius: 12,
-        backgroundColor: 'black',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-    }
 });

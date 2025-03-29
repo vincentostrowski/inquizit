@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { View, StyleSheet, PanResponder, Animated, Dimensions, ScrollView } from 'react-native';
+import { View, StyleSheet, PanResponder, Animated, Dimensions, ScrollView, Pressable } from 'react-native';
 import { Card } from './Card';
 
 export default function Deck({ cards, onGestureStart, onGestureEnd }) {
@@ -9,6 +9,8 @@ export default function Deck({ cards, onGestureStart, onGestureEnd }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const { width } = Dimensions.get('window');
   const OFF_SCREEN_X = -width * 1.1;
+  const [componentWidth, setComponentWidth] = useState(0);
+  const dragThreshold = 5; // Movement threshold to differentiate drag from tap
 
   const position = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
   const backPosition = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
@@ -16,15 +18,15 @@ export default function Deck({ cards, onGestureStart, onGestureEnd }) {
   const offScreenPosition = useRef(new Animated.ValueXY({ x: OFF_SCREEN_X, y: 0 })).current;
   const backOffScreenPosition = useRef(new Animated.ValueXY({ x: OFF_SCREEN_X, y: 0 })).current;
   // Threshold for swipe acceptance
-  const SWIPE_THRESHOLD = -50; // Negative value: swipe left
+  const SWIPE_THRESHOLD = -30; // Negative value: swipe left
+  const SWIPE_THRESHOLD_RIGHT = 25; // Positive value: swipe right
 
   const gestureStarted = useRef(false);
+  const preventTap = useRef(false); // Track if a drag is happening
   // re-enable vertical scrolling when gesture ends
 
   // Helper function that finalizes the gesture
   const finalizeGestureNext = (gestureState, nongesture) => {
-    gestureStarted.current = false;
-
     if (gestureState.dx <= SWIPE_THRESHOLD || nongesture) {
       setCurrentIndex(prevIndex => (prevIndex + 1) % deck.length);
       Animated.timing(position, {
@@ -41,6 +43,8 @@ export default function Deck({ cards, onGestureStart, onGestureEnd }) {
           setIsTransitioningNext(true);
           onGestureEnd();
           rotateDeckNext();
+          preventTap.current = false;
+          gestureStarted.current = false;
           // Delay resetting animated values to allow re-render with new deck state
           setTimeout(() => {
             offScreenPosition.setValue({ x: OFF_SCREEN_X, y: 0 });
@@ -59,14 +63,15 @@ export default function Deck({ cards, onGestureStart, onGestureEnd }) {
       Animated.spring(position, {
         toValue: { x: 0, y: 0 },
         useNativeDriver: false,
-      }).start();
+      }).start(() => {
+        preventTap.current = false;
+        gestureStarted.current = false;
+      });
     }
   };
 
   const finalizeGesturePrev = (gestureState, nongesture) => {
-    gestureStarted.current = false;
-
-    if (gestureState.dx >= -1 * SWIPE_THRESHOLD || nongesture) {
+    if (gestureState.dx >= SWIPE_THRESHOLD_RIGHT || nongesture) {
       Animated.timing(backPosition, {
         toValue: { x: OFF_SCREEN_X, y: 0 },
         duration: 80,
@@ -81,6 +86,8 @@ export default function Deck({ cards, onGestureStart, onGestureEnd }) {
           setIsTransitioningPrev(true);
           onGestureEnd();
           rotateDeckPrev();
+          preventTap.current = false;
+          gestureStarted.current = false;
           setTimeout(() => {
             backOffScreenPosition.setValue({ x: OFF_SCREEN_X, y: 0 });
             backPosition.setValue({ x: 0, y: 0 });
@@ -97,7 +104,10 @@ export default function Deck({ cards, onGestureStart, onGestureEnd }) {
       Animated.spring(position, {
         toValue: { x: 0, y: 0 },
         useNativeDriver: false,
-      }).start();
+      }).start(() => {
+        preventTap.current = false;
+        gestureStarted.current = false;
+      });
     }
   };
 
@@ -105,11 +115,12 @@ export default function Deck({ cards, onGestureStart, onGestureEnd }) {
     PanResponder.create({
       onStartShouldSetPanResponder: (evt, gestureState) => Math.abs(gestureState.dx) * 2 > Math.abs(gestureState.dy),
       onMoveShouldSetPanResponderCapture: (evt, gestureState) => {
-        return Math.abs(gestureState.dx) * 2 > Math.abs(gestureState.dy);
+        return !gestureStarted.current && !preventTap.current && Math.abs(gestureState.dx) > dragThreshold && Math.abs(gestureState.dx) * 2 > Math.abs(gestureState.dy);
       },
       onPanResponderMove: (evt, gestureState) => {
         if (!gestureStarted.current && Math.abs(gestureState.dx) * 2 > Math.abs(gestureState.dy)) {
           gestureStarted.current = true;
+          preventTap.current = true;
           onGestureStart();
         }
         // Move the card with the user's finger
@@ -124,6 +135,7 @@ export default function Deck({ cards, onGestureStart, onGestureEnd }) {
         } else {
           finalizeGestureNext(gestureState, false);
         }
+        
       },
       onPanResponderTerminate: (evt, gestureState) => {
         if (gestureState.dx > 0) {
@@ -153,8 +165,32 @@ export default function Deck({ cards, onGestureStart, onGestureEnd }) {
     });
   };
 
+  const handleTap = (event) => {
+    if (preventTap.current) {
+      return;
+    }
+
+    const tapX = event.nativeEvent.locationX;
+
+    if (tapX < componentWidth / 2) {
+      handleLeftTap();
+    } else if (tapX > componentWidth / 2) {
+      handleRightTap();
+    }
+  };
+
+  const handleLeftTap = () => {
+    preventTap.current = true;
+    finalizeGesturePrev({ dx: 0 }, true);
+  };
+
+  const handleRightTap = () => {
+    preventTap.current = true;
+    finalizeGestureNext({ dx: 0 }, true);
+  };
+
   return (
-    <View style={styles.container}>
+    <View style={styles.container} {...panResponderNext.panHandlers}>
       {/* Fake Front Card to move into back */}
       <Animated.View
       style={[
@@ -204,7 +240,6 @@ export default function Deck({ cards, onGestureStart, onGestureEnd }) {
               ],
             },
           ]}
-          {...panResponderNext.panHandlers}
         >
           <ScrollView
             bounces={false}
@@ -212,7 +247,15 @@ export default function Deck({ cards, onGestureStart, onGestureEnd }) {
             contentContainerStyle={{ width: '100%', height: '100%' }}
             directionalLockEnabled
             horizontal>
-            <Card card={deck[0]} />
+            <Pressable 
+              onPress={handleTap} 
+              style={{ width: '100%', height: '100%' }}
+              onLayout={(event) => {
+                const { width } = event.nativeEvent.layout;
+                setComponentWidth(width); // Capture the component's width
+              }}>
+              <Card card={deck[0]} />
+            </Pressable>
           </ScrollView>
         </Animated.View>
       )}
