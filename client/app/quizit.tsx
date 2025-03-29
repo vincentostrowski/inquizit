@@ -11,44 +11,49 @@ export default function QuizitScreen() {
   const insets = useSafeAreaInsets();
   const [verticalScrollEnabled, setVerticalScrollEnabled] = useState(true);
   
-  const availableHeight = SCREEN_HEIGHT - (insets.top + 30 + 85);
+  const availableHeight = SCREEN_HEIGHT - (insets.top + 50 + 85);
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.scopeBarContainer}>
-        <ScopeBar />
-      </View>
-      <ScrollView
-        scrollEnabled={verticalScrollEnabled}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ flexGrow: 1}}
-        directionalLockEnabled
-        pagingEnabled
-      >
-        {
-          decks.map((deck, index) => (
-            <View key={index} style={[styles.deckContainer, {height: availableHeight}]}>
-              <Deck 
-                cards={deck}
-                onGestureStart={() => setVerticalScrollEnabled(false)} // Lock scroll for each deck
-                onGestureEnd={() => setVerticalScrollEnabled(true)} // Unlock scroll for each deck
-              />
-            </View>
-          ))
-        }
-      </ScrollView>
-    </SafeAreaView>
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <View style={styles.scopeBarContainer}>
+          <ScopeBar />
+        </View>
+        <ScrollView
+          scrollEnabled={verticalScrollEnabled}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ flexGrow: 1, backgroundColor: '#f2f2f2'}}
+          directionalLockEnabled
+          pagingEnabled
+        >
+          {
+            decks.map((deck, index) => (
+              <View key={index} style={[styles.deckContainer, {height: availableHeight}]}>
+                <Deck 
+                  cards={deck}
+                  onGestureStart={() => setVerticalScrollEnabled(false)} // Lock scroll for each deck
+                  onGestureEnd={() => setVerticalScrollEnabled(true)} // Unlock scroll for each deck
+                />
+              </View>
+            ))
+          }
+        </ScrollView>
+      </SafeAreaView>
+    
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: 'white',
   },
   scopeBarContainer: {
-    height: 30,
+    height: 50,
+    paddingVertical: 10,
     paddingHorizontal: 20,
     width: '100%',
+    borderBottomWidth: 1,
+    borderColor: '#e0e0e0',
   },
   deckContainer: {
     width: '100%',

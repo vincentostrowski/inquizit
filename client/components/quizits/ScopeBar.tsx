@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 export default function ScopeBar() {
     return (
         <View style={styles.bar}>
-            <Text>How To Wi... / Arouse in the other person an eager want </Text>
+            <Text>How To Win Friends and Influence Others</Text>
         </View> 
     );
 }
@@ -14,7 +14,7 @@ const styles = StyleSheet.create({
         height: 30,
         justifyContent: 'center',
         alignItems: 'center',
-        borderRadius: 5,
+        borderRadius: 30,
         backgroundColor: '#f7f7f7',
         borderColor: '#e0e0e0',
         borderWidth: 1,
