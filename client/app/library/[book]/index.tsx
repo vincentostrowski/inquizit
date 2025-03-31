@@ -15,7 +15,7 @@ const COVER_WIDTH = width * 0.5; // Half the screen width
 const COVER_HEIGHT = COVER_WIDTH * 1.5; // 3:2 aspect ratio to match explore view
 
 export default function BookScreen() {
-  const { selectedBook, selectedBookinsights, setSelectedBookInsights } = useBook();
+  const { selectedBook, insightTree, setInsightTree, setInsightMap } = useBook();
 
   const { book: bookIdParam } = useLocalSearchParams();
   const bookId = parseInt(Array.isArray(bookIdParam) ? bookIdParam[0] : bookIdParam, 10);  
@@ -39,10 +39,11 @@ export default function BookScreen() {
     if (!book) {
       loadBook();
       //if book is not already loaded, then the loaded insights are not relevant
-      setSelectedBookInsights([]);
+      setInsightTree([]);
+      setInsightMap({});
     }
-    if (selectedBookinsights && selectedBookinsights.length > 0) {
-      setInsights(selectedBookinsights);
+    if (insightTree && insightTree.length > 0) {
+      setInsights(insightTree);
       setAllLoaded(true);
     } else {
       loadRootInsights();
@@ -53,10 +54,11 @@ export default function BookScreen() {
     if (!rootLoaded) return;
     const loadAllInsights = async () => {
       let {data: allInsights, error} = await supabase.from('Insight').select('*').eq('bookId', book.id);
-      const insightTree = buildInsightTree(allInsights);
-      setInsights(insightTree || []);
+      const { tree, map } = buildInsightTreeAndMap(allInsights);
+      setInsights(tree || []);
       setAllLoaded(true);
-      setSelectedBookInsights(insightTree);
+      setInsightTree(tree);
+      setInsightMap(map);
     };
     loadAllInsights();
   }, [rootLoaded])
@@ -69,22 +71,22 @@ export default function BookScreen() {
     setExpandedRows(2);
   }
 
-  function buildInsightTree(allInsights: Insight[]): Insight[] {
-    const lookup: Record<string, Insight> = {};
+  function buildInsightTreeAndMap(allInsights: Insight[]) {
+    const map: Record<string, Insight> = {};
     const tree: Insight[] = [];
   
     allInsights.forEach((insight) => {
-      lookup[insight.id] = { ...insight, children: [] };
+      map[insight.id] = { ...insight, children: [] };
     });
   
     allInsights.forEach((insight) => {
       if (insight.parentId) {
-        lookup[insight.parentId]?.children.push(lookup[insight.id]);
+        map[insight.parentId]?.children.push(map[insight.id]);
       } else {
-        tree.push(lookup[insight.id]);
+        tree.push(map[insight.id]);
       }
     });
-    return tree;
+    return {tree, map};
   }
 
   const handleInsightPress = (insight: Insight) => {

@@ -5,12 +5,14 @@ const BookContext = createContext();
 
 export const BookProvider = ({ children }) => {
   const [selectedBook, setSelectedBook] = useState(null);
-  const [selectedBookinsights, setSelectedBookInsights] = useState([]);
+  const [insightTree, setInsightTree] = useState([]);
+  const [insightMap, setInsightMap] = useState({});
 
   // Custom function to update selectedBook
   const updateSelectedBook = (book) => {
     if (!selectedBook || book.id != selectedBook.id) {
-      setSelectedBookInsights([]);
+      setInsightTree([]);
+      setInsightMap({});
       setSelectedBook(book);
     };
   };
@@ -20,8 +22,10 @@ export const BookProvider = ({ children }) => {
       value={{ 
           selectedBook, 
           setSelectedBook: updateSelectedBook, 
-          selectedBookinsights, 
-          setSelectedBookInsights,
+          insightTree, 
+          setInsightTree,
+          insightMap,
+          setInsightMap
       }}>
       {children}
     </BookContext.Provider>

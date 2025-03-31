@@ -1,27 +1,43 @@
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
-import { insights, getInsightsByParentId } from "../../../../data/insights";
 import type { Insight } from "../../../../data/types";
 import { QuizitButton } from "../../../../components/QuizitButton";
 import { useState, useEffect } from "react";
 import { InsightList } from "../../../../components/insights/InsightList";
 import { SaveIcon } from "@/components/insights/SaveIcon";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useBook } from "../../../../data/bookContext";
+import { supabase } from "../../../../config/supabase";
 
 export default function InsightScreen() {
+  const { selectedBook, insightMap } = useBook();
   const params = useLocalSearchParams();
   const bookId = Array.isArray(params.book) ? params.book[0] : params.book;
   const insightId = params.insight;
-  const insight = insights.find((i: Insight) => i.id === insightId);
+  const [insight, setInsight] = useState<Insight | null>(selectedBook && selectedBook.id.toString() === bookId && insightMap ? insightMap[insightId] : null);
   const [childInsights, setChildInsights] = useState<Insight[]>([]);
   const [isSelected, setIsSelected] = useState(false);
 
   useEffect(() => {
-    if (insight?.id) {
-      const childInsights = getInsightsByParentId(insight.id);
-      setChildInsights(childInsights);
-    }
-  }, [insight]);
+    if (insight) return;
+    const loadInsight = async () => {
+      const { data: insight, error } = await supabase.from('Insight').select('*').eq('id', insightId).single();
+      if (insight) {
+        setInsight(insight);
+      }
+    };
+    const loadChildInsights = async () => {
+      const { data: insights, error } = await supabase.from('Insight').select('*').eq('parentId', insightId);
+      if (insights) {
+        setChildInsights(insights);
+      }
+    };  
+    loadInsight();
+    loadChildInsights();
+  }, [insightId]);
+
+  //!!! Eventually update for when insight gone to and need to build insight Map + insight Tree
+  //         or will this happen by bookScreen as this will be needed always when insight is gone to
 
   const handleInsightPress = (insight: Insight) => {
       router.push({
@@ -66,7 +82,7 @@ export default function InsightScreen() {
         ))}
         {!insight.leaf && <View style={styles.separator} />}
         <InsightList 
-          insights={childInsights}
+          insights={insight.children || childInsights}
           onInsightPress={handleInsightPress}
           indent={0}
         />
