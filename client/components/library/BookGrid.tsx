@@ -11,7 +11,7 @@ export function BookGrid({ books }: BookGridProps) {
     <FlatList
       data={books}
       renderItem={({ item }) => <BookItem book={item} />}
-      keyExtractor={item => item._id}
+      keyExtractor={item => item.id}
       numColumns={3}
       showsVerticalScrollIndicator={false}
       showsHorizontalScrollIndicator={false} 

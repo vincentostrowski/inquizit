@@ -12,13 +12,13 @@ export default function InsightScreen() {
   const params = useLocalSearchParams();
   const bookId = Array.isArray(params.book) ? params.book[0] : params.book;
   const insightId = params.insight;
-  const insight = insights.find((i: Insight) => i._id === insightId);
+  const insight = insights.find((i: Insight) => i.id === insightId);
   const [childInsights, setChildInsights] = useState<Insight[]>([]);
   const [isSelected, setIsSelected] = useState(false);
 
   useEffect(() => {
-    if (insight?._id) {
-      const childInsights = getInsightsByParentId(insight._id);
+    if (insight?.id) {
+      const childInsights = getInsightsByParentId(insight.id);
       setChildInsights(childInsights);
     }
   }, [insight]);
@@ -28,7 +28,7 @@ export default function InsightScreen() {
         pathname: "/library/[book]/[insight]",
         params: { 
           book: bookId,
-          insight: insight._id
+          insight: insight.id
         },
       },);
     };

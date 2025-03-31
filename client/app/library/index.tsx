@@ -1,9 +1,9 @@
 import { View, StyleSheet, ActivityIndicator } from "react-native";
-import { BookGrid } from "../../components/library/BookGrid";
-import { books as getAllBooks } from "../../data/books";
 import { useState, useEffect } from "react";
-import type { Book } from "../../data/types";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { supabase } from "../../config/supabase";
+import { BookGrid } from "../../components/library/BookGrid";
+import type { Book } from "../../data/types";
 
 export default function LibraryScreen() {
   const [books, setBooks] = useState<Book[]>([]);
@@ -13,8 +13,8 @@ export default function LibraryScreen() {
     const loadBooks = async () => {
       try {
         setIsLoading(true);
-        const fetchedBooks = getAllBooks;
-        setBooks(fetchedBooks);
+        let {data: Books, error} = await supabase.from('Book').select('*');
+        setBooks(Books);
       } catch (error) {
         console.error('Error loading books:', error);
       } finally {

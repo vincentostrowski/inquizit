@@ -1,35 +1,54 @@
 import { View, Text, StyleSheet, Image, ScrollView, Dimensions} from "react-native";
+import { useState, useEffect } from "react";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
+import { supabase } from "../../../config/supabase";
 import { QuizitButton } from "../../../components/QuizitButton";
 import { ExpandCollapse } from "../../../components/book/ExpandCollapse";
 import { InsightList } from "../../../components/insights/InsightList";
-import { getBookById } from "../../../data/books";
-import { getInsightsByBookIdStructured } from "../../../data/insights";
+import { LoadingInsightList } from "../../../components/insights/LoadingInsightList";
 import type { Book, Insight } from "../../../data/types";
-import { useState, useEffect } from "react";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useBook } from "../../../data/bookContext";
 
 const { width } = Dimensions.get('window');
 const COVER_WIDTH = width * 0.5; // Half the screen width
 const COVER_HEIGHT = COVER_WIDTH * 1.5; // 3:2 aspect ratio to match explore view
 
 export default function BookScreen() {
-  const { book: bookId } = useLocalSearchParams();
-  const [book, setBook] = useState<Book | null>(null);
+  const { selectedBook } = useBook();
+  const { book: bookIdParam } = useLocalSearchParams();
+  const bookId = parseInt(Array.isArray(bookIdParam) ? bookIdParam[0] : bookIdParam, 10);  
+  const [book, setBook] = useState<Book | null>(selectedBook && selectedBook.id === bookId ? selectedBook : null);
   const [insights, setInsights] = useState<Insight[]>([]);
   const [expandedRows, setExpandedRows] = useState<number>(1);
+  const [rootLoaded, setRootLoaded] = useState(false);
+  const [allLoaded, setAllLoaded] = useState(false);
 
   useEffect(() => {
-    if (typeof bookId === 'string') {
-      const foundBook = getBookById(bookId);
-      setBook(foundBook || null);
-      
-      if (foundBook) {
-        const bookInsights = getInsightsByBookIdStructured(foundBook._id);
-        setInsights(bookInsights);
-      }
+    const loadRootInsights = async () => {
+      let {data: Insights, error} = await supabase.from('Insight').select('*').eq('bookId', bookId).is('parentId', null);
+      setInsights(Insights || []);
+      setRootLoaded(true);
+    };
+    const loadBook = async () => {
+      let {data: fetchedBook, error} = await supabase.from('Book').select('*').eq('id', bookId).single();  
+      setBook(fetchedBook); 
+    };
+    if (!book) {
+      loadBook();
     }
+    loadRootInsights();
   }, [bookId]);
+
+  useEffect(() => {
+    const loadAllInsights = async () => {
+      let {data: allInsights, error} = await supabase.from('Insight').select('*').eq('bookId', book.id);
+      const insightTree = buildInsightTree(allInsights);
+      setInsights(insightTree || []);
+      setAllLoaded(true);
+    };
+    loadAllInsights();
+  }, [rootLoaded])
 
   const collapseRows = () => {
     setExpandedRows(1);
@@ -39,11 +58,29 @@ export default function BookScreen() {
     setExpandedRows(2);
   }
 
+  function buildInsightTree(allInsights: Insight[]): Insight[] {
+    const lookup: Record<string, Insight> = {};
+    const tree: Insight[] = [];
+  
+    allInsights.forEach((insight) => {
+      lookup[insight.id] = { ...insight, children: [] };
+    });
+  
+    allInsights.forEach((insight) => {
+      if (insight.parentId) {
+        lookup[insight.parentId]?.children.push(lookup[insight.id]);
+      } else {
+        tree.push(lookup[insight.id]);
+      }
+    });
+    return tree;
+  }
+
   const handleInsightPress = (insight: Insight) => {
-    if (book?._id) {
+    if (book?.id) {
       router.push({
         pathname: "/library/[book]/[insight]",
-        params: { book: book._id, insight: insight._id}
+        params: { book: book.id, insight: insight.id}
       });
     }
   };
@@ -62,7 +99,7 @@ export default function BookScreen() {
         <QuizitButton />
         <View style={styles.coverContainer}>
           <Image 
-            source={{ uri: book.coverUrl }}
+            source={{ uri: book.coverURL }}
             style={styles.cover}
             resizeMode="cover"
           />
@@ -71,13 +108,23 @@ export default function BookScreen() {
         <Text style={styles.description}>{book.description}</Text>
         <ExpandCollapse collapse={collapseRows} expand={expandRows} />
         <View style={styles.separator} />
-        <InsightList 
-          insights={insights}
-          onInsightPress={handleInsightPress}
-          indent={0}
-          expand={expandedRows}
-          setExpandedStart={setExpandedRows}
-        />
+        {allLoaded && (
+          <InsightList 
+            insights={insights}
+            onInsightPress={handleInsightPress}
+            indent={0}
+            expand={expandedRows}
+            setExpandedStart={setExpandedRows}
+          />)}
+        {
+          rootLoaded && !allLoaded && (
+            <LoadingInsightList 
+            insights={insights}
+            onInsightPress={handleInsightPress}
+            expand={expandedRows}
+            setExpandedStart={setExpandedRows}
+          />)
+        }
       </ScrollView>
     </SafeAreaView>
   );

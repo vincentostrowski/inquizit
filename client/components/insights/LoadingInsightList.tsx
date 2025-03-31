@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Text } from 'react-native';
 import { InsightRow } from './InsightRow';
 
-export function InsightList({ insights, onInsightPress, indent, expand, setExpandedStart }) {
+export function LoadingInsightList({ insights, onInsightPress, expand, setExpandedStart }) {
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
@@ -38,16 +38,13 @@ export function InsightList({ insights, onInsightPress, indent, expand, setExpan
             insight={insight}
             onPress={onInsightPress}
             onToggle={() => toggleRow(insight.id)}
-            indent={indent}
+            indent={0}
             expand={expandedRows[insight.id]}
           />
-          {expandedRows[insight.id] && insight.children && insight.children.length > 0 && (
-            <InsightList
-              insights={insight.children}
-              onInsightPress={onInsightPress}
-              indent={indent ? indent + 1 : 1}
-              expand={expand}
-            />
+          {expandedRows[insight.id] && (
+            <View style={styles.loadingContainer}>
+                <Text>loading ...</Text>
+            </View>
           )}  
         </View>
       ))}
@@ -59,4 +56,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  loadingContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E3E3E3',
+  }
 }); 

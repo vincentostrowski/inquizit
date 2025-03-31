@@ -1,13 +1,13 @@
 export type Book = {
-  _id: string;
+  id: string;
   title: string;
   author: string;
   description: string;
-  coverUrl: string;
+  coverURL: string;
 }
 
 export type Insight = {
-  _id: string;
+  id: string;
   title: string;
   body: string[];
   parentId: string;  // Could be bookId or insightId
