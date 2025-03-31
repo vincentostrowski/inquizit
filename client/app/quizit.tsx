@@ -11,7 +11,7 @@ export default function QuizitScreen() {
   const insets = useSafeAreaInsets();
   const [verticalScrollEnabled, setVerticalScrollEnabled] = useState(true);
   
-  const availableHeight = SCREEN_HEIGHT - (insets.top + 50 + 85);
+  const availableHeight = SCREEN_HEIGHT - (insets.top + 50 + 90);
 
   return (
       <SafeAreaView style={styles.container} edges={['top']}>

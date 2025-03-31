@@ -3,12 +3,12 @@ import { useState, useEffect } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
 import { supabase } from "../../../config/supabase";
-import { QuizitButton } from "../../../components/QuizitButton";
 import { ExpandCollapse } from "../../../components/book/ExpandCollapse";
 import { InsightList } from "../../../components/insights/InsightList";
 import { LoadingInsightList } from "../../../components/insights/LoadingInsightList";
 import type { Book, Insight } from "../../../data/types";
 import { useBook } from "../../../data/bookContext";
+import { TopBar } from "../../../components/book/TopBar";
 
 const { width } = Dimensions.get('window');
 const COVER_WIDTH = width * 0.5; // Half the screen width
@@ -107,9 +107,9 @@ export default function BookScreen() {
   }
 
   return (
-    <SafeAreaView style={{flex: 1 }} edges={['top']}>
+    <SafeAreaView style={{flex: 1, backgroundColor: '#e8e8e8' }} edges={['top']}>
       <ScrollView style={styles.container}>
-        <QuizitButton />
+        <TopBar />
         <View style={styles.coverContainer}>
           <Image 
             source={{ uri: book.coverURL }}
@@ -147,6 +147,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     position: 'relative',
+    backgroundColor: '#f2f2f2',
   },
   coverContainer: {
     alignItems: 'center',

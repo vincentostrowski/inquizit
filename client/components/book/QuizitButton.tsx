@@ -1,6 +1,6 @@
 import { Image, Pressable, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
-import quizitIcon from '../assets/icons/quizit100.png';
+import quizitIcon from '../../assets/icons/quizit100.png';
 
 export function QuizitButton() {
   return (
@@ -19,11 +19,8 @@ export function QuizitButton() {
 
 const styles = StyleSheet.create({
   container: {
-    position: 'absolute',
-    top: 5,
-    right: 20,
-    width: 40,
-    height: 40,
+    width: 30,
+    height: 30,
     zIndex: 1000,
   },
   icon: {

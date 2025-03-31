@@ -1,7 +1,10 @@
 import { Tabs } from "expo-router";
-import { Image } from "react-native";
+import { Image, TouchableOpacity } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
-import quizitIcon from "../assets/icons/quizit100.png";
+import { router } from 'expo-router';
+import cardsIcon from "../assets/icons/cardsIcon.png";
+import inquizit_modern_icon from "../assets/icons/inquizit_modern_icon.png";
+import quizit from "../assets/icons/quizit100.png";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { BookProvider } from "../data/bookContext";
 
@@ -13,25 +16,25 @@ export default function RootLayout() {
         <Tabs
           screenOptions={{
             headerShown: false,
-            tabBarActiveTintColor: 'white',
-            tabBarInactiveTintColor: '#CCCCCC',
+            tabBarActiveTintColor: '#ffe8cd',
+            tabBarInactiveTintColor: '#a69887',
             tabBarStyle: {
-              height: 85,
+              height: 90,
               paddingBottom: 10,
               paddingTop: 10,
               backgroundColor: '#011A2E',
               borderTopColor: 'black',
             },
-            tabBarLabelStyle: {
-              color: 'white',
-            }
           }}
           initialRouteName="library"
         >
           <Tabs.Screen
             name="index"
             options={{
-              href: null,
+              title: 'Home',
+              tabBarIcon: ({ color, size }) => (
+                <Ionicons name="home" size={size} color={color} />
+              )
             }}
           />
           <Tabs.Screen 
@@ -49,17 +52,25 @@ export default function RootLayout() {
               title: "Quizit", 
               tabBarIcon: ({ color, size }) => (
                 <Image 
-                  source={quizitIcon} 
+                  source={cardsIcon} 
                   style={{ 
                     width: size, 
                     height: size, 
                     resizeMode: 'contain',
-                    tintColor: 'white',
-                    opacity: color === '#CCCCCC' ? 0.5 : 1 
+                    tintColor: color
                   }} 
                 />
               )
             }} 
+          />
+          <Tabs.Screen
+            name="profile"
+            options={{
+              title: 'Profile',
+              tabBarIcon: ({ color, size }) => (
+                <Ionicons name="person" size={size} color={color} />
+              )
+            }}
           />
         </Tabs>
       </SafeAreaProvider>

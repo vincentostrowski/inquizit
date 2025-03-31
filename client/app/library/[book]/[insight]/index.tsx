@@ -1,13 +1,13 @@
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import type { Insight } from "../../../../data/types";
-import { QuizitButton } from "../../../../components/QuizitButton";
 import { useState, useEffect } from "react";
 import { InsightList } from "../../../../components/insights/InsightList";
 import { SaveIcon } from "@/components/insights/SaveIcon";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useBook } from "../../../../data/bookContext";
 import { supabase } from "../../../../config/supabase";
+import { TopBar } from "../../../../components/book/TopBar";
 
 export default function InsightScreen() {
   const { selectedBook, insightMap } = useBook();
@@ -62,9 +62,9 @@ export default function InsightScreen() {
   }
 
   return (
-    <SafeAreaView style={{flex: 1}} edges={['top']}>
+    <SafeAreaView style={{flex: 1, backgroundColor: '#e8e8e8'}} edges={['top']}>
       <ScrollView style={styles.container}>
-        <QuizitButton />
+        <TopBar />
         <View style={styles.titleContainer}>
           <Text style={styles.title}>{insight.title}</Text>
           {insight.leaf && (
@@ -95,6 +95,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     position: 'relative',
+    backgroundColor: '#f2f2f2',
   },
   saveContainer: {
     height: 50,
