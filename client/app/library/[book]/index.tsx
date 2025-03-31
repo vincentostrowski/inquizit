@@ -15,15 +15,17 @@ const COVER_WIDTH = width * 0.5; // Half the screen width
 const COVER_HEIGHT = COVER_WIDTH * 1.5; // 3:2 aspect ratio to match explore view
 
 export default function BookScreen() {
-  const { selectedBook } = useBook();
+  const { selectedBook, selectedBookinsights, setSelectedBookInsights } = useBook();
+
   const { book: bookIdParam } = useLocalSearchParams();
   const bookId = parseInt(Array.isArray(bookIdParam) ? bookIdParam[0] : bookIdParam, 10);  
-  const [book, setBook] = useState<Book | null>(selectedBook && selectedBook.id === bookId ? selectedBook : null);
+  const [book, setBook] = useState<Book | null>((selectedBook && selectedBook.id === bookId) ? selectedBook : null);
+
   const [insights, setInsights] = useState<Insight[]>([]);
   const [expandedRows, setExpandedRows] = useState<number>(1);
   const [rootLoaded, setRootLoaded] = useState(false);
   const [allLoaded, setAllLoaded] = useState(false);
-
+  
   useEffect(() => {
     const loadRootInsights = async () => {
       let {data: Insights, error} = await supabase.from('Insight').select('*').eq('bookId', bookId).is('parentId', null);
@@ -36,16 +38,25 @@ export default function BookScreen() {
     };
     if (!book) {
       loadBook();
+      //if book is not already loaded, then the loaded insights are not relevant
+      setSelectedBookInsights([]);
     }
-    loadRootInsights();
+    if (selectedBookinsights && selectedBookinsights.length > 0) {
+      setInsights(selectedBookinsights);
+      setAllLoaded(true);
+    } else {
+      loadRootInsights();
+    }
   }, [bookId]);
 
   useEffect(() => {
+    if (!rootLoaded) return;
     const loadAllInsights = async () => {
       let {data: allInsights, error} = await supabase.from('Insight').select('*').eq('bookId', book.id);
       const insightTree = buildInsightTree(allInsights);
       setInsights(insightTree || []);
       setAllLoaded(true);
+      setSelectedBookInsights(insightTree);
     };
     loadAllInsights();
   }, [rootLoaded])
