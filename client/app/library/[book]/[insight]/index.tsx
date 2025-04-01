@@ -123,7 +123,7 @@ export default function InsightScreen() {
   }
 
   return (
-    <SafeAreaView style={{flex: 1, backgroundColor: '#e8e8e8', position: 'relative'}} edges={['top']}>
+    <SafeAreaView style={{flex: 1, backgroundColor: '#dfdfdf', position: 'relative'}} edges={['top']}>
       <TopBar />
       {insight.leaf && (
               <View style={[styles.saveContainer, {top: insets.top, zIndex: 1, overflow: 'hidden'}]}>

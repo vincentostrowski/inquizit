@@ -26,7 +26,7 @@ const styles = StyleSheet.create({
   icon: {
     width: '60%',
     height: '60%',
-    tintColor: '#e8e8e8',
-    color: '#e8e8e8',
+    tintColor: '#dfdfdf',
+    color: '#dfdfdf',
   },
 }); 

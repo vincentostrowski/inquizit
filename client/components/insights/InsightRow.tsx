@@ -1,7 +1,7 @@
-import { Pressable, Text, View, StyleSheet, GestureResponderEvent } from 'react-native';
+import { Pressable, Text, View, StyleSheet, Animated } from 'react-native';
 import type { Insight } from '../../data/types';
 import { SaveIcon } from './SaveIcon';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { supabase } from "../../config/supabase";
 import { useBook } from '../../data/bookContext';
@@ -18,7 +18,69 @@ interface InsightRowProps {
 export function InsightRow({ insight, onPress, indent, onToggle, expand, userId }: InsightRowProps) {
   const [isSaved, setIsSaved] = useState(insight.is_saved);
   const [preventRepress , setPreventRepress] = useState(false);
-  const { setInsightMap, setInsightTree } = useBook();
+  const { insightMap, insightTree, setInsightMap, setInsightTree } = useBook();
+  const [fraction, setFraction] = useState(0);
+
+  const animatedFraction = useRef(new Animated.Value(fraction)).current;
+
+  useEffect(() => {
+    // Animate the fraction value when it changes
+    Animated.timing(animatedFraction, {
+      toValue: fraction,
+      duration: 500, // Animation duration in milliseconds
+      useNativeDriver: false, // `false` because we're animating width (layout property)
+    }).start();
+  }, [fraction]);
+
+  const animatedWidth = animatedFraction.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['10%', '110%'], // Map fraction (0 to 1) to percentage width
+  });
+
+  const animatedRight = animatedFraction.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['100%', '0%'], // Adjust the right value dynamically
+  });
+
+  function DFS(insight) {
+    let total = 1; // Count the current insight
+    let saved = insight.is_saved ? 1 : 0; // Check if the current insight is saved
+  
+    // Recursively traverse the children
+    if (insight.children && insight.children.length > 0) {
+      for (const child of insight.children) {
+        const { total: childTotal, saved: childSaved } = DFS(child);
+        total += childTotal;
+        saved += childSaved;
+      }
+    }
+  
+    return { total, saved };
+  }
+
+  function computeSavedFraction() {
+    let total = 1;
+    let saved = 1;
+  
+    if (insightMap && insightMap[insight.id]) {
+      // Perform DFS starting from the root insight
+      const result = DFS(insightMap[insight.id]);
+      total = result.total - 1;
+      saved = result.saved;
+    }
+    
+    // Return the fraction of saved insights
+    return total > 0 ? saved / total : 0;
+  }
+
+  useEffect(() => {
+    const savedFraction = computeSavedFraction() * 0.9;
+    if (savedFraction == 0) {
+      setFraction(-0.1);
+    } else {
+      setFraction(savedFraction);
+    }
+  }, [insightMap]);
 
   useEffect(() => {
     setIsSaved(insight.is_saved);
@@ -88,8 +150,6 @@ export function InsightRow({ insight, onPress, indent, onToggle, expand, userId 
     onToggle();
   };
 
-  const fraction = 0.4 * 0.9;
-
   return (
     <Pressable 
       style={styles.content}
@@ -97,11 +157,10 @@ export function InsightRow({ insight, onPress, indent, onToggle, expand, userId 
     >
       {!insight.leaf && (
       <View style={styles.barContainer}>
-        <View style={[
+        <Animated.View style={[
           styles.backgroundOverlay, 
-          { width: `${fraction * 100}%`, right: `${104 - fraction * 100}%` }
+          { width: animatedWidth, right: animatedRight }
         ]}/>
-        <View style={[styles.angleOverlay, {right: `${100 - fraction * 100}%`}]} />
       </View>
       )}
 
@@ -147,16 +206,8 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     backgroundColor: 'black', // your desired background color
+    transform: [{ skewX: '-30deg' }],
     zIndex: -1, // behind text and icons
-  },
-  angleOverlay: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    width: 30, // adjust the width to control the size of the angled area
-    backgroundColor: 'black',
-    transform: [{ skewX: '-30deg' }], // angle the left edge by 10 degrees
-    zIndex: -1,
   },
   title: {
     fontSize: 16,

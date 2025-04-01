@@ -108,7 +108,7 @@ export default function BookScreen() {
   }
 
   return (
-    <SafeAreaView style={{flex: 1, backgroundColor: '#e8e8e8', position: 'relative' }} edges={['top']}>
+    <SafeAreaView style={{flex: 1, backgroundColor: '#dfdfdf', position: 'relative' }} edges={['top']}>
       <TopBar />
       <ScrollView style={styles.container}>
         <View style={styles.coverContainer}>

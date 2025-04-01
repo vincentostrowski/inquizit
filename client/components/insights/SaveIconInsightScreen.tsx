@@ -19,7 +19,7 @@ export function SaveIconInsightScreen({ isSelected, onToggle, size = 24 }: SaveI
       ) : (
         <View style={{position: 'relative', height: size, width: size}}>
             <View style={{position: 'absolute', zIndex: 2}}>
-                <Ionicons name="bookmark-outline" size={size} color={'#e8e8e8'} />
+                <Ionicons name="bookmark-outline" size={size} color={'#dfdfdf'} />
             </View>
             <View style={{position: 'absolute', zIndex: 1}}>
                 <Ionicons name="bookmark" size={size} color={'#f2f2f2'}/>

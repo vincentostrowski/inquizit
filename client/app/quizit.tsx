@@ -45,7 +45,7 @@ export default function QuizitScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'white',
+    backgroundColor: '#dfdfdf',
   },
   scopeBarContainer: {
     height: 50,

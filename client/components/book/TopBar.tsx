@@ -1,7 +1,7 @@
 import { View, StyleSheet, Image } from 'react-native';
 import { QuizitButton } from './QuizitButton';
 import { ConflictButton } from './ConflictButton';
-import back from '../../assets/icons/back.png';
+import back from '../../assets/icons/backNew.png';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export function TopBar() {
