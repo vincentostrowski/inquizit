@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = 'https://ewwmeflwxqnhbkhfjeuo.supabase.co'
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL
 const supabaseKey = process.env.EXPO_PUBLIC_SUPABASE_KEY
 const supabase = createClient(supabaseUrl, supabaseKey)
 
