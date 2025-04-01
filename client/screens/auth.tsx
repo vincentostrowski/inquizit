@@ -11,13 +11,15 @@ export default function AuthScreen() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     
-    const { signIn } = useAuth();
+    const { logIn } = useAuth();
     
     const handleSignIn = async () => {
+        console.log('sign in');
+        console.log(email, password);
         setLoading(true);
         setError(null);
         try {
-        await signIn(email, password);
+        await logIn(email, password);
         } catch (error) {
         setError(error.message);
         }

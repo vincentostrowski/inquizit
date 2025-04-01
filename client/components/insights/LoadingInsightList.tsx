@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { View, StyleSheet, Text } from 'react-native';
 import { InsightRow } from './InsightRow';
 
-export function LoadingInsightList({ insights, onInsightPress, expand, setExpandedStart }) {
+export function LoadingInsightList({ insights, onInsightPress, expand, setExpandedStart, userId }) {
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
@@ -40,6 +40,7 @@ export function LoadingInsightList({ insights, onInsightPress, expand, setExpand
             onToggle={() => toggleRow(insight.id)}
             indent={0}
             expand={expandedRows[insight.id]}
+            userId={userId}
           />
           {expandedRows[insight.id] && (
             <View style={styles.loadingContainer}>

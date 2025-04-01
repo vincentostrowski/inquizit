@@ -8,15 +8,19 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useBook } from "../../../../data/bookContext";
 import { supabase } from "../../../../config/supabase";
 import { TopBar } from "../../../../components/book/TopBar";
+import { useAuth } from "../../../../data/authContext";
 
 export default function InsightScreen() {
-  const { selectedBook, insightMap } = useBook();
+  const { user } = useAuth();
+  const userId = user?.id;
+  const { selectedBook, insightMap, setInsightMap, setInsightTree } = useBook();
   const params = useLocalSearchParams();
   const bookId = Array.isArray(params.book) ? params.book[0] : params.book;
   const insightId = params.insight;
   const [insight, setInsight] = useState<Insight | null>(selectedBook && selectedBook.id.toString() === bookId && insightMap ? insightMap[insightId] : null);
   const [childInsights, setChildInsights] = useState<Insight[]>([]);
-  const [isSelected, setIsSelected] = useState(false);
+  const [isSelected, setIsSelected] = useState(insight?.is_saved || false);
+  const [preventRepress, setPreventRepress] = useState(false);
 
   useEffect(() => {
     if (insight) return;
@@ -40,17 +44,73 @@ export default function InsightScreen() {
   //         or will this happen by bookScreen as this will be needed always when insight is gone to
 
   const handleInsightPress = (insight: Insight) => {
-      router.push({
-        pathname: "/library/[book]/[insight]",
-        params: { 
-          book: bookId,
-          insight: insight.id
-        },
-      },);
-    };
+    router.push({
+      pathname: "/library/[book]/[insight]",
+      params: { 
+        book: bookId,
+        insight: insight.id
+      },
+    },);
+  };
+
+  const updateContext = (save: boolean) => {
+    setInsightTree((prevTree) => {
+      return prevTree ? [...prevTree] : [];
+    });
+    setInsightMap((prevMap) => {
+      if (!prevMap || !prevMap[insight.id]) return prevMap;
+  
+      // Mutate the shared object reference (safe within setState)
+      prevMap[insight.id].is_saved = save;
+  
+      return { ...prevMap }; // New top-level map reference to trigger re-renders
+    });
+  };
+
+  const saveInsight = async () => {
+    // add a new row or change value on saved column
+    const { data, error } = await supabase.from('UserInsight').upsert(
+      {
+        userId,
+        insightId: insight.id,
+        bookId: insight.bookId,
+        saved: true,
+      },
+      { onConflict: ['userId', 'insightId'] } // if a row exists, update it
+    );
+
+    if (error) {
+      console.error('Error saving insight:', error);
+    } else {
+      console.log('Insight saved successfully:');
+      updateContext(true);
+    }
+  };
+
+  const unsaveInsight = async () => {
+        // change value on saved column
+    const { data, error } = await supabase.from('UserInsight').update({ saved: false }).eq('userId', userId).eq('insightId', insight.id);
+
+    if (error) {
+      console.error('Error unsaving insight:', error);
+    } else {
+      console.log('Insight unsaved successfully:');
+      updateContext(false);
+    }
+  };
 
   const handleSavePress = () => {
+    if (preventRepress) return;
+    setPreventRepress(true);
+    if (isSelected) {
+      unsaveInsight();
+    } else {
+      saveInsight();
+    }
     setIsSelected(!isSelected);
+    setTimeout(() => {
+      setPreventRepress(false);
+    }, 1000);
   };
 
   if (!insight) {
@@ -64,18 +124,18 @@ export default function InsightScreen() {
   return (
     <SafeAreaView style={{flex: 1, backgroundColor: '#e8e8e8'}} edges={['top']}>
       <ScrollView style={styles.container}>
+        {insight.leaf && (
+              <View style={styles.saveContainer}>
+                <SaveIcon
+                  isSelected={isSelected}
+                  onToggle={handleSavePress}
+                  size={80}
+                />
+              </View>
+            )}
         <TopBar />
         <View style={styles.titleContainer}>
           <Text style={styles.title}>{insight.title}</Text>
-          {insight.leaf && (
-            <View style={styles.saveContainer}>
-            <SaveIcon
-              isSelected={isSelected}
-              onToggle={handleSavePress}
-              size={30}
-            />
-            </View>
-          )}
         </View>
         {insight.body.map((paragraph: string, index: number) => (
           <Text key={index} style={styles.paragraph}>{paragraph}</Text>
@@ -85,6 +145,7 @@ export default function InsightScreen() {
           insights={insight.children || childInsights}
           onInsightPress={handleInsightPress}
           indent={0}
+          userId={userId}
         />
       </ScrollView>
     </SafeAreaView>
@@ -98,8 +159,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#f2f2f2',
   },
   saveContainer: {
-    height: 50,
-    width: 50,
+    height: 80,
+    width: 80,
+    position: 'absolute',
+    top: -10,
+    left: 0,
   },
   title: {
     fontSize: 20,

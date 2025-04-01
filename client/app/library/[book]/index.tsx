@@ -9,26 +9,27 @@ import { LoadingInsightList } from "../../../components/insights/LoadingInsightL
 import type { Book, Insight } from "../../../data/types";
 import { useBook } from "../../../data/bookContext";
 import { TopBar } from "../../../components/book/TopBar";
+import { useAuth } from "../../../data/authContext";
 
 const { width } = Dimensions.get('window');
 const COVER_WIDTH = width * 0.5; // Half the screen width
 const COVER_HEIGHT = COVER_WIDTH * 1.5; // 3:2 aspect ratio to match explore view
 
 export default function BookScreen() {
+  const { user } = useAuth();
+  const userId = user?.id;
   const { selectedBook, insightTree, setInsightTree, setInsightMap } = useBook();
-
   const { book: bookIdParam } = useLocalSearchParams();
   const bookId = parseInt(Array.isArray(bookIdParam) ? bookIdParam[0] : bookIdParam, 10);  
   const [book, setBook] = useState<Book | null>((selectedBook && selectedBook.id === bookId) ? selectedBook : null);
-
-  const [insights, setInsights] = useState<Insight[]>([]);
+  const [insights, setInsights] = useState<Insight[]>(insightTree);
   const [expandedRows, setExpandedRows] = useState<number>(1);
   const [rootLoaded, setRootLoaded] = useState(false);
   const [allLoaded, setAllLoaded] = useState(false);
   
   useEffect(() => {
     const loadRootInsights = async () => {
-      let {data: Insights, error} = await supabase.from('Insight').select('*').eq('bookId', bookId).is('parentId', null);
+      let {data: Insights, error} = await supabase.from('book_insights_with_saved_state').select('*').eq('bookId', bookId).is('parentId', null);
       setInsights(Insights || []);
       setRootLoaded(true);
     };
@@ -53,7 +54,7 @@ export default function BookScreen() {
   useEffect(() => {
     if (!rootLoaded) return;
     const loadAllInsights = async () => {
-      let {data: allInsights, error} = await supabase.from('Insight').select('*').eq('bookId', book.id);
+      let {data: allInsights, error} = await supabase.from('book_insights_with_saved_state').select('*').eq('bookId', book.id);
       const { tree, map } = buildInsightTreeAndMap(allInsights);
       setInsights(tree || []);
       setAllLoaded(true);
@@ -128,6 +129,7 @@ export default function BookScreen() {
             indent={0}
             expand={expandedRows}
             setExpandedStart={setExpandedRows}
+            userId={userId}
           />)}
         {
           rootLoaded && !allLoaded && (
@@ -136,6 +138,7 @@ export default function BookScreen() {
             onInsightPress={handleInsightPress}
             expand={expandedRows}
             setExpandedStart={setExpandedRows}
+            userId={userId}
           />)
         }
       </ScrollView>

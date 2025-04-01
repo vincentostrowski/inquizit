@@ -3,6 +3,8 @@ import type { Insight } from '../../data/types';
 import { SaveIcon } from './SaveIcon';
 import { useState, useEffect } from 'react';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { supabase } from "../../config/supabase";
+import { useBook } from '../../data/bookContext';
 
 interface InsightRowProps {
   insight: Insight;
@@ -10,20 +12,83 @@ interface InsightRowProps {
   onToggle: () => void;
   indent: number;
   expand: boolean;
+  userId: string;
 }
 
-export function InsightRow({ insight, onPress, indent, onToggle, expand }: InsightRowProps) {
-  const [isSaved, setIsSaved] = useState(false);
+export function InsightRow({ insight, onPress, indent, onToggle, expand, userId }: InsightRowProps) {
+  const [isSaved, setIsSaved] = useState(insight.is_saved);
+  const [preventRepress , setPreventRepress] = useState(false);
+  const { setInsightMap, setInsightTree } = useBook();
+
+  useEffect(() => {
+    setIsSaved(insight.is_saved);
+  }, [insight.is_saved]);
+
+    const updateContext = (save: boolean) => {
+      setInsightTree((prevTree) => {
+        return prevTree ? [...prevTree] : [];
+      });
+      setInsightMap((prevMap) => {
+        if (!prevMap || !prevMap[insight.id]) return prevMap;
+    
+        // Mutate the shared object reference (safe within setState)
+        prevMap[insight.id].is_saved = save;
+    
+        return { ...prevMap }; // New top-level map reference to trigger re-renders
+      });
+    };
+
+  const saveInsight = async () => {
+        // add a new row or change value on saved column
+        console.log('userId:', userId);
+        const { data, error } = await supabase.from('UserInsight').upsert(
+      {
+        userId,
+        insightId: insight.id,
+        bookId: insight.bookId,
+        saved: true,
+      },
+      { onConflict: ['userId', 'insightId'] } // if a row exists, update it
+    );
+
+  if (error) {
+    console.error('Error saving insight:', error);
+  } else {
+    console.log('Insight saved successfully:', data);
+    updateContext(true);
+  }
+  };
+
+  const unsaveInsight = async () => {
+        // change value on saved column
+    const { data, error } = await supabase.from('UserInsight').update({ saved: false }).eq('userId', userId).eq('insightId', insight.id);
+    if (error) {
+      console.error('Error unsaving insight:', error);
+    } else {
+      console.log('Insight unsaved successfully:', data);
+      updateContext(false);
+    }
+  };
 
   const handleSavePress = () => {
+    if (preventRepress) return;
+    setPreventRepress(true);
+    if (isSaved) {
+      unsaveInsight();
+    } else {
+      saveInsight();
+    }
     setIsSaved(!isSaved);
+    setTimeout(() => {
+      setPreventRepress(false);
+    }, 1000);
   };
 
   const handleToggle = () => {
     onToggle();
   };
 
-  const fraction = 1 * 0.9;
+  const fraction = 0.4 * 0.9;
 
   return (
     <Pressable 
