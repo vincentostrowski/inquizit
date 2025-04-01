@@ -108,9 +108,9 @@ export default function BookScreen() {
   }
 
   return (
-    <SafeAreaView style={{flex: 1, backgroundColor: '#e8e8e8' }} edges={['top']}>
+    <SafeAreaView style={{flex: 1, backgroundColor: '#e8e8e8', position: 'relative' }} edges={['top']}>
+      <TopBar />
       <ScrollView style={styles.container}>
-        <TopBar />
         <View style={styles.coverContainer}>
           <Image 
             source={{ uri: book.coverURL }}

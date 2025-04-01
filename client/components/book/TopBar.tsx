@@ -2,10 +2,13 @@ import { View, StyleSheet, Image } from 'react-native';
 import { QuizitButton } from './QuizitButton';
 import { ConflictButton } from './ConflictButton';
 import back from '../../assets/icons/back.png';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export function TopBar() {
+    const insets = useSafeAreaInsets();
+
     return (
-    <View style={styles.container}>
+    <View style={[styles.container, {top: insets.top}]}>
         <ConflictButton />
         <QuizitButton />
         <Image 
@@ -19,18 +22,17 @@ export function TopBar() {
 
 const styles = StyleSheet.create({
   container: {
-    top: 0,
     right: 0,
     display: 'flex',
     flexDirection: 'row',
     justifyContent: 'flex-end',
     alignItems: 'center',
-    paddingVertical: 10,
+    paddingVertical: 0,
     paddingHorizontal: 5,
-    height: 40,
+    height: 30,
     gap: 10,
     zIndex: 1000,
-    position: 'relative',
+    position: 'absolute',
     },
     backContainer: {
         position: 'absolute',

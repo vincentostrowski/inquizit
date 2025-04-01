@@ -3,8 +3,8 @@ import { router, useLocalSearchParams } from "expo-router";
 import type { Insight } from "../../../../data/types";
 import { useState, useEffect } from "react";
 import { InsightList } from "../../../../components/insights/InsightList";
-import { SaveIcon } from "@/components/insights/SaveIcon";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SaveIconInsightScreen } from "@/components/insights/SaveIconInsightScreen";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBook } from "../../../../data/bookContext";
 import { supabase } from "../../../../config/supabase";
 import { TopBar } from "../../../../components/book/TopBar";
@@ -21,6 +21,7 @@ export default function InsightScreen() {
   const [childInsights, setChildInsights] = useState<Insight[]>([]);
   const [isSelected, setIsSelected] = useState(insight?.is_saved || false);
   const [preventRepress, setPreventRepress] = useState(false);
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     if (insight) return;
@@ -122,18 +123,20 @@ export default function InsightScreen() {
   }
 
   return (
-    <SafeAreaView style={{flex: 1, backgroundColor: '#e8e8e8'}} edges={['top']}>
-      <ScrollView style={styles.container}>
-        {insight.leaf && (
-              <View style={styles.saveContainer}>
-                <SaveIcon
-                  isSelected={isSelected}
-                  onToggle={handleSavePress}
-                  size={80}
-                />
+    <SafeAreaView style={{flex: 1, backgroundColor: '#e8e8e8', position: 'relative'}} edges={['top']}>
+      <TopBar />
+      {insight.leaf && (
+              <View style={[styles.saveContainer, {top: insets.top, zIndex: 1, overflow: 'hidden'}]}>
+                <View style={{position: 'absolute', bottom: 20, left: 0}}>
+                  <SaveIconInsightScreen
+                    isSelected={isSelected}
+                    onToggle={handleSavePress}
+                    size={80}
+                  />
+                </View>
               </View>
             )}
-        <TopBar />
+      <ScrollView style={styles.container}>
         <View style={styles.titleContainer}>
           <Text style={styles.title}>{insight.title}</Text>
         </View>
@@ -162,8 +165,6 @@ const styles = StyleSheet.create({
     height: 80,
     width: 80,
     position: 'absolute',
-    top: -10,
-    left: 0,
   },
   title: {
     fontSize: 20,
