@@ -10,6 +10,7 @@ import type { Book, Insight } from "../../../data/types";
 import { useBook } from "../../../data/bookContext";
 import { TopBar } from "../../../components/book/TopBar";
 import { useAuth } from "../../../data/authContext";
+import { BackButton } from "../../../components/book/BackButton";
 
 const { width } = Dimensions.get('window');
 const COVER_WIDTH = width * 0.5; // Half the screen width
@@ -109,6 +110,7 @@ export default function BookScreen() {
 
   return (
     <SafeAreaView style={{flex: 1, backgroundColor: '#dfdfdf', position: 'relative' }} edges={['top']}>
+      <BackButton />
       <TopBar />
       <ScrollView style={styles.container}>
         <View style={styles.coverContainer}>
@@ -154,7 +156,7 @@ const styles = StyleSheet.create({
   },
   coverContainer: {
     alignItems: 'center',
-    marginTop: 60,
+    marginTop: 90,
     marginBottom: 20,
   },
   cover: {

@@ -1,10 +1,10 @@
-import { Image, Pressable, StyleSheet } from 'react-native';
+import { Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import quizitIcon from '../../assets/icons/quizit100.png';
 
 export function QuizitButton() {
   return (
-    <Pressable 
+    <TouchableOpacity 
       style={styles.container}
       onPress={() => router.push('/quizit')}
     >
@@ -13,14 +13,14 @@ export function QuizitButton() {
         style={styles.icon}
         resizeMode="contain"
       />
-    </Pressable>
+    </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    width: 30,
-    height: 30,
+    width: 35,
+    height: 35,
     zIndex: 1000,
   },
   icon: {

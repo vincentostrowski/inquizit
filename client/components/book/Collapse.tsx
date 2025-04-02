@@ -1,11 +1,11 @@
-import { View, StyleSheet, Pressable } from 'react-native';
+import { StyleSheet, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
 export function Collapse({onPress}) {
   return (
-    <Pressable style={styles.click} onPress={onPress}>
+    <TouchableOpacity style={styles.click} onPress={onPress}>
         <Icon name="arrow-drop-up" size={24} color="black"/>
-    </Pressable>
+    </TouchableOpacity>
   );
 }
 
