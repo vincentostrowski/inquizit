@@ -18,7 +18,7 @@ interface InsightRowProps {
 export function InsightRow({ insight, onPress, indent, onToggle, expand, userId }: InsightRowProps) {
   const [isSaved, setIsSaved] = useState(insight.is_saved);
   const [preventRepress , setPreventRepress] = useState(false);
-  const { insightMap, insightTree, setInsightMap, setInsightTree } = useBook();
+  const { insightMap, setInsightMap, setInsightTree } = useBook();
   const [fraction, setFraction] = useState(0);
 
   const animatedFraction = useRef(new Animated.Value(fraction)).current;
@@ -73,6 +73,7 @@ export function InsightRow({ insight, onPress, indent, onToggle, expand, userId 
     return total > 0 ? saved / total : 0;
   }
 
+  // Update the fraction value when the insightMap changes
   useEffect(() => {
     const savedFraction = computeSavedFraction() * 0.9;
     if (savedFraction == 0) {
@@ -82,6 +83,7 @@ export function InsightRow({ insight, onPress, indent, onToggle, expand, userId 
     }
   }, [insightMap]);
 
+  // Update when insight.is_saved changes and thus render correct save icon
   useEffect(() => {
     setIsSaved(insight.is_saved);
   }, [insight.is_saved]);
