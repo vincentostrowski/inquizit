@@ -19,8 +19,8 @@ export function QuizitButton() {
 
 const styles = StyleSheet.create({
   container: {
-    width: 35,
-    height: 35,
+    width: 30,
+    height: 30,
     zIndex: 1000,
   },
   icon: {

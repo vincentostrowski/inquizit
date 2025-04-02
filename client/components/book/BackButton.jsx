@@ -1,46 +1,37 @@
-import { View, TouchableOpacity, StyleSheet } from 'react-native';
+import { TouchableOpacity, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import Icon from 'react-native-vector-icons/MaterialIcons'; 
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export function BackButton() {
-  const insets = useSafeAreaInsets();
 
   return (
-    <View style={[styles.container, { top: insets.top}]}>
       <TouchableOpacity 
-        style={styles.button}
+        style={styles.container}
         onPress={() => router.back()}
       >
-        <Icon name="arrow-back" size={24} color="gray" />
+        <Icon name="arrow-back" size={28} color='black' />
       </TouchableOpacity>
-    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    height: 30, 
-    position: 'absolute',
-    paddingTop: 15,
-    paddingLeft: 7,
-    zIndex: 100,
-    display: 'flex',
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    alignItems: 'center'
-  },
-  button: {
-    width: 35,
-    height: 35,
-    zIndex: 1000,
-    // backgroundColor: '#dfdfdf',
-    borderRadius: 20,
+    width: 50,
+    height: 50,
     justifyContent: 'center',
     alignItems: 'center',
+    zIndex: 1000,
+    position: 'absolute',
+    left: 5,
+    top: 5,
+    justifyContent: 'flex-start',
+    alignItems: 'flex-start',
   },
   icon: {
-    width: '100%',
-    height: '100%',
+    width: '60%',
+    height: '60%',
+    tintColor: '#dfdfdf',
+    color: '#dfdfdf',
+    zIndex: 3000,
   },
 }); 

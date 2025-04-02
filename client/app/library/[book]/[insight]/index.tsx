@@ -10,7 +10,6 @@ import { useBook } from "../../../../data/bookContext";
 import { supabase } from "../../../../config/supabase";
 import { TopBar } from "../../../../components/book/TopBar";
 import { useAuth } from "../../../../data/authContext";
-import { BackButton } from "../../../../components/book/BackButton";
 
 export default function InsightScreen() {
   const { user } = useAuth();
@@ -125,13 +124,7 @@ export default function InsightScreen() {
 
   return (
     <SafeAreaView style={{flex: 1, backgroundColor: '#dfdfdf', position: 'relative'}} edges={['top']}>
-      <BackButton />
       <TopBar />
-      {insight.leaf && isSelected && (
-        <PageBookMark
-          onToggle={handleSavePress}
-        />
-      )}
       <ScrollView style={styles.container}>
         <View style={[styles.titleContainer, !insight.leaf && {marginBottom: 40}]}>
           <Text style={styles.title}>{insight.title}</Text>
