@@ -23,15 +23,8 @@ const styles = StyleSheet.create({
     zIndex: 1000,
     position: 'absolute',
     left: 5,
-    top: 5,
+    bottom: -55,
     justifyContent: 'flex-start',
     alignItems: 'flex-start',
-  },
-  icon: {
-    width: '60%',
-    height: '60%',
-    tintColor: '#dfdfdf',
-    color: '#dfdfdf',
-    zIndex: 3000,
   },
 }); 

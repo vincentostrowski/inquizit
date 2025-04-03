@@ -1,13 +1,13 @@
 import { TouchableOpacity, StyleSheet, Image } from 'react-native';
-import cardsIcon from '../../assets/icons/cardsIcon.png';
+import quizitIcon from '../../assets/icons/quizit100.png';
 
 export function ConflictButton() {
   return (
     <TouchableOpacity style={styles.container}>
         <Image 
-            source={cardsIcon}
-            style={styles.icon}
-            resizeMode="contain"
+          source={quizitIcon}
+          style={styles.icon}
+          resizeMode="contain"
         />
     </TouchableOpacity>
   );
@@ -17,16 +17,10 @@ const styles = StyleSheet.create({
   container: {
     width: 30,
     height: 30,
-    borderRadius: 20,
-    backgroundColor: 'black',
-    justifyContent: 'center',
-    alignItems: 'center',
     zIndex: 1000,
   },
   icon: {
-    width: '60%',
-    height: '60%',
-    tintColor: '#dfdfdf',
-    color: '#dfdfdf',
+    width: '100%',
+    height: '100%',
   },
 }); 

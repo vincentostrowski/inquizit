@@ -1,15 +1,16 @@
-import { View, Text, StyleSheet, ScrollView } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Dimensions } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import type { Insight } from "../../../../data/types";
 import { useState, useEffect } from "react";
 import { InsightList } from "../../../../components/insights/InsightList";
-import { PageBookMark } from "@/components/insights/PageBookMark";
 import { SaveIconInsightPage } from "../../../../components/insights/SaveIconInsightPage";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useBook } from "../../../../data/bookContext";
 import { supabase } from "../../../../config/supabase";
 import { TopBar } from "../../../../components/book/TopBar";
 import { useAuth } from "../../../../data/authContext";
+import { ProgressBar } from "../../../../components/progressBar";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function InsightScreen() {
   const { user } = useAuth();
@@ -22,6 +23,10 @@ export default function InsightScreen() {
   const [childInsights, setChildInsights] = useState<Insight[]>([]);
   const [isSelected, setIsSelected] = useState(insight?.is_saved || false);
   const [preventRepress, setPreventRepress] = useState(false);
+  const [topBarHeight, setTopBarHeight] = useState(0);
+  const insets = useSafeAreaInsets();
+  const { height } = Dimensions.get('window');
+  
 
   useEffect(() => {
     if (insight) return;
@@ -123,11 +128,25 @@ export default function InsightScreen() {
   }
 
   return (
-    <SafeAreaView style={{flex: 1, backgroundColor: '#dfdfdf', position: 'relative'}} edges={['top']}>
-      <TopBar />
-      <ScrollView style={styles.container}>
+    <SafeAreaView style={{flex: 1, backgroundColor: '#dfdfdf'}} edges={['top']}>
+      <TopBar setTopBarHeight={setTopBarHeight}/>
+      <ScrollView 
+              style={styles.container}
+              contentOffset={{ y: topBarHeight, x: 0 }}
+              contentContainerStyle={{
+                paddingTop: topBarHeight,
+                minHeight: (height - 90 - insets.top) + topBarHeight, // 💡 ensures scrollable height
+              }}
+            >
         <View style={[styles.titleContainer, !insight.leaf && {marginBottom: 40}]}>
           <Text style={styles.title}>{insight.title}</Text>
+          <View style={styles.progressContainer}>
+          {(isSelected || !insight.leaf) ? (
+            <ProgressBar />
+          ) : (
+            <View style={{height: 5}} />
+          )}
+          </View>
           {insight.leaf && (
             <SaveIconInsightPage
               onToggle={handleSavePress}
@@ -153,7 +172,6 @@ export default function InsightScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    position: 'relative',
     backgroundColor: '#f2f2f2',
   },
   title: {
@@ -166,8 +184,13 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 90,
+    marginTop: 60,
     paddingHorizontal:70,
+  },
+  progressContainer: {
+    width: 80,
+    paddingTop: 7,
+    paddingHorizontal: 5,
   },
   paragraph: {
     fontSize: 16,

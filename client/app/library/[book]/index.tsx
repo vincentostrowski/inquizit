@@ -10,10 +10,8 @@ import type { Book, Insight } from "../../../data/types";
 import { useBook } from "../../../data/bookContext";
 import { TopBar } from "../../../components/book/TopBar";
 import { useAuth } from "../../../data/authContext";
-
-const { width } = Dimensions.get('window');
-const COVER_WIDTH = width * 0.5; // Half the screen width
-const COVER_HEIGHT = COVER_WIDTH * 1.5; // 3:2 aspect ratio to match explore view
+import { ProgressBar } from "../../../components/progressBar";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function BookScreen() {
   const { user } = useAuth();
@@ -26,6 +24,12 @@ export default function BookScreen() {
   const [expandedRows, setExpandedRows] = useState<number>(1);
   const [rootLoaded, setRootLoaded] = useState(false);
   const [allLoaded, setAllLoaded] = useState(false);
+  const [topBarHeight, setTopBarHeight] = useState(0);
+  const { width, height } = Dimensions.get('window');
+  const COVER_WIDTH = width * 0.5; // Half the screen width
+  const COVER_HEIGHT = COVER_WIDTH * 1.5; // Aspect ratio of 2:3
+  const insets = useSafeAreaInsets();
+  
   
   useEffect(() => {
     const loadRootInsights = async () => {
@@ -108,15 +112,25 @@ export default function BookScreen() {
   }
 
   return (
-    <SafeAreaView style={{flex: 1, backgroundColor: '#dfdfdf', position: 'relative' }} edges={['top']}>
-      <TopBar />
-      <ScrollView style={styles.container}>
+    <SafeAreaView style={{flex: 1, backgroundColor: '#dfdfdf'}} edges={['top']}>
+      <TopBar setTopBarHeight={setTopBarHeight}/>
+      <ScrollView 
+        style={styles.container}
+        contentOffset={{ y: topBarHeight, x: 0 }}
+        contentContainerStyle={{
+          paddingTop: topBarHeight,
+          minHeight: (height - 90 - insets.top) + topBarHeight, // 💡 ensures scrollable height
+        }}
+      >
         <View style={styles.coverContainer}>
           <Image 
             source={{ uri: book.coverURL }}
-            style={styles.cover}
+            style={[styles.cover, {width: COVER_WIDTH, height: COVER_HEIGHT}]}
             resizeMode="cover"
           />
+          <View style={[styles.progressContainer, {width: COVER_WIDTH}]}>
+            <ProgressBar />
+          </View>
         </View>
         <Text style={styles.title}>{book.title}</Text>
         <Text style={styles.description}>{book.description}</Text>
@@ -149,17 +163,18 @@ export default function BookScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    position: 'relative',
     backgroundColor: '#f2f2f2',
   },
   coverContainer: {
     alignItems: 'center',
-    marginTop: 90,
+    marginTop: 60,
     marginBottom: 20,
   },
+  progressContainer: {
+    paddingTop: 10,
+    paddingHorizontal: 5,
+  },
   cover: {
-    width: COVER_WIDTH,
-    height: COVER_HEIGHT,
     borderRadius: 8,
   },
   title: {

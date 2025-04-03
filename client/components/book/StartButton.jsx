@@ -1,13 +1,10 @@
 import { Image, TouchableOpacity, StyleSheet } from 'react-native';
 import cardsIcon from '../../assets/icons/cardsIcon.png';
 
-export function QuizitButton({setShowQuizitDropDown, onPress}) {
+export function StartButton() {
   return (
     <TouchableOpacity 
       style={styles.container}
-      onPress={() => {
-        onPress()
-        setShowQuizitDropDown(true)}}
     >
       <Image 
             source={cardsIcon}
