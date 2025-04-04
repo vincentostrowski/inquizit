@@ -11,7 +11,6 @@ import { useBook } from "../../../data/bookContext";
 import { TopBar } from "../../../components/book/TopBar";
 import { useAuth } from "../../../data/authContext";
 import { ProgressBar } from "../../../components/progressBar";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function BookScreen() {
   const { user } = useAuth();
@@ -24,11 +23,9 @@ export default function BookScreen() {
   const [expandedRows, setExpandedRows] = useState<number>(1);
   const [rootLoaded, setRootLoaded] = useState(false);
   const [allLoaded, setAllLoaded] = useState(false);
-  const [topBarHeight, setTopBarHeight] = useState(0);
-  const { width, height } = Dimensions.get('window');
+  const { width } = Dimensions.get('window');
   const COVER_WIDTH = width * 0.5; // Half the screen width
   const COVER_HEIGHT = COVER_WIDTH * 1.5; // Aspect ratio of 2:3
-  const insets = useSafeAreaInsets();
   
   
   useEffect(() => {
@@ -113,14 +110,9 @@ export default function BookScreen() {
 
   return (
     <SafeAreaView style={{flex: 1, backgroundColor: '#dfdfdf'}} edges={['top']}>
-      <TopBar setTopBarHeight={setTopBarHeight}/>
+      <TopBar/>
       <ScrollView 
         style={styles.container}
-        contentOffset={{ y: topBarHeight, x: 0 }}
-        contentContainerStyle={{
-          paddingTop: topBarHeight,
-          minHeight: (height - 90 - insets.top) + topBarHeight, // 💡 ensures scrollable height
-        }}
       >
         <View style={styles.coverContainer}>
           <Image 

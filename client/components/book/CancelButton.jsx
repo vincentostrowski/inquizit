@@ -1,14 +1,13 @@
 import { Image, TouchableOpacity, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons'; 
 
-export function CancelButton({setShowQuizitDropDown, onPress}) {
+export function CancelButton({setShowQuizitDropDown}) {
 
   return (
     <TouchableOpacity 
       style={styles.container}
       onPress={() => { 
-        setShowQuizitDropDown(false)
-        onPress()}}
+        setShowQuizitDropDown(false)}}
     >
       <Icon name="close" size={15} color='white' />
     </TouchableOpacity>

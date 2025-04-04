@@ -17,7 +17,7 @@ const styles = StyleSheet.create({
         padding: 20,
     },
     innerContainer: { 
-        height: 200,
+        height: 50,
         width: '100%',
     },
     text: {
