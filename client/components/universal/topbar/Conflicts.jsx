@@ -1,9 +1,9 @@
-import { View, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 
-export function QuizitSelection() {
+export function Conflicts() { 
     return (
         <View style={styles.container}>
-            <View style={styles.innerContainer}></View>
+            <Text style={styles.text}>Detecting identical/conflicting insights within your library...</Text>
         </View>
     );
 }
@@ -14,15 +14,11 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: '#dfdfdf',
-        padding: 20,
-    },
-    innerContainer: { 
-        height: 50,
-        width: '100%',
+        zIndex: 1000,
     },
     text: {
-        fontSize: 20,
+        fontSize: 12,
         color: '#333',
-    },
+        textAlign: 'center',
+    }
 });
-

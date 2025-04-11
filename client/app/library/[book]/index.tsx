@@ -3,19 +3,19 @@ import { useState, useEffect } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
 import { supabase } from "../../../config/supabase";
-import { ExpandCollapse } from "../../../components/book/ExpandCollapse";
-import { InsightList } from "../../../components/insights/InsightList";
-import { LoadingInsightList } from "../../../components/insights/LoadingInsightList";
+import { ExpandCollapse } from "../../../components/insightList/toggles/ExpandCollapse";
+import { InsightList } from "../../../components/insightList/InsightList";
+import { LoadingInsightList } from "../../../components/insightList/LoadingInsightList";
 import type { Book, Insight } from "../../../data/types";
 import { useBook } from "../../../data/bookContext";
-import { TopBar } from "../../../components/book/TopBar";
+import { TopBar } from "../../../components/universal/topbar/TopBar";
 import { useAuth } from "../../../data/authContext";
-import { ProgressBar } from "../../../components/progressBar";
+import { ProgressBar } from "../../../components/universal/progressBar";
 
 export default function BookScreen() {
   const { user } = useAuth();
   const userId = user?.id;
-  const { selectedBook, insightTree, setInsightTree, setInsightMap } = useBook();
+  const { selectedBook, insightTree, insightMap, setInsightTree, setInsightMap } = useBook();
   const { book: bookIdParam } = useLocalSearchParams();
   const bookId = parseInt(Array.isArray(bookIdParam) ? bookIdParam[0] : bookIdParam, 10);  
   const [book, setBook] = useState<Book | null>((selectedBook && selectedBook.id === bookId) ? selectedBook : null);
@@ -26,24 +26,29 @@ export default function BookScreen() {
   const { width } = Dimensions.get('window');
   const COVER_WIDTH = width * 0.5; // Half the screen width
   const COVER_HEIGHT = COVER_WIDTH * 1.5; // Aspect ratio of 2:3
+  const [insightCount, setInsightCount] = useState({saved: 0, total: 0});
+  const [fractionSaved, setFractionSaved] = useState(0);
   
-  
+  // If book not already loaded by library selection, load the book + insight structures
   useEffect(() => {
     const loadRootInsights = async () => {
-      let {data: Insights, error} = await supabase.from('book_insights_with_saved_state').select('*').eq('bookId', bookId).is('parentId', null);
+      let {data: Insights, error} = await supabase.from('book_insights_with_saved_state').select('*').eq('bookId', bookId).is('parentId', null).order('order', { ascending: true });
       setInsights(Insights || []);
       setRootLoaded(true);
     };
+    
     const loadBook = async () => {
       let {data: fetchedBook, error} = await supabase.from('Book').select('*').eq('id', bookId).single();  
       setBook(fetchedBook); 
     };
+
     if (!book) {
+      //No book in context or URL book does not match book in context, so reset context
       loadBook();
-      //if book is not already loaded, then the loaded insights are not relevant
       setInsightTree([]);
       setInsightMap({});
     }
+
     if (insightTree && insightTree.length > 0) {
       setInsights(insightTree);
       setAllLoaded(true);
@@ -55,7 +60,7 @@ export default function BookScreen() {
   useEffect(() => {
     if (!rootLoaded) return;
     const loadAllInsights = async () => {
-      let {data: allInsights, error} = await supabase.from('book_insights_with_saved_state').select('*').eq('bookId', book.id);
+      let {data: allInsights, error} = await supabase.from('book_insights_with_saved_state').select('*').eq('bookId', book.id).order('order', { ascending: true });
       const { tree, map } = buildInsightTreeAndMap(allInsights);
       setInsights(tree || []);
       setAllLoaded(true);
@@ -64,6 +69,47 @@ export default function BookScreen() {
     };
     loadAllInsights();
   }, [rootLoaded])
+
+  useEffect(() => {
+    if (!insightTree || insightTree.length === 0) return;
+    // DFS when computing the fraction of saved insights
+    const DFS = (insight) => {
+      let total = (insight.leaf) ? 1 : 0; // Count the current insight
+      let saved = insight.is_saved ? 1 : 0; // Check if the current insight is saved
+    
+      // Recursively traverse the children
+      if (insight.children && insight.children.length > 0) {
+        for (const child of insight.children) {
+          const { total: childTotal, saved: childSaved } = DFS(child);
+          total += childTotal;
+          saved += childSaved;
+        }
+      }
+    
+      return { total, saved };
+    }
+
+    const computeSavedFraction = () => {
+      let total = 0;
+      let saved = 0;
+    
+      for (const insight of insightTree) {
+        if (insightMap && insightMap[insight.id]) {
+          // Perform DFS starting from the root insight 
+          const result = DFS(insightMap[insight.id]);
+          total += result.total;
+          saved += result.saved;
+        }
+      }
+      setInsightCount({saved, total});
+      // Return the fraction of saved insights
+      return total > 0 ? saved / total : 0;
+    }
+
+    const savedFraction = computeSavedFraction();
+
+    setFractionSaved(savedFraction);
+  }, [insightTree]);
 
   const collapseRows = () => {
     setExpandedRows(1);
@@ -110,7 +156,7 @@ export default function BookScreen() {
 
   return (
     <SafeAreaView style={{flex: 1, backgroundColor: '#dfdfdf'}} edges={['top']}>
-      <TopBar/>
+      <TopBar book={book} insight={null} insightCount={insightCount}/>
       <ScrollView 
         style={styles.container}
       >
@@ -121,7 +167,7 @@ export default function BookScreen() {
             resizeMode="cover"
           />
           <View style={[styles.progressContainer, {width: COVER_WIDTH}]}>
-            <ProgressBar />
+            <ProgressBar fraction={fractionSaved}/>
           </View>
         </View>
         <Text style={styles.title}>{book.title}</Text>
@@ -179,9 +225,8 @@ const styles = StyleSheet.create({
   description: {
     fontSize: 16,
     lineHeight: 24,
-    paddingHorizontal: 30,
+    paddingHorizontal: 25,
     color: '#333',
-    textAlign: 'center',
   },
   separator: {
     height: 1,

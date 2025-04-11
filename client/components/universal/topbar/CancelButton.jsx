@@ -1,17 +1,14 @@
 import { Image, TouchableOpacity, StyleSheet } from 'react-native';
-import cardsIcon from '../../assets/icons/cardsIcon.png';
+import Icon from 'react-native-vector-icons/Ionicons'; 
 
-export function QuizitButton({onPress}) {
+export function CancelButton({onPress}) {
+
   return (
     <TouchableOpacity 
       style={styles.container}
       onPress={onPress}
     >
-      <Image 
-            source={cardsIcon}
-            style={styles.icon}
-            resizeMode="contain"
-        />
+      <Icon name="close" size={15} color='white' />
     </TouchableOpacity>
   );
 }
@@ -25,11 +22,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 1000,
-  },
-  icon: {
-    width: '60%',
-    height: '60%',
-    tintColor: '#dfdfdf',
-    color: '#dfdfdf',
   },
 }); 

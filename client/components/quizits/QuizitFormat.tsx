@@ -5,11 +5,7 @@ export function QuizitFormat({ card }) {
 
   return (
     <View style={styles.container}>
-      {
-        card.body.map((sentence, index) => (
-        <Text key={index} style={styles.text}>{sentence}</Text>
-        ))
-      }
+        <Text style={styles.text}>{card.quizit}</Text>
     </View>
   );
 }
@@ -20,9 +16,12 @@ const styles = StyleSheet.create({
     height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 30,
+    backgroundColor: '#e6e6e6'
   },
   text: {
     width: '100%',
+    opacity: 0.6,
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 40,

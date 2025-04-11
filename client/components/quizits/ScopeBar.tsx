@@ -1,10 +1,10 @@
 import { View, StyleSheet, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-export default function ScopeBar() {
+export default function ScopeBar({ sessionTitle }) {
     return (
         <View style={styles.bar}>
-            <Text>How To Win Friends and Influence Others</Text>
+            <Text>{sessionTitle}</Text>
         </View> 
     );
 }

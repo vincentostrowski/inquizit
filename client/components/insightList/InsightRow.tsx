@@ -23,6 +23,7 @@ export function InsightRow({ insight, onPress, indent, onToggle, expand, userId 
 
   const animatedFraction = useRef(new Animated.Value(fraction)).current;
 
+  // Animate the progress bar when the fraction computed
   useEffect(() => {
     // Animate the fraction value when it changes
     Animated.timing(animatedFraction, {
@@ -42,8 +43,9 @@ export function InsightRow({ insight, onPress, indent, onToggle, expand, userId 
     outputRange: ['100%', '0%'], // Adjust the right value dynamically
   });
 
+  // DFS when computing the fraction of saved insights
   function DFS(insight) {
-    let total = 1; // Count the current insight
+    let total = (insight.leaf) ? 1 : 0; // Count the current insight
     let saved = insight.is_saved ? 1 : 0; // Check if the current insight is saved
   
     // Recursively traverse the children
@@ -59,13 +61,13 @@ export function InsightRow({ insight, onPress, indent, onToggle, expand, userId 
   }
 
   function computeSavedFraction() {
-    let total = 1;
-    let saved = 1;
+    let total = 0;
+    let saved = 0;
   
     if (insightMap && insightMap[insight.id]) {
-      // Perform DFS starting from the root insight
+      // Perform DFS starting from the root insight 
       const result = DFS(insightMap[insight.id]);
-      total = result.total - 1;
+      total = result.total;
       saved = result.saved;
     }
     
@@ -88,23 +90,23 @@ export function InsightRow({ insight, onPress, indent, onToggle, expand, userId 
     setIsSaved(insight.is_saved);
   }, [insight.is_saved]);
 
-    const updateContext = (save: boolean) => {
-      setInsightTree((prevTree) => {
-        return prevTree ? [...prevTree] : [];
-      });
-      setInsightMap((prevMap) => {
-        if (!prevMap || !prevMap[insight.id]) return prevMap;
-    
-        // Mutate the shared object reference (safe within setState)
-        prevMap[insight.id].is_saved = save;
-    
-        return { ...prevMap }; // New top-level map reference to trigger re-renders
-      });
-    };
+  // Update the insight structures stored in context so that other screens refelct the changes
+  const updateContext = (save: boolean) => {
+    setInsightTree((prevTree) => {
+      return prevTree ? [...prevTree] : [];
+    });
+    setInsightMap((prevMap) => {
+      if (!prevMap || !prevMap[insight.id]) return prevMap;
+  
+      // Mutate the shared object reference (safe within setState)
+      prevMap[insight.id].is_saved = save;
+  
+      return { ...prevMap }; // New top-level map reference to trigger re-renders
+    });
+  };
 
   const saveInsight = async () => {
         // add a new row or change value on saved column
-        console.log('userId:', userId);
         const { data, error } = await supabase.from('UserInsight').upsert(
       {
         userId,
@@ -115,12 +117,12 @@ export function InsightRow({ insight, onPress, indent, onToggle, expand, userId 
       { onConflict: ['userId', 'insightId'] } // if a row exists, update it
     );
 
-  if (error) {
-    console.error('Error saving insight:', error);
-  } else {
-    console.log('Insight saved successfully:', data);
-    updateContext(true);
-  }
+    if (error) {
+      console.error('Error saving insight:', error);
+    } else {
+      console.log('Insight saved successfully:', data);
+      updateContext(true);
+    }
   };
 
   const unsaveInsight = async () => {

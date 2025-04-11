@@ -1,10 +1,11 @@
 import { Image, TouchableOpacity, StyleSheet } from 'react-native';
-import cardsIcon from '../../assets/icons/cardsIcon.png';
+import cardsIcon from '../../../assets/icons/cardsIcon.png';
 
-export function StartButton() {
+export function QuizitButton({onPress}) {
   return (
     <TouchableOpacity 
       style={styles.container}
+      onPress={onPress}
     >
       <Image 
             source={cardsIcon}

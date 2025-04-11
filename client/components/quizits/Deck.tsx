@@ -2,8 +2,8 @@ import React, { useRef, useState } from 'react';
 import { View, StyleSheet, PanResponder, Animated, Dimensions, ScrollView, Pressable } from 'react-native';
 import { Card } from './Card';
 
-export default function Deck({ cards, onGestureStart, onGestureEnd }) {
-  const [deck, setDeck] = useState(cards);
+export default function Deck({ quizitItems, onGestureStart, onGestureEnd }) {
+  const [deck, setDeck] = useState(quizitItems);
   const [isTransitioningNext, setIsTransitioningNext] = useState(false);
   const [isTransitioningPrev, setIsTransitioningPrev] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -11,6 +11,8 @@ export default function Deck({ cards, onGestureStart, onGestureEnd }) {
   const OFF_SCREEN_X = -width * 1.1;
   const [componentWidth, setComponentWidth] = useState(0);
   const dragThreshold = 5; // Movement threshold to differentiate drag from tap
+
+  // BEFORE CHANGES
 
   const position = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
   const backPosition = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
@@ -21,6 +23,7 @@ export default function Deck({ cards, onGestureStart, onGestureEnd }) {
   const SWIPE_THRESHOLD = -30; // Negative value: swipe left
   const SWIPE_THRESHOLD_RIGHT = 25; // Positive value: swipe right
 
+  const swipeDirectionRatio = 10; // Ratio of vertical to horizontal swipe distance
   const gestureStarted = useRef(false);
   const preventTap = useRef(false); // Track if a drag is happening
   // re-enable vertical scrolling when gesture ends
@@ -31,13 +34,13 @@ export default function Deck({ cards, onGestureStart, onGestureEnd }) {
       setCurrentIndex(prevIndex => (prevIndex + 1) % deck.length);
       Animated.timing(position, {
         toValue: { x: OFF_SCREEN_X, y: 0 },
-        duration: 300,
+        duration: 250,
         useNativeDriver: false,
       }).start(() => {
         // Animate offScreen card into position
         Animated.timing(offScreenPosition, {
           toValue: { x: 8, y: 8 },
-          duration: 200,
+          duration: 150,
           useNativeDriver: false,
         }).start(() => {
           setIsTransitioningNext(true);
@@ -113,12 +116,12 @@ export default function Deck({ cards, onGestureStart, onGestureEnd }) {
 
   const panResponderNext = useRef(
     PanResponder.create({
-      onStartShouldSetPanResponder: (evt, gestureState) => Math.abs(gestureState.dx) * 2 > Math.abs(gestureState.dy),
+      onStartShouldSetPanResponder: (evt, gestureState) => Math.abs(gestureState.dx) * swipeDirectionRatio > Math.abs(gestureState.dy),
       onMoveShouldSetPanResponderCapture: (evt, gestureState) => {
-        return !gestureStarted.current && !preventTap.current && Math.abs(gestureState.dx) > dragThreshold && Math.abs(gestureState.dx) * 2 > Math.abs(gestureState.dy);
+        return !gestureStarted.current && !preventTap.current && Math.abs(gestureState.dx) > dragThreshold && Math.abs(gestureState.dx) * swipeDirectionRatio > Math.abs(gestureState.dy);
       },
       onPanResponderMove: (evt, gestureState) => {
-        if (!gestureStarted.current && Math.abs(gestureState.dx) * 2 > Math.abs(gestureState.dy)) {
+        if (!gestureStarted.current && Math.abs(gestureState.dx) * swipeDirectionRatio > Math.abs(gestureState.dy)) {
           gestureStarted.current = true;
           preventTap.current = true;
           onGestureStart();
@@ -367,12 +370,11 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: '100%',
     height: '100%',
-    backgroundColor: '#fff8ef',
     borderRadius: 5,
     shadowColor: 'black',
     shadowOffset: { width: 1, height: 1 },
     shadowOpacity: 0.2,
-    shadowRadius: 1,
+    shadowRadius: 2,
   },
   dotContainer: {
     position: 'absolute',

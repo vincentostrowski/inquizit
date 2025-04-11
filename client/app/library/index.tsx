@@ -4,6 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase } from "../../config/supabase";
 import { BookGrid } from "../../components/library/BookGrid";
 import type { Book } from "../../data/types";
+import { TopBar } from "../../components/library/TopBar";
 
 export default function LibraryScreen() {
   const [books, setBooks] = useState<Book[]>([]);
@@ -34,7 +35,8 @@ export default function LibraryScreen() {
   }
 
   return (
-    <SafeAreaView style={{flex: 1, }} edges={['top']}>
+    <SafeAreaView style={{flex: 1 }} edges={['top']}>
+      {/* <TopBar /> */}
       <View style={styles.container}>
         <BookGrid books={books} />
       </View>
@@ -47,5 +49,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: '#f2f2f2',
+    // paddingTop: 26,
   },
 });

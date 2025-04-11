@@ -38,7 +38,7 @@ export function BookItem({ book }: Props) {
   const loadAllInsights = async () => {
     setInsightTree([]);
     setInsightMap({});
-    let {data: allInsights, error} = await supabase.from('book_insights_with_saved_state').select('*').eq('bookId', book.id);
+    let {data: allInsights, error} = await supabase.from('book_insights_with_saved_state').select('*').eq('bookId', book.id).order('order', { ascending: true });
     if (allInsights && allInsights.length > 0) {
       const { tree, map } = buildInsightTreeAndMap(allInsights);
       setInsightTree(tree);

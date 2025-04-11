@@ -1,11 +1,11 @@
 import { TouchableOpacity, StyleSheet, Image } from 'react-native';
-import quizitIcon from '../../assets/icons/quizit100.png';
+import approximateIcon from '../../../assets/icons/approximate.png';
 
-export function ConflictButton() {
+export function ConflictButton({onPress}) {
   return (
-    <TouchableOpacity style={styles.container}>
+    <TouchableOpacity style={styles.container} onPress={onPress}>
         <Image 
-          source={quizitIcon}
+          source={approximateIcon}
           style={styles.icon}
           resizeMode="contain"
         />
