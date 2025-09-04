@@ -1,20 +1,9 @@
-import { BookProvider } from "../data/bookContext";
-import { AuthProvider } from "../data/authContext";
-import { LoadingProvider } from "../data/loadingContext";
-import { QuizitProvider } from "../data/quizitContext";
-import RootLayout from "../screens/rootlayout";
+import { Stack } from 'expo-router';
 
-export default function _layout() {
-
+export default function RootLayout() {
   return (
-    <AuthProvider>
-      <LoadingProvider>
-        <BookProvider>
-          <QuizitProvider>
-            <RootLayout/>
-          </QuizitProvider>
-        </BookProvider>
-      </LoadingProvider>
-    </AuthProvider>
+    <Stack>
+      <Stack.Screen name="index" options={{ title: 'Home' }} />
+    </Stack>
   );
 }
