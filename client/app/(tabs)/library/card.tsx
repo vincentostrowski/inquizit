@@ -58,7 +58,8 @@ export default function CardScreen() {
       pathname: '/quizit',
       params: { 
         quizitId: cardId,
-        quizitType: 'card'
+        quizitType: 'card',
+        quizitTitle: cardTitle
       }
     });
   };

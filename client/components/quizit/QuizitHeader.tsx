@@ -1,31 +1,30 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 
 interface QuizitHeaderProps {
   onBack: () => void;
+  quizitTitle: string;
 }
 
 export default function QuizitHeader({
   onBack,
+  quizitTitle,
 }: QuizitHeaderProps) {
   return (
     <View style={styles.container}>
-      {/* Back Button */}
-      <TouchableOpacity onPress={onBack} style={styles.backButton}>
-        <Ionicons name="chevron-back" size={24} color="#1D1D1F" />
-      </TouchableOpacity>
 
       {/* Rounded Title Container */}
       <View style={styles.titleContainer}>
         <Text style={styles.title} numberOfLines={1}>
-          Quizit
+          {quizitTitle}
         </Text>
       </View>
 
       {/* Settings Icon */}
-      <TouchableOpacity style={styles.settingsButton}>
-        <Ionicons name="settings-outline" size={24} color="#1D1D1F" />
+      <TouchableOpacity>
+        <Image 
+          source={require('../../assets/icons/mingcute--settings-2-line.png')} 
+          style={{ width: 24, height: 24 }} 
+        />
       </TouchableOpacity>
     </View>
   );
@@ -36,34 +35,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: 50, // Account for status bar
-    paddingBottom: 16,
-    paddingHorizontal: 20,
-    backgroundColor: 'transparent',
-  },
-  backButton: {
-    padding: 8,
-    borderRadius: 20,
+    paddingTop: 20,
+    paddingBottom: 10,
+    paddingHorizontal: 16,
+    backgroundColor: 'white',
+    gap: 8,
   },
   titleContainer: {
     flex: 1,
     alignItems: 'center',
-    backgroundColor: '#F2F2F7', // Light gray pill background
+    borderWidth: 1,
+    borderColor: '#D1D1D6',
     borderRadius: 20, // Pill shape
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    marginHorizontal: 16,
-    height: 44, // Fixed height for pill shape
+    padding: 5,
     justifyContent: 'center',
   },
   title: {
-    fontSize: 16,
+    fontSize: 12,
     fontWeight: '500',
     textAlign: 'center',
     color: '#1D1D1F',
-  },
-  settingsButton: {
-    padding: 8,
-    borderRadius: 20,
   },
 });

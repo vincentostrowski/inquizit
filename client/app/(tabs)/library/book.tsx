@@ -33,7 +33,7 @@ export default function BookScreen() {
   const handleStartQuizit = () => {
     router.push({
       pathname: '/quizit',
-      params: { quizitId: bookId }
+      params: { quizitId: bookId, quizitTitle: bookTitle }
     });
   };
 

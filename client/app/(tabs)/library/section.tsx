@@ -36,7 +36,8 @@ export default function SectionScreen() {
       pathname: '/quizit',
       params: { 
         quizitId: sectionId,
-        quizitType: 'section'
+        quizitType: 'section',
+        quizitTitle: sectionTitle
       }
     });
   };
