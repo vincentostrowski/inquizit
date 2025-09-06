@@ -5,7 +5,7 @@ import { useViewMode } from '../../../context/ViewModeContext';
 import ContentHeader from '../../../components/common/ContentHeader';
 import CoverDisplay from '../../../components/book/CoverDisplay';
 import ContentDescription from '../../../components/common/ContentDescription';
-import DisplayToggle from '../../../components/common/DisplayToggle';
+import BookDisplayToggle from '../../../components/book/BookDisplayToggle';
 import CardDisplay from '../../../components/book/CardDisplay';
 import ListDisplay from '../../../components/book/ListDisplay';
 import SkeletonCoverDisplay from '../../../components/book/SkeletonCoverDisplay';
@@ -131,7 +131,7 @@ export default function BookScreen() {
             ) : null}
 
             {/* Display Toggle - Always show */}
-            <DisplayToggle />
+            <BookDisplayToggle />
 
             {/* Cards/List Display - Skeleton or Real */}
             {loading ? (

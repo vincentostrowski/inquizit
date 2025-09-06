@@ -47,7 +47,6 @@ const styles = StyleSheet.create({
   },
   cardsContainer: {
     paddingHorizontal: 20,
-    paddingVertical: 16,
     gap: 16,
   },
 });

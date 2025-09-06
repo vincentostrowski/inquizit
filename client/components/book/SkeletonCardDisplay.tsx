@@ -72,6 +72,7 @@ export default function SkeletonCardDisplay() {
 const styles = StyleSheet.create({
   container: {
     backgroundColor: '#FFFFFF',
+    paddingTop: 8,
   },
   titleContainer: {
     paddingHorizontal: 20,

@@ -5,7 +5,7 @@ import { useBookDetails } from '../../../hooks/useBookDetails';
 import ContentHeader from '../../../components/common/ContentHeader';
 import SectionDisplay from '../../../components/section/SectionDisplay';
 import ContentDescription from '../../../components/common/ContentDescription';
-import DisplayToggle from '../../../components/common/DisplayToggle';
+import DisplayToggle from '../../../components/section/DisplayToggle';
 import SectionCardDisplay from '../../../components/section/SectionCardDisplay';
 import SectionListDisplay from '../../../components/section/SectionListDisplay';
 import SkeletonSectionDisplay from '../../../components/section/SkeletonSectionDisplay';

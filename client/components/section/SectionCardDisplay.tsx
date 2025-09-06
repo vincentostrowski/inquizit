@@ -52,7 +52,6 @@ const styles = StyleSheet.create({
   cardsContainer: {
     paddingLeft: 20,
     paddingRight: 20,
-    paddingVertical: 10,
     gap: 16, // Consistent spacing between all cards
   },
   emptyContainer: {

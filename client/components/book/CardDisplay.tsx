@@ -1,4 +1,4 @@
-import { View } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import CardRow from './CardRow';
 
@@ -53,7 +53,7 @@ export default function CardDisplay({
   };
 
   return (
-    <View>
+    <View style={styles.container}>
       {sections.map((section) => (
         <CardRow
           key={section.id}
@@ -71,3 +71,11 @@ export default function CardDisplay({
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: 'white',
+    paddingTop: 8,
+  },
+});

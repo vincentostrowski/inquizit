@@ -5,7 +5,7 @@ import { useViewMode } from '../../../context/ViewModeContext';
 import ContentHeader from '../../../components/common/ContentHeader';
 import CoverDisplay from '../../../components/book/CoverDisplay';
 import ContentDescription from '../../../components/common/ContentDescription';
-import DisplayToggle from '../../../components/common/DisplayToggle';
+import DisplayToggle from '../../../components/section/DisplayToggle';
 import CardDisplay from '../../../components/book/CardDisplay';
 import ListDisplay from '../../../components/book/ListDisplay';
 import SkeletonCoverDisplay from '../../../components/book/SkeletonCoverDisplay';
