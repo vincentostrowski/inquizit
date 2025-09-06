@@ -47,10 +47,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: 'white',
+    paddingBottom: 20,
   },
   cardsContainer: {
-    paddingHorizontal: 20,
+    paddingLeft: 20,
+    paddingRight: 20,
     paddingVertical: 10,
+    gap: 16, // Consistent spacing between all cards
   },
   emptyContainer: {
     flex: 1,

@@ -59,6 +59,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 20,
     paddingBottom: 36,
-    gap: 8,
+    gap: 16,
   },
 });

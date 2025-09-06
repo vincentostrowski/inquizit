@@ -59,7 +59,6 @@ const getSizeStyles = (size: 'small' | 'medium' | 'large') => {
         height: 184,
         width: 138, // 0.75 ratio (184 * 0.75 = 138)
         padding: 8,
-        marginRight: 12,
         borderRadius: 8,
       },
       coverContainer: {
@@ -94,7 +93,6 @@ const getSizeStyles = (size: 'small' | 'medium' | 'large') => {
         height: 240,
         width: 180, // 0.75 ratio (240 * 0.75 = 180)
         padding: 10, // 4.17% of height (like small: 8/184 = 4.35%)
-        marginRight: 16,
         borderRadius: 10, // 4.17% of height (like small: 8/184 = 4.35%)
       },
       coverContainer: {
