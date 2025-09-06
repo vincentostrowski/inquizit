@@ -175,7 +175,8 @@ export default function SectionScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    // backgroundColor will be set dynamically to match header color
+    backgroundColor: 'white',
+    zIndex: -3,
   },
   growingArea: {
     position: 'absolute',

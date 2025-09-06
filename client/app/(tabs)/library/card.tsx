@@ -153,6 +153,8 @@ export default function CardScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: 'white',
+    zIndex: -3,
   },
   growingArea: {
     position: 'absolute',

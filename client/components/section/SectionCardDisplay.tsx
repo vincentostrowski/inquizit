@@ -46,6 +46,7 @@ export default function SectionCardDisplay({ cards, onCardPress }: SectionCardDi
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: 'white',
   },
   cardsContainer: {
     paddingHorizontal: 20,

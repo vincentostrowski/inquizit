@@ -43,6 +43,7 @@ export default function SkeletonSectionCardDisplay() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: 'white',
   },
   cardsContainer: {
     paddingHorizontal: 20,
