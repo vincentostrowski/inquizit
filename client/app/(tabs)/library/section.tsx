@@ -1,17 +1,17 @@
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
-import { useViewMode } from '../context/ViewModeContext';
-import { useBookDetails } from '../hooks/useBookDetails';
-import ContentHeader from '../components/common/ContentHeader';
-import SectionDisplay from '../components/section/SectionDisplay';
-import ContentDescription from '../components/common/ContentDescription';
-import DisplayToggle from '../components/common/DisplayToggle';
-import SectionCardDisplay from '../components/section/SectionCardDisplay';
-import SectionListDisplay from '../components/section/SectionListDisplay';
-import SkeletonSectionDisplay from '../components/section/SkeletonSectionDisplay';
-import SkeletonDescription from '../components/common/SkeletonDescription';
-import SkeletonSectionCardDisplay from '../components/section/SkeletonSectionCardDisplay';
-import SkeletonSectionListDisplay from '../components/section/SkeletonSectionListDisplay';
+import { useViewMode } from '../../../context/ViewModeContext';
+import { useBookDetails } from '../../../hooks/useBookDetails';
+import ContentHeader from '../../../components/common/ContentHeader';
+import SectionDisplay from '../../../components/section/SectionDisplay';
+import ContentDescription from '../../../components/common/ContentDescription';
+import DisplayToggle from '../../../components/common/DisplayToggle';
+import SectionCardDisplay from '../../../components/section/SectionCardDisplay';
+import SectionListDisplay from '../../../components/section/SectionListDisplay';
+import SkeletonSectionDisplay from '../../../components/section/SkeletonSectionDisplay';
+import SkeletonDescription from '../../../components/common/SkeletonDescription';
+import SkeletonSectionCardDisplay from '../../../components/section/SkeletonSectionCardDisplay';
+import SkeletonSectionListDisplay from '../../../components/section/SkeletonSectionListDisplay';
 
 export default function SectionScreen() {
   const { 
@@ -51,7 +51,7 @@ export default function SectionScreen() {
 
   const handleCardPress = (card: any) => {
     router.push({
-      pathname: '/card',
+      pathname: '/library/card',
       params: { 
         cardId: card.id, 
         cardTitle: card.title,

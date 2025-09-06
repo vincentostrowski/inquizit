@@ -38,7 +38,7 @@ export default function CardDisplay({
 }: CardDisplayProps) {
   const handleSectionPress = (section: Section) => {
     router.push({
-      pathname: '/section',
+      pathname: '/library/section',
       params: {
         sectionId: section.id,
         sectionTitle: section.title,

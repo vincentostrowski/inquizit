@@ -1,12 +1,12 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
-import { useBookDetails } from '../hooks/useBookDetails';
-import ContentHeader from '../components/common/ContentHeader';
-import GradientBackground from '../components/common/GradientBackground';
-import Card from '../components/common/Card';
-import Content from '../components/card/Content';
-import SkeletonCardDisplay from '../components/card/SkeletonCardDisplay';
-import SkeletonContent from '../components/card/SkeletonContent';
+import { useBookDetails } from '../../../hooks/useBookDetails';
+import ContentHeader from '../../../components/common/ContentHeader';
+import GradientBackground from '../../../components/common/GradientBackground';
+import Card from '../../../components/common/Card';
+import Content from '../../../components/card/Content';
+import SkeletonCardDisplay from '../../../components/card/SkeletonCardDisplay';
+import SkeletonContent from '../../../components/card/SkeletonContent';
 
 export default function CardScreen() {
   const { 

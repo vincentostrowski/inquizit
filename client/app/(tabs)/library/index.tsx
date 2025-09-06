@@ -1,12 +1,13 @@
 import { View, StyleSheet, FlatList, Text, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
-import { useCollections } from '../../hooks/useCollections';
-import { useSearch } from '../../hooks/useSearch';
-import LibraryHeader from '../../components/library/LibraryHeader';
-import SearchBar from '../../components/library/SearchBar';
-import FilterGroup from '../../components/library/FilterGroup';
-import BookRow from '../../components/library/BookRow';
-import SearchResults from '../../components/search/SearchResults';
+import { useCollections } from '../../../hooks/useCollections';
+import { useSearch } from '../../../hooks/useSearch';
+import LibraryHeader from '../../../components/library/LibraryHeader';
+import SearchBar from '../../../components/library/SearchBar';
+import FilterGroup from '../../../components/library/FilterGroup';
+import BookRow from '../../../components/library/BookRow';
+import SearchResults from '../../../components/search/SearchResults';
+import SafeAreaWrapper from '../../../components/common/SafeAreaWrapper';
 
 export default function LibraryScreen() {
   const { 
@@ -78,7 +79,7 @@ export default function LibraryScreen() {
 
   const handleBookPress = (book: any) => {
     router.push({
-      pathname: '/book',
+      pathname: '/library/book',
       params: {
         bookId: book.id,
         bookTitle: book.title,
@@ -92,40 +93,42 @@ export default function LibraryScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <LibraryHeader />
-      <SearchBar 
-        value={searchQuery}
-        onChangeText={search}
-        onClear={clearSearch}
-        loading={searchLoading}
-      />
-      <FilterGroup />
-      
-      {isSearching ? (
-        <SearchResults
-          results={searchResults}
+    <SafeAreaWrapper backgroundColor="white">
+      <View style={styles.container}>
+        <LibraryHeader />
+        <SearchBar 
+          value={searchQuery}
+          onChangeText={search}
+          onClear={clearSearch}
           loading={searchLoading}
-          loadingMore={searchLoadingMore}
-          error={searchError}
-          hasMore={hasMoreResults}
-          onLoadMore={loadMoreResults}
-          onBookPress={handleBookPress}
         />
-      ) : (
-        <FlatList
-          data={collections}
-          renderItem={renderCollectionRow}
-          keyExtractor={(item, index) => `collection-${item.id}-${index}`}
-          onEndReached={loadMoreCollections}
-          onEndReachedThreshold={0.5}
-          ListFooterComponent={renderFooter}
-          ListEmptyComponent={renderEmpty}
-          showsVerticalScrollIndicator={false}
-          style={styles.content}
-        />
-      )}
-    </View>
+        <FilterGroup />
+        
+        {isSearching ? (
+          <SearchResults
+            results={searchResults}
+            loading={searchLoading}
+            loadingMore={searchLoadingMore}
+            error={searchError}
+            hasMore={hasMoreResults}
+            onLoadMore={loadMoreResults}
+            onBookPress={handleBookPress}
+          />
+        ) : (
+          <FlatList
+            data={collections}
+            renderItem={renderCollectionRow}
+            keyExtractor={(item, index) => `collection-${item.id}-${index}`}
+            onEndReached={loadMoreCollections}
+            onEndReachedThreshold={0.5}
+            ListFooterComponent={renderFooter}
+            ListEmptyComponent={renderEmpty}
+            showsVerticalScrollIndicator={false}
+            style={styles.content}
+          />
+        )}
+      </View>
+    </SafeAreaWrapper>
   );
 }
 
@@ -133,7 +136,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: 'white',
-    paddingTop: 40,
   },
   content: {
     flex: 1,

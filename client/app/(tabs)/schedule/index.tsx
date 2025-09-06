@@ -1,8 +1,10 @@
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import SafeAreaWrapper from '../../../components/common/SafeAreaWrapper';
 
 export default function ScheduleScreen() {
   return (
-    <ScrollView style={styles.container}>
+    <SafeAreaWrapper backgroundColor="#F8F9FA">
+      <ScrollView style={styles.container}>
         <View style={styles.header}>
           <Text style={styles.title}>Schedule</Text>
           <Text style={styles.subtitle}>Plan your learning sessions</Text>
@@ -24,7 +26,8 @@ export default function ScheduleScreen() {
             <Text style={styles.cardText}>0 days in a row</Text>
           </View>
         </View>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaWrapper>
   );
 }
 
@@ -35,7 +38,6 @@ const styles = StyleSheet.create({
   },
   header: {
     padding: 20,
-    paddingTop: 60,
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#E5E5EA',

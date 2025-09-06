@@ -1,8 +1,10 @@
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import SafeAreaWrapper from '../../../components/common/SafeAreaWrapper';
 
 export default function HomeScreen() {
   return (
-    <ScrollView style={styles.container}>
+    <SafeAreaWrapper backgroundColor="white">
+      <ScrollView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Welcome to Inquizit</Text>
         <Text style={styles.subtitle}>Your learning companion</Text>
@@ -19,7 +21,8 @@ export default function HomeScreen() {
           <Text style={styles.cardText}>Start a new quiz or browse your library</Text>
         </View>
       </View>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaWrapper>
   );
 }
 
@@ -30,7 +33,6 @@ const styles = StyleSheet.create({
   },
   header: {
     padding: 20,
-    paddingTop: 60,
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#E5E5EA',

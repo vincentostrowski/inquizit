@@ -1,17 +1,17 @@
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
-import { useBookDetails } from '../hooks/useBookDetails';
-import { useViewMode } from '../context/ViewModeContext';
-import ContentHeader from '../components/common/ContentHeader';
-import CoverDisplay from '../components/book/CoverDisplay';
-import ContentDescription from '../components/common/ContentDescription';
-import DisplayToggle from '../components/common/DisplayToggle';
-import CardDisplay from '../components/book/CardDisplay';
-import ListDisplay from '../components/book/ListDisplay';
-import SkeletonCoverDisplay from '../components/book/SkeletonCoverDisplay';
-import SkeletonDescription from '../components/common/SkeletonDescription';
-import SkeletonCardDisplay from '../components/book/SkeletonCardDisplay';
-import SkeletonListDisplay from '../components/book/SkeletonListDisplay';
+import { useBookDetails } from '../../../hooks/useBookDetails';
+import { useViewMode } from '../../../context/ViewModeContext';
+import ContentHeader from '../../../components/common/ContentHeader';
+import CoverDisplay from '../../../components/book/CoverDisplay';
+import ContentDescription from '../../../components/common/ContentDescription';
+import DisplayToggle from '../../../components/common/DisplayToggle';
+import CardDisplay from '../../../components/book/CardDisplay';
+import ListDisplay from '../../../components/book/ListDisplay';
+import SkeletonCoverDisplay from '../../../components/book/SkeletonCoverDisplay';
+import SkeletonDescription from '../../../components/common/SkeletonDescription';
+import SkeletonCardDisplay from '../../../components/book/SkeletonCardDisplay';
+import SkeletonListDisplay from '../../../components/book/SkeletonListDisplay';
 
 export default function BookScreen() {
   const { 
@@ -48,7 +48,7 @@ export default function BookScreen() {
 
   const handleCardPress = (card: any) => {
     router.push({
-      pathname: '/card',
+      pathname: '/library/card',
       params: {
         cardId: card.id,
         cardTitle: card.title,

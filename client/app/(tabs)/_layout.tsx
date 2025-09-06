@@ -1,11 +1,9 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import SafeAreaWrapper from '../../components/common/SafeAreaWrapper';
 
 export default function TabLayout() {
   return (
-    <SafeAreaWrapper backgroundColor="white">
-      <Tabs
+    <Tabs
       screenOptions={{
         tabBarActiveTintColor: '#007AFF',
         tabBarInactiveTintColor: '#8E8E93',
@@ -17,7 +15,7 @@ export default function TabLayout() {
       }}
     >
       <Tabs.Screen
-        name="index"
+        name="home"
         options={{
           title: 'Home',
           headerShown: false,
@@ -57,6 +55,5 @@ export default function TabLayout() {
         }}
       />
     </Tabs>
-    </SafeAreaWrapper>
   );
 }
