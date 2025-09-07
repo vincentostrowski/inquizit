@@ -40,6 +40,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     backgroundColor: 'white',
     gap: 8,
+    height: 60,
   },
   titleContainer: {
     flex: 1,
