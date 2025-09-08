@@ -1,13 +1,17 @@
-import React from 'react';
-import { View, StyleSheet, Text } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, StyleSheet, Text, Image } from 'react-native';
 import ConceptFace from './ConceptFace';
 import QuizitFace from './QuizitFace';
 
 interface ConceptData {
+  id: string;
   banner: string;
   title: string;
   description: string;
   reasoning: string;
+  hidden: boolean;
+  recognitionScore?: number;
+  reasoningScore?: number;
 }
 
 interface QuizitData {
@@ -18,13 +22,28 @@ interface CardProps {
   faceType: 'concept' | 'quizit';
   conceptData?: ConceptData;
   quizitData?: QuizitData;
+  onConceptTap?: () => void;
+  onViewReasoning?: () => void;
+  onScoreChange?: (type: 'recognition' | 'reasoning', score: number) => void;
 }
 
 export function CardComponent({
   faceType,
   conceptData,
   quizitData,
+  onConceptTap,
+  onViewReasoning,
+  onScoreChange,
 }: CardProps) {
+  // Preload banner image when component mounts
+  useEffect(() => {
+    if (faceType === 'concept' && conceptData?.banner) {
+      Image.prefetch(conceptData.banner).catch(error => {
+        console.warn('Failed to preload banner image:', error);
+      });
+    }
+  }, [faceType, conceptData?.banner]);
+
   const renderFace = () => {
     if (faceType === 'concept' && conceptData) {
       return (
@@ -33,6 +52,12 @@ export function CardComponent({
           title={conceptData.title}
           description={conceptData.description}
           reasoning={conceptData.reasoning}
+          hidden={conceptData.hidden}
+          recognitionScore={conceptData.recognitionScore}
+          reasoningScore={conceptData.reasoningScore}
+          onTap={onConceptTap}
+          onViewReasoning={onViewReasoning}
+          onScoreChange={onScoreChange}
         />
       );
     }
@@ -48,16 +73,11 @@ export function CardComponent({
     return null;
   };
 
-  return (
-    <View style={styles.container}>
-      {renderFace()}
-      
-      {/* Inquizit Badge */}
-      <View style={styles.badgeContainer}>
-        <Text style={styles.badgeText}>Inquizit</Text>
-      </View>
-    </View>
-  );
+        return (
+          <View style={styles.container}>
+            {renderFace()}
+          </View>
+        );
 }
 
 const styles = StyleSheet.create({
@@ -66,19 +86,6 @@ const styles = StyleSheet.create({
     height: '100%',
     backgroundColor: '#FFF7ED',
     borderRadius: 24,
-    position: 'relative',
-  },
-  badgeContainer: {
-    position: 'absolute',
-    bottom: 8,
-    right: 8,
-  },
-  badgeText: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#6B7280',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
   },
 });
 

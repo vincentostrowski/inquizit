@@ -1,16 +1,23 @@
-import React, { useRef, useState } from 'react';
-import { View, StyleSheet, Animated, Dimensions, ScrollView, Pressable } from 'react-native';
+import React, { useRef, useState, useMemo } from 'react';
+import { View, StyleSheet, Animated, Dimensions, ScrollView, Pressable, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card } from './Card';
+
+type CardState = 'question' | 'empty' | 'checkmark';
 
 interface DeckProps {
   quizitItems: Array<{
     faceType: 'concept' | 'quizit';
     conceptData?: {
+      id: string;
       banner: string;
       title: string;
       description: string;
       reasoning: string;
+      hidden: boolean;
+      status?: CardState;
+      recognitionScore?: number;
+      reasoningScore?: number;
     };
     quizitData?: {
       quizit: string;
@@ -18,13 +25,99 @@ interface DeckProps {
   }>;
   onGestureStart: () => void;
   onGestureEnd: () => void;
+  onViewReasoning?: () => void;
+  blockGesture: boolean;
 }
 
-export default function Deck({ quizitItems, onGestureStart, onGestureEnd }: DeckProps) {
-  const [deck, setDeck] = useState(quizitItems);
+export default function Deck({ quizitItems, onGestureStart, onGestureEnd, onViewReasoning, blockGesture }: DeckProps) {
+  // Enhanced deck state with all card data
+  const [deck, setDeck] = useState(() => 
+    quizitItems.map(item => ({
+      ...item,
+      conceptData: item.conceptData ? {
+        ...item.conceptData,
+        status: 'question' as CardState,
+        recognitionScore: undefined,
+        reasoningScore: undefined,
+      } : undefined
+    }))
+  );
   const [isTransitioningNext, setIsTransitioningNext] = useState(false);
   const [isTransitioningPrev, setIsTransitioningPrev] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
+
+  // Create position mapping for concept cards (position 1, 2, 3...)
+  const positionMap = useMemo(() => {
+    const map: Record<number, string> = {};
+    let conceptIndex = 1; // Start at 1 (0 is quizit)
+    
+    quizitItems.forEach((item) => {
+      if (item.faceType === 'concept' && item.conceptData?.id) {
+        map[conceptIndex] = item.conceptData.id;
+        conceptIndex++;
+      }
+    });
+    
+    return map;
+  }, [quizitItems]);
+
+  // Helper function to check if all concept cards are completed
+  const allConceptCardsCompleted = useMemo(() => {
+    return deck.every(item => {
+      if (item.faceType === 'concept' && item.conceptData) {
+        return item.conceptData.recognitionScore !== undefined && 
+               item.conceptData.reasoningScore !== undefined;
+      }
+      return true; // Non-concept cards are considered "completed"
+    });
+  }, [deck]);
+
+  const handleConceptTap = (cardIndex: number) => {
+    // Update deck to reveal the card and change status
+    setDeck(prevDeck => {
+      const newDeck = [...prevDeck];
+      if (newDeck[cardIndex].conceptData) {
+        newDeck[cardIndex] = {
+          ...newDeck[cardIndex],
+          conceptData: {
+            ...newDeck[cardIndex].conceptData!,
+            hidden: false,
+            status: 'empty' as CardState
+          }
+        };
+      }
+      return newDeck;
+    });
+  };
+
+  const handleScoreChange = (type: 'recognition' | 'reasoning', score: number) => {
+    // Update the current card's score in deck state
+    setDeck(prevDeck => {
+      const newDeck = [...prevDeck];
+      if (newDeck[0].conceptData) {
+        newDeck[0] = {
+          ...newDeck[0],
+          conceptData: {
+            ...newDeck[0].conceptData!,
+            [type === 'recognition' ? 'recognitionScore' : 'reasoningScore']: score,
+            // Update status to checkmark if both scores are now set
+            status: (() => {
+              const currentScores = newDeck[0].conceptData!;
+              const newRecognition = type === 'recognition' ? score : currentScores.recognitionScore;
+              const newReasoning = type === 'reasoning' ? score : currentScores.reasoningScore;
+              
+              if (newRecognition !== undefined && newReasoning !== undefined) {
+                return 'checkmark' as CardState;
+              }
+              return currentScores.status || 'question' as CardState;
+            })()
+          }
+        };
+      }
+      return newDeck;
+    });
+  };
+
   const { width } = Dimensions.get('window');
   const OFF_SCREEN_X = -width * 1.1;
   const [componentWidth, setComponentWidth] = useState(0);
@@ -117,11 +210,13 @@ export default function Deck({ quizitItems, onGestureStart, onGestureEnd }: Deck
   };
 
   const handleLeftTap = () => {
+    if (blockGesture) return;
     onGestureStart();
     animateToPrev();
   };
 
   const handleRightTap = () => {
+    if (blockGesture) return;
     onGestureStart();
     animateToNext();
   };
@@ -144,6 +239,9 @@ export default function Deck({ quizitItems, onGestureStart, onGestureEnd }: Deck
           faceType={deck[0].faceType}
           conceptData={deck[0].conceptData}
           quizitData={deck[0].quizitData}
+          onConceptTap={() => null}
+          onViewReasoning={onViewReasoning}
+          onScoreChange={handleScoreChange}
         />
       </Animated.View>
       {/* Fake Front Card to Render while transition jump occurs */}
@@ -153,6 +251,9 @@ export default function Deck({ quizitItems, onGestureStart, onGestureEnd }: Deck
             faceType={deck[0].faceType}
             conceptData={deck[0].conceptData}
             quizitData={deck[0].quizitData}
+            onConceptTap={() => null}
+          onViewReasoning={onViewReasoning}
+          onScoreChange={handleScoreChange}
           />
         </View>
       )}
@@ -201,6 +302,9 @@ export default function Deck({ quizitItems, onGestureStart, onGestureEnd }: Deck
                 faceType={deck[0].faceType}
                 conceptData={deck[0].conceptData}
                 quizitData={deck[0].quizitData}
+                onConceptTap={() => handleConceptTap(0)}
+                onViewReasoning={onViewReasoning}
+          onScoreChange={handleScoreChange}
               />
             </Pressable>
           </ScrollView>
@@ -260,6 +364,9 @@ export default function Deck({ quizitItems, onGestureStart, onGestureEnd }: Deck
               faceType={card.faceType}
               conceptData={card.conceptData}
               quizitData={card.quizitData}
+              onConceptTap={() => null}
+          onViewReasoning={onViewReasoning}
+          onScoreChange={handleScoreChange}
             />
           </Animated.View>
         ))
@@ -280,6 +387,9 @@ export default function Deck({ quizitItems, onGestureStart, onGestureEnd }: Deck
             faceType={deck[deck.length - 1].faceType}
             conceptData={deck[deck.length - 1].conceptData}
             quizitData={deck[deck.length - 1].quizitData}
+            onConceptTap={() => null}
+          onViewReasoning={onViewReasoning}
+          onScoreChange={handleScoreChange}
           />
         </Animated.View>
       )}
@@ -293,27 +403,120 @@ export default function Deck({ quizitItems, onGestureStart, onGestureEnd }: Deck
             faceType={deck[0].faceType}
             conceptData={deck[0].conceptData}
             quizitData={deck[0].quizitData}
+            onConceptTap={() => null}
+          onViewReasoning={onViewReasoning}
+          onScoreChange={handleScoreChange}
           />
         </Animated.View>
       )}
-      <View style={styles.cardIndicatorContainer}>
-        {deck.map((_: any, index: number) => (
-          <View
-            key={index}
-            style={[
-              styles.cardIndicator,
-              currentIndex === index ? styles.activeCardIndicator : null,
-            ]}
+      {/* Card Indicators and Navigation */}
+      <View style={styles.indicatorsAndNavigation}>
+        {/* Card Indicators */}
+        <View style={styles.cardIndicatorContainer}>
+          {deck.map((_: any, index: number) => {
+            const isActive = currentIndex === index;
+            
+            return (
+              <View
+                key={index}
+                style={[
+                  styles.cardIndicator,
+                  (() => {
+                    // For index 0 (quizit card), use completion state if all concept cards are done
+                    if (index === 0) {
+                      if (allConceptCardsCompleted) {
+                        return isActive ? styles.activeCompletedCardIndicator : styles.completedCardIndicator;
+                      }
+                      return isActive ? styles.activeCardIndicator : null;
+                    }
+                    
+                    // For concept cards (index > 0), find the card by its original position
+                    const cardId = positionMap[index];
+                    const card = deck.find(item => item.conceptData?.id === cardId);
+                    const isCompleted = card?.conceptData && 
+                      card.conceptData.recognitionScore !== undefined && 
+                      card.conceptData.reasoningScore !== undefined;
+                    
+                    if (isActive && isCompleted) {
+                      return styles.activeCompletedCardIndicator;
+                    } else if (isActive) {
+                      return styles.activeCardIndicator;
+                    } else if (isCompleted) {
+                      return styles.completedCardIndicator;
+                    }
+                    return null;
+                  })(),
+                ]}
+              >
+                {(() => {
+                  // For index 0 (quizit card), show completed state if all concept cards are done
+                  if (index === 0) {
+                    if (allConceptCardsCompleted) {
+                      return (
+                        <Ionicons 
+                          name="checkmark" 
+                          size={12} 
+                          color="#ffffff" 
+                        />
+                      );
+                    }
+                    return null;
+                  }
+                  
+                  // For concept cards (index > 0), find the card by its original position
+                  const cardId = positionMap[index];
+                  const card = deck.find(item => item.conceptData?.id === cardId);
+                  const state = card?.conceptData?.status || 'question';
+                  const isCompleted = card?.conceptData && 
+                    card.conceptData.recognitionScore !== undefined && 
+                    card.conceptData.reasoningScore !== undefined;
+                  
+                  return (
+                    <>
+                      {state === 'question' && !isCompleted && (
+                        <Ionicons 
+                          name="help-outline" 
+                          size={12} 
+                          color={isActive ? '#ffffff' : '#6b6b6b'} 
+                        />
+                      )}
+                      {state === 'empty' && !isCompleted && null}
+                      {(state === 'checkmark' || isCompleted) && (
+                        <Ionicons 
+                          name="checkmark" 
+                          size={12} 
+                          color={isCompleted ? '#ffffff' : (isActive ? '#ffffff' : '#6b6b6b')} 
+                        />
+                      )}
+                    </>
+                  );
+                })()}
+              </View>
+            );
+          })}
+        </View>
+
+        {/* Navigation Buttons */}
+        <View style={styles.navigationContainer}>
+          <TouchableOpacity 
+            style={styles.navButtonHitZone} 
+            onPress={() => handleLeftTap()}
+            activeOpacity={0.7}
           >
-            {index > 0 && (
-              <Ionicons 
-                name="help-outline" 
-                size={12} 
-                color={currentIndex === index ? '#ffffff' : '#6b6b6b'} 
-              />
-            )}
-          </View>
-        ))}
+            <View style={styles.navButton}>
+              <Ionicons name="chevron-back" size={12} color="#6b6b6b" />
+            </View>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.navButtonHitZone} 
+            onPress={() => handleRightTap()}
+            activeOpacity={0.7}
+          >
+            <View style={styles.navButton}>
+              <Ionicons name="chevron-forward" size={12} color="#6b6b6b" />
+            </View>
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
@@ -335,14 +538,41 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 2,
   },
-  cardIndicatorContainer: {
+  indicatorsAndNavigation: {
     position: 'absolute',
     width: '100%',
-    top: '83%', // Position right under the cards (80% + 2% gap)
+    top: '84.5%', // Position right under the cards (80% + 2% gap)
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end', // Align to bottom baseline
+    paddingLeft: 20,
+    zIndex: 100,
+  },
+  cardIndicatorContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 100,
+    gap: 8,
+    height: 24, // Match nav button height
+  },
+  navigationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 24, // Match indicator height
+  },
+  navButtonHitZone: {
+    width: 64,
+    height: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  navButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 12,
+    backgroundColor: '#d6d6d6',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   cardIndicator: {
     width: 18,
@@ -354,6 +584,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   activeCardIndicator: {
-    backgroundColor: '#6b6b6b',
+    backgroundColor: '#8b8b8b',
+  },
+  completedCardIndicator: {
+    backgroundColor: '#90EE90', // Light green
+  },
+  activeCompletedCardIndicator: {
+    backgroundColor: '#4CAF50', // Darker green
   },
 });
