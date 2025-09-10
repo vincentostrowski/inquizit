@@ -1,6 +1,6 @@
 import { View, StyleSheet, FlatList, Text, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { useCollections } from '../../../hooks/useCollections';
 import { useSearch } from '../../../hooks/useSearch';
@@ -34,23 +34,19 @@ export default function LibraryScreen() {
     clearSearch
   } = useSearch();
 
-  const { pushToNavigationStack, popFromNavigationStack, modalData, toggleEditMode, navigationStack } = useQuizitConfig();
+  const { modalData, toggleEditMode, navigationStack } = useQuizitConfig();
   const isEditMode = modalData?.isEditMode || false;
-  
-  // Show back button if there are multiple items in stack (user navigated here)
-  const shouldShowBackButton = navigationStack.length > 1 && navigationStack[-2] != 'library';
+  const [shouldShowBackButton, setShouldShowBackButton] = useState(false);
+
+  useEffect(() => {
+    setShouldShowBackButton(navigationStack.length > 0);
+  }, []);
 
   const handleBackPress = () => {
     router.back();
   };
 
-  // Navigation stack management
-  useEffect(() => {
-    pushToNavigationStack('library');
-    return () => {
-      popFromNavigationStack('library');
-    };
-  }, [pushToNavigationStack, popFromNavigationStack]);
+  // No need to push library to navigation stack - it's the default starting point
 
   const renderCollectionRow = ({ item }: { item: any }) => {
     return (
