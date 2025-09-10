@@ -39,6 +39,7 @@ interface QuizitConfigContextType {
   pushToNavigationStack: (bookId: string) => void;
   popFromNavigationStack: (bookId: string) => void;
   isCurrentlyOnBook: (bookId: string) => boolean;
+  navigateToLibraryEdit: () => void;
 }
 
 const QuizitConfigContext = createContext<QuizitConfigContextType | undefined>(undefined);
@@ -61,8 +62,6 @@ export const QuizitConfigProvider = ({ children }: QuizitConfigProviderProps) =>
   const [navigationStack, setNavigationStack] = useState<string[]>([]);
 
   const showQuizitConfig = (data: QuizitConfigData) => {
-    console.log('QuizitConfigContext - showQuizitConfig called with data:', data);
-    console.log('QuizitConfigContext - bookSelections:', data.bookSelections);
     setModalData(data);
     setShowModal(true);
   };
@@ -177,8 +176,10 @@ export const QuizitConfigProvider = ({ children }: QuizitConfigProviderProps) =>
 
   const isCurrentlyOnBook = useCallback((bookId: string) => {
     const normalizedBookId = normalizeId(bookId);
-    return navigationStack.includes(normalizedBookId);
+    return navigationStack.length > 0 && 
+           navigationStack[navigationStack.length - 1] === normalizedBookId;
   }, [navigationStack]);
+
 
   const navigateToBookEdit = useCallback((book: BookSelection) => {
     // Check if we're already on this book
@@ -214,6 +215,18 @@ export const QuizitConfigProvider = ({ children }: QuizitConfigProviderProps) =>
     }
   }, [isCurrentlyOnBook, modalData]);
 
+  const navigateToLibraryEdit = useCallback(() => {
+    // Switch to edit mode and navigate to library
+    if (modalData) {
+      setModalData({
+        ...modalData,
+        isEditMode: true
+      });
+    }
+    
+    router.push('/library');
+  }, [modalData]);
+
   return (
     <QuizitConfigContext.Provider
       value={{
@@ -233,6 +246,7 @@ export const QuizitConfigProvider = ({ children }: QuizitConfigProviderProps) =>
         pushToNavigationStack,
         popFromNavigationStack,
         isCurrentlyOnBook,
+        navigateToLibraryEdit,
       }}
     >
       {children}

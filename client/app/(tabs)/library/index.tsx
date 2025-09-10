@@ -1,7 +1,10 @@
-import { View, StyleSheet, FlatList, Text, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, FlatList, Text, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
+import { useEffect } from 'react';
+import { Ionicons } from '@expo/vector-icons';
 import { useCollections } from '../../../hooks/useCollections';
 import { useSearch } from '../../../hooks/useSearch';
+import { useQuizitConfig } from '../../../context/QuizitConfigContext';
 import LibraryHeader from '../../../components/library/LibraryHeader';
 import SearchBar from '../../../components/library/SearchBar';
 import FilterGroup from '../../../components/library/FilterGroup';
@@ -30,6 +33,24 @@ export default function LibraryScreen() {
     loadMoreResults,
     clearSearch
   } = useSearch();
+
+  const { pushToNavigationStack, popFromNavigationStack, modalData, toggleEditMode, navigationStack } = useQuizitConfig();
+  const isEditMode = modalData?.isEditMode || false;
+  
+  // Show back button if there are multiple items in stack (user navigated here)
+  const shouldShowBackButton = navigationStack.length > 1 && navigationStack[-1] != 'library';
+
+  const handleBackPress = () => {
+    router.back();
+  };
+
+  // Navigation stack management
+  useEffect(() => {
+    pushToNavigationStack('library');
+    return () => {
+      popFromNavigationStack('library');
+    };
+  }, [pushToNavigationStack, popFromNavigationStack]);
 
   const renderCollectionRow = ({ item }: { item: any }) => {
     return (
@@ -95,13 +116,24 @@ export default function LibraryScreen() {
   return (
     <SafeAreaWrapper backgroundColor="white">
       <View style={styles.container}>
-        <LibraryHeader />
-        <SearchBar 
-          value={searchQuery}
-          onChangeText={search}
-          onClear={clearSearch}
-          loading={searchLoading}
-        />
+        {!shouldShowBackButton && <LibraryHeader />}
+        <View style={styles.searchContainer}>
+          {shouldShowBackButton && (
+            <TouchableOpacity 
+              style={styles.backButton}
+              onPress={handleBackPress}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="arrow-back" size={24} color="#1D1D1F" />
+            </TouchableOpacity>
+          )}
+          <SearchBar 
+            value={searchQuery}
+            onChangeText={search}
+            onClear={clearSearch}
+            loading={searchLoading}
+          />
+        </View>
         <FilterGroup />
         
         {isSearching ? (
@@ -113,6 +145,7 @@ export default function LibraryScreen() {
             hasMore={hasMoreResults}
             onLoadMore={loadMoreResults}
             onBookPress={handleBookPress}
+            isEditMode={isEditMode}
           />
         ) : (
           <FlatList
@@ -125,6 +158,7 @@ export default function LibraryScreen() {
             ListEmptyComponent={renderEmpty}
             showsVerticalScrollIndicator={false}
             style={styles.content}
+            contentContainerStyle={isEditMode ? { paddingBottom: 150 } : undefined}
           />
         )}
       </View>
@@ -140,6 +174,29 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingTop: 8,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    width: '100%',
+    paddingHorizontal: 20,
+  },
+  backButton: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E5E5EA',
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    minHeight: 48,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   footerLoader: {
     flexDirection: 'row',

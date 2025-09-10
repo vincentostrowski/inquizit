@@ -10,7 +10,7 @@ interface CardProps {
   isSelected?: boolean;
 }
 
-export default function Card({ title, description, banner, onPress, size = 'medium', isSelected = false }: CardProps) {
+export default function Card({ title, description, banner, onPress, size = 'medium', isSelected = false }: CardProps) {                                                                                               
   const sizeStyles = getSizeStyles(size);
   
   return (

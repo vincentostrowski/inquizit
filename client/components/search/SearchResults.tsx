@@ -10,6 +10,7 @@ interface SearchResultsProps {
   hasMore: boolean;
   onLoadMore: () => void;
   onBookPress?: (book: Book) => void;
+  isEditMode?: boolean;
 }
 
 export default function SearchResults({ 
@@ -19,7 +20,8 @@ export default function SearchResults({
   error, 
   hasMore, 
   onLoadMore, 
-  onBookPress 
+  onBookPress,
+  isEditMode = false
 }: SearchResultsProps) {
   // Group books into rows of 3
   const groupBooksIntoRows = (books: Book[]): Book[][] => {
@@ -97,6 +99,7 @@ export default function SearchResults({
         ListEmptyComponent={renderEmpty}
         showsVerticalScrollIndicator={false}
         style={styles.resultsList}
+        contentContainerStyle={isEditMode ? { paddingBottom: 150 } : undefined}
       />
     </View>
   );

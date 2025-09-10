@@ -30,14 +30,11 @@ export default function QuizitConfigModal({
   onStartQuizit,
   onClose,
 }: QuizitConfigModalProps) {
-  const { modalData, toggleEditMode, getTotalCardCount, navigateToBookEdit } = useQuizitConfig();
+  const { modalData, toggleEditMode, getTotalCardCount, navigateToBookEdit, navigateToLibraryEdit } = useQuizitConfig();
   const isEditMode = modalData?.isEditMode || false;
   const bookSelections = modalData?.bookSelections || [];
   const totalCardCount = getTotalCardCount();
   
-  // Debug logging
-  console.log('QuizitConfigModal - bookSelections:', bookSelections);
-  console.log('QuizitConfigModal - modalData:', modalData);
   
   // Get current book's card count for normal mode
   const currentBookId = modalData?.bookSelections?.[0]?.bookId || '';
@@ -122,10 +119,7 @@ export default function QuizitConfigModal({
             {/* Add Book Placeholder - Always first */}
             <TouchableOpacity 
               style={styles.addBookContainer}
-              onPress={() => {
-                // TODO: Navigate to book selection
-                console.log('Add book pressed');
-              }}
+              onPress={navigateToLibraryEdit}
               activeOpacity={0.8}
             >
               <Ionicons name="add" size={20} color="#8E8E93" />

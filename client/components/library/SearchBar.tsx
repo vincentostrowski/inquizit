@@ -41,9 +41,9 @@ export default function SearchBar({ value, onChangeText, onClear, loading = fals
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 20,
     paddingVertical: 16,
     backgroundColor: '#FFFFFF',
+    flex: 1,
   },
   searchContainer: {
     flexDirection: 'row',

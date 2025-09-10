@@ -11,7 +11,7 @@ export default function LibraryHeader() {
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingTop: 32,
     backgroundColor: '#FFFFFF',
   },
   logo: {
