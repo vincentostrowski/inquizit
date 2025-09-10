@@ -21,21 +21,9 @@ export default function CardComponent({ title, isBookmarked = false, onPress, si
       activeOpacity={0.7}
     >
       <View style={styles.leftContainer}>
-        {/* Card Icon with Selection Indicator */}
+        {/* Card Icon */}
         <View style={[styles.cardIcon, sizeStyles.cardIcon]}>
-          <MiniCardIcon size={sizeStyles.iconSize} />
-          {/* Selection Overlay - Only on the mini card icon */}
-          {isSelected && (
-            <View style={[styles.selectionOverlay, sizeStyles.cardIcon]}>
-              <View style={[styles.checkmarkContainer, sizeStyles.checkmarkContainer]}>
-                <Ionicons 
-                  name="checkmark" 
-                  size={sizeStyles.checkmarkSize} 
-                  color="white" 
-                />
-              </View>
-            </View>
-          )}
+          <MiniCardIcon size={sizeStyles.iconSize} isSelected={isSelected} />
         </View>
         {/* Card Title */}
         <Text style={[styles.title, sizeStyles.title]}>{title}</Text>
@@ -68,12 +56,6 @@ const getSizeStyles = (size: 'small' | 'medium' | 'large') => {
         marginRight: 6,
       },
       iconSize: 20,
-      checkmarkSize: 12,
-      checkmarkContainer: {
-        width: 16,
-        height: 16,
-        borderRadius: 8,
-      },
       title: {
         fontSize: 12,
         lineHeight: 16,
@@ -95,12 +77,6 @@ const getSizeStyles = (size: 'small' | 'medium' | 'large') => {
         marginRight: 12,
       },
       iconSize: 28,
-      checkmarkSize: 14,
-      checkmarkContainer: {
-        width: 18,
-        height: 18,
-        borderRadius: 9,
-      },
       title: {
         fontSize: 14,
         lineHeight: 20,
@@ -121,12 +97,6 @@ const getSizeStyles = (size: 'small' | 'medium' | 'large') => {
         marginRight: 16,
       },
       iconSize: 32,
-      checkmarkSize: 16,
-      checkmarkContainer: {
-        width: 20,
-        height: 20,
-        borderRadius: 10,
-      },
       title: {
         fontSize: 16,
         lineHeight: 22,
@@ -164,21 +134,5 @@ const styles = StyleSheet.create({
   bookmarkContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  selectionOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
-    borderRadius: 4,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  checkmarkContainer: {
-    backgroundColor: '#000000',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
 });

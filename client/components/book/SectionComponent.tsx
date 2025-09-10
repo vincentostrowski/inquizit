@@ -193,8 +193,8 @@ const styles = StyleSheet.create({
   },
   selectAllButton: {
     padding: 4,
-    minWidth: 24,
-    minHeight: 24,
+    minWidth: 32,
+    minHeight: 32,
     justifyContent: 'center',
     alignItems: 'center',
   },

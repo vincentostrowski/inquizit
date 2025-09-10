@@ -53,11 +53,7 @@ export default function Card({ title, description, banner, onPress, size = 'medi
       
       {/* Selection Overlay */}
       {isSelected && (
-        <View style={[styles.selectionOverlay, sizeStyles.selectionOverlay] as any}>
-          <View style={[styles.checkmarkContainer, sizeStyles.checkmarkContainer] as any}>
-            <Ionicons name="checkmark" size={sizeStyles.checkmarkIcon.size} color="white" />
-          </View>
-        </View>
+        <View style={[styles.selectionOverlay, sizeStyles.selectionOverlay] as any} />
       )}
     </TouchableOpacity>
   );
@@ -106,24 +102,6 @@ const getSizeStyles = (size: 'small' | 'medium' | 'large') => {
         bottom: 0,
         backgroundColor: 'rgba(0, 0, 0, 0.2)',
         borderRadius: 8,
-        justifyContent: 'center',
-        alignItems: 'center',
-      },
-      checkmarkContainer: {
-        width: 24,
-        height: 24,
-        borderRadius: 12,
-        backgroundColor: '#000000',
-        justifyContent: 'center',
-        alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.3,
-        shadowRadius: 4,
-        elevation: 4,
-      },
-      checkmarkIcon: {
-        size: 14,
       },
     },
     medium: {
@@ -167,24 +145,6 @@ const getSizeStyles = (size: 'small' | 'medium' | 'large') => {
         bottom: 0,
         backgroundColor: 'rgba(0, 0, 0, 0.2)',
         borderRadius: 10,
-        justifyContent: 'center',
-        alignItems: 'center',
-      },
-      checkmarkContainer: {
-        width: 28,
-        height: 28,
-        borderRadius: 14,
-        backgroundColor: '#000000',
-        justifyContent: 'center',
-        alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.3,
-        shadowRadius: 4,
-        elevation: 4,
-      },
-      checkmarkIcon: {
-        size: 16,
       },
     },
     large: {
@@ -229,24 +189,6 @@ const getSizeStyles = (size: 'small' | 'medium' | 'large') => {
         bottom: 0,
         backgroundColor: 'rgba(0, 0, 0, 0.2)',
         borderRadius: 14,
-        justifyContent: 'center',
-        alignItems: 'center',
-      },
-      checkmarkContainer: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        backgroundColor: '#000000',
-        justifyContent: 'center',
-        alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.3,
-        shadowRadius: 4,
-        elevation: 4,
-      },
-      checkmarkIcon: {
-        size: 18,
       },
     },
   };
@@ -315,12 +257,5 @@ const styles = StyleSheet.create({
     bottom: 0,
     backgroundColor: 'rgba(0, 0, 0, 0.2)',
     borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  checkmarkContainer: {
-    backgroundColor: '#000000',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
 });

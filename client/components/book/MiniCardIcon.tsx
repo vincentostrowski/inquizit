@@ -3,9 +3,10 @@ import { View, Text, StyleSheet } from 'react-native';
 
 interface MiniCardIconProps {
   size?: number;
+  isSelected?: boolean;
 }
 
-export default function MiniCardIcon({ size = 20 }: MiniCardIconProps) {
+export default function MiniCardIcon({ size = 20, isSelected = false }: MiniCardIconProps) {
   return (
     <View style={[styles.miniCard, { width: size, height: size }]}>
       {/* Mini Cover */}
@@ -17,6 +18,11 @@ export default function MiniCardIcon({ size = 20 }: MiniCardIconProps) {
       <View style={styles.miniDescription} />
       <View style={styles.miniDescription} />
       <View style={styles.miniDescription} />
+      
+      {/* Selection Overlay */}
+      {isSelected && (
+        <View style={[styles.selectionOverlay, { width: size, height: size }]} />
+      )}
     </View>
   );
 }
@@ -57,5 +63,12 @@ const styles = StyleSheet.create({
     borderRadius: 0.5,
     marginBottom: 1,
     opacity: 0.5,
+  },
+  selectionOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+    borderRadius: 2,
   },
 });

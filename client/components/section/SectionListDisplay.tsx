@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { includesId } from '../../utils/idUtils';
 import CardComponent from '../common/CardComponent';
+import { includesId } from '../../utils/idUtils';
 
 interface Card {
   id: string;
