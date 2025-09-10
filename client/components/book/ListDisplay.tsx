@@ -21,10 +21,14 @@ interface ListDisplayProps {
   onCardPress?: (card: Card) => void;
   bookId?: string;
   bookTitle?: string;
+  bookCover?: string;
   headerColor?: string;
   backgroundEndColor?: string;
   buttonTextBorderColor?: string;
   buttonCircleColor?: string;
+  isEditMode?: boolean;
+  selectedCardIds?: string[];
+  onCardSelection?: (cardId: string) => void;
 }
 
 export default function ListDisplay({ 
@@ -32,21 +36,15 @@ export default function ListDisplay({
   onCardPress, 
   bookId, 
   bookTitle, 
+  bookCover,
   headerColor, 
   backgroundEndColor,
   buttonTextBorderColor, 
-  buttonCircleColor 
+  buttonCircleColor,
+  isEditMode = false,
+  selectedCardIds = [],
+  onCardSelection
 }: ListDisplayProps) {
-  const calculateProgress = (section: Section) => {
-    // For now, we'll calculate progress based on card count
-    // In a real app, this might be based on completion status
-    const totalCards = section.cards.length;
-    if (totalCards === 0) return 0;
-    
-    // Mock progress calculation - in reality this would be based on user progress
-    // For now, we'll show a random progress between 0-100%
-    return Math.floor(Math.random() * 101);
-  };
 
   const handleSectionPress = (section: Section) => {
     router.push({
@@ -56,6 +54,7 @@ export default function ListDisplay({
         sectionTitle: section.title,
         bookId: bookId || '',
         bookTitle: bookTitle || '',
+        bookCover: bookCover || '',
         headerColor: headerColor || '#1D1D1F',
         backgroundEndColor: backgroundEndColor || '#1E40AF',
         buttonTextBorderColor: buttonTextBorderColor || '#FFFFFF',
@@ -88,9 +87,11 @@ export default function ListDisplay({
           <SectionComponent
             key={section.id}
             title={section.title}
-            progressPercentage={calculateProgress(section)}
             cards={transformCards(section)}
             onPress={() => handleSectionPress(section)}
+            isEditMode={isEditMode}
+            selectedCardIds={selectedCardIds}
+            onCardSelection={onCardSelection}
           />
         ))}
       </View>

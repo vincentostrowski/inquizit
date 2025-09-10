@@ -149,7 +149,6 @@ function QuizitScreenContent() {
     // Check if the user has scrolled to the bottom
     if (layoutMeasurement.height + contentOffset.y >= contentSize.height - 20) {
       // Could add more decks here in the future
-      console.log('Reached bottom of scroll');
     }
   };
 

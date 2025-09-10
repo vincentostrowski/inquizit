@@ -1,18 +1,58 @@
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { includesId } from '../../utils/idUtils';
 import { useViewMode } from '../../context/ViewModeContext';
 
 interface DisplayToggleProps {
-  // No props needed - using global context
+  filterMode: 'all' | 'saved';
+  setFilterMode: (mode: 'all' | 'saved') => void;
+  isEditMode?: boolean;
+  selectedCardIds?: string[];
+  allCardIds?: string[];
+  onSelectAll?: () => void;
+  loading?: boolean;
 }
 
-export default function DisplayToggle({}: DisplayToggleProps) {
+export default function DisplayToggle({ 
+  filterMode, 
+  setFilterMode, 
+  isEditMode = false, 
+  selectedCardIds = [], 
+  allCardIds = [], 
+  onSelectAll,
+  loading = false
+}: DisplayToggleProps) {
   const { viewMode, setViewMode } = useViewMode();
+  
+  // Check if all cards are selected
+  const allCardsSelected = allCardIds.length > 0 && allCardIds.every(cardId => includesId(selectedCardIds, cardId));
+  
   return (
     <View style={styles.container}>
-      <View style={styles.placeholder} />
-      
-      <View style={styles.controls}>
+      {/* Left side: Filter and View toggles */}
+      <View style={styles.leftSection}>
+        {/* All/Saved Filter Toggle */}
+        <View style={styles.filterToggle}>
+          <TouchableOpacity 
+            onPress={() => setFilterMode('all')} 
+            style={[styles.filterButton, filterMode === 'all' && styles.activeFilterButton]}
+          >
+            <Text style={[styles.filterText, filterMode === 'all' && styles.activeFilterText]}>All</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            onPress={() => setFilterMode('saved')} 
+            style={[styles.filterButton, filterMode === 'saved' && styles.activeFilterButton]}
+          >
+            <Text style={[styles.filterText, filterMode === 'saved' && styles.activeFilterText]}>Saved</Text>
+          </TouchableOpacity>
+        </View>
+        
+        {/* Vertical Line */}
+        <View style={styles.verticalLine} />
+        
+        {/* View Mode Toggle */}
+        <View style={styles.controls}>
         {/* Card View Button */}
         <TouchableOpacity 
           onPress={() => setViewMode('cards')} 
@@ -35,7 +75,17 @@ export default function DisplayToggle({}: DisplayToggleProps) {
             <View style={[styles.iconLine, viewMode === 'list' && styles.activeIconLine]} />
           </View>
         </TouchableOpacity>
+        </View>
       </View>
+      
+      {/* Select All Button - Only show in edit mode, when not loading, and when data is available */}
+      {isEditMode && onSelectAll && !loading && allCardIds.length > 0 && (
+        <TouchableOpacity onPress={onSelectAll} style={styles.selectAllButton}>
+          <Text style={[styles.selectAllText, allCardsSelected && styles.selectAllTextSelected]}>
+            {allCardsSelected ? "Deselect All" : "Select All"}
+          </Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -49,8 +99,38 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     backgroundColor: '#FFFFFF',
   },
-  placeholder: {
-    flex: 1,
+  leftSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  filterToggle: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  filterButton: {
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 28,
+  },
+  activeFilterButton: {
+    // No background color
+  },
+  filterText: {
+    fontSize: 12,
+    color: '#8E8E93',
+    fontWeight: '400',
+  },
+  activeFilterText: {
+    color: '#1D1D1F',
+    fontWeight: '500',
+  },
+  verticalLine: {
+    width: 1,
+    height: 20,
+    backgroundColor: '#E5E5EA',
+    marginHorizontal: 16,
   },
   controls: {
     flexDirection: 'row',
@@ -92,5 +172,19 @@ const styles = StyleSheet.create({
   },
   activeIconLine: {
     backgroundColor: '#1D1D1F',
+  },
+  selectAllButton: {
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 6,
+    backgroundColor: '#F2F2F7',
+  },
+  selectAllText: {
+    fontSize: 12,
+    color: '#8E8E93',
+    fontWeight: '500',
+  },
+  selectAllTextSelected: {
+    color: '#8E8E93',
   },
 });

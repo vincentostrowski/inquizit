@@ -1,6 +1,7 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useBookDetails } from '../../../hooks/useBookDetails';
+import { useQuizitConfig } from '../../../context/QuizitConfigContext';
 import ContentHeader from '../../../components/common/ContentHeader';
 import GradientBackground from '../../../components/common/GradientBackground';
 import Card from '../../../components/common/Card';
@@ -13,6 +14,8 @@ export default function CardScreen() {
     cardId, 
     cardTitle, 
     bookId, 
+    bookTitle,
+    bookCover,
     headerColor, 
     backgroundEndColor,
     buttonTextBorderColor, 
@@ -20,6 +23,7 @@ export default function CardScreen() {
   } = useLocalSearchParams();
   
   const { bookDetails, loading, error } = useBookDetails(bookId);
+  const { showQuizitConfig } = useQuizitConfig();
   // Find the specific card data
   const cardData = (() => {
     if (!bookDetails || !(bookDetails as any).sections) return null;
@@ -54,11 +58,18 @@ export default function CardScreen() {
   };
 
   const handleStartQuizit = () => {
-    router.push({
-      pathname: '/quizit',
-      params: { 
-        quizitId: cardId,
-        quizitType: 'card'
+    showQuizitConfig({
+      screenType: 'card',
+      bookCover: bookCover as string,
+      title: bookDetails?.book?.title || (bookTitle as string) || 'Unknown Book',
+      onStartQuizit: () => {
+        router.push({
+          pathname: '/quizit',
+          params: { 
+            quizitId: cardId,
+            quizitType: 'card'
+          }
+        });
       }
     });
   };

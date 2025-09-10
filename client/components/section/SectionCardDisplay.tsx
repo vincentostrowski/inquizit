@@ -1,4 +1,5 @@
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { includesId } from '../../utils/idUtils';
 import Card from '../common/Card';
 
 interface CardData {
@@ -11,9 +12,18 @@ interface CardData {
 interface SectionCardDisplayProps {
   cards: CardData[];
   onCardPress?: (card: CardData) => void;
+  isEditMode?: boolean;
+  selectedCardIds?: string[];
+  onCardSelection?: (cardId: string) => void;
 }
 
-export default function SectionCardDisplay({ cards, onCardPress }: SectionCardDisplayProps) {
+export default function SectionCardDisplay({ 
+  cards, 
+  onCardPress, 
+  isEditMode = false, 
+  selectedCardIds = [], 
+  onCardSelection 
+}: SectionCardDisplayProps) {
   if (!cards || cards.length === 0) {
     return (
       <View style={styles.emptyContainer}>
@@ -21,6 +31,9 @@ export default function SectionCardDisplay({ cards, onCardPress }: SectionCardDi
       </View>
     );
   }
+
+  console.log('Selected card IDs:', selectedCardIds);
+  console.log('Cards:', cards);
 
   return (
     <ScrollView 
@@ -35,8 +48,15 @@ export default function SectionCardDisplay({ cards, onCardPress }: SectionCardDi
           title={card.title}
           description={card.description}
           banner={card.banner}
-          onPress={() => onCardPress?.(card)}
+          onPress={() => {
+            if (isEditMode && onCardSelection) {
+              onCardSelection(card.id);
+            } else {
+              onCardPress?.(card);
+            }
+          }}
           size="medium"
+          isSelected={includesId(selectedCardIds, card.id)}
         />
       ))}
     </ScrollView>

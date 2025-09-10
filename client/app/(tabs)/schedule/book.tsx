@@ -147,6 +147,7 @@ export default function BookScreen() {
                   onCardPress={handleCardPress}
                   bookId={bookId as string}
                   bookTitle={bookTitle as string}
+                  bookCover={bookCover as string}
                   headerColor={headerColor as string || bookDetails.book.header_color}
                   backgroundEndColor={backgroundEndColor as string || bookDetails.book.background_end_color}
                   buttonTextBorderColor={buttonTextBorderColor as string || bookDetails.book.button_text_border_color}
@@ -158,6 +159,7 @@ export default function BookScreen() {
                   onCardPress={handleCardPress}
                   bookId={bookId as string}
                   bookTitle={bookTitle as string}
+                  bookCover={bookCover as string}
                   headerColor={headerColor as string || bookDetails.book.header_color}
                   backgroundEndColor={backgroundEndColor as string || bookDetails.book.background_end_color}
                   buttonTextBorderColor={buttonTextBorderColor as string || bookDetails.book.button_text_border_color}

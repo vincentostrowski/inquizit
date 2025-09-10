@@ -10,6 +10,7 @@ interface ContentHeaderProps {
   headerColor?: string;
   buttonTextBorderColor?: string;
   buttonCircleColor?: string;
+  isEditMode?: boolean;
 }
 
 export default function ContentHeader({ 
@@ -20,6 +21,7 @@ export default function ContentHeader({
   headerColor = 'green',
   buttonTextBorderColor = 'green',
   buttonCircleColor = 'green',
+  isEditMode = false,
 }: ContentHeaderProps) {
 
   const insets = useSafeAreaInsets();
@@ -37,7 +39,15 @@ export default function ContentHeader({
         </TouchableOpacity>
         
         <View style={styles.buttons}>
-          <TouchableOpacity style={[styles.button, { borderColor: buttonTextBorderColor }]} onPress={onStartQuizit}>
+          <TouchableOpacity 
+            style={[
+              styles.button, 
+              { borderColor: buttonTextBorderColor },
+              isEditMode && styles.disabledButton
+            ]} 
+            onPress={isEditMode ? undefined : onStartQuizit}
+            disabled={isEditMode}
+          >
             <View style={[styles.buttonCircle, { backgroundColor: buttonCircleColor }]}>
               <Ionicons name="document-text" size={16} color={headerColor} />
             </View>
@@ -46,7 +56,15 @@ export default function ContentHeader({
             </Text>
           </TouchableOpacity>
           
-          <TouchableOpacity style={[styles.button, styles.disabledButton, { borderColor: buttonTextBorderColor }]} onPress={onCheckConflicts}>
+          <TouchableOpacity 
+            style={[
+              styles.button, 
+              { borderColor: buttonTextBorderColor },
+              isEditMode && styles.disabledButton
+            ]} 
+            onPress={isEditMode ? undefined : onCheckConflicts}
+            disabled={isEditMode}
+          >
             <View style={[styles.buttonCircle, { backgroundColor: buttonCircleColor }]}>
               <Ionicons name="warning" size={16} color={headerColor} />
             </View>
@@ -55,7 +73,15 @@ export default function ContentHeader({
             </Text>
           </TouchableOpacity>
           
-          <TouchableOpacity style={[styles.button, styles.disabledButton, { borderColor: buttonTextBorderColor }]} onPress={onViewPastQuizits}>
+          <TouchableOpacity 
+            style={[
+              styles.button, 
+              { borderColor: buttonTextBorderColor },
+              isEditMode && styles.disabledButton
+            ]} 
+            onPress={isEditMode ? undefined : onViewPastQuizits}
+            disabled={isEditMode}
+          >
             <View style={[styles.buttonCircle, { backgroundColor: buttonCircleColor }]}>
               <Ionicons name="refresh" size={16} color={headerColor} />
             </View>
@@ -104,7 +130,7 @@ const styles = StyleSheet.create({
     paddingRight: 16,
   },
   disabledButton: {
-    opacity: 0.5,
+    opacity: 0.2,
   },
   buttonCircle: {
     width: 32,

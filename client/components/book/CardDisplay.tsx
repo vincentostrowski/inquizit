@@ -20,10 +20,15 @@ interface CardDisplayProps {
   onCardPress?: (card: Card) => void;
   bookId?: string;
   bookTitle?: string;
+  bookCover?: string;
   headerColor?: string;
   backgroundEndColor?: string;
   buttonTextBorderColor?: string;
   buttonCircleColor?: string;
+  isEditMode?: boolean;
+  selectedCardIds?: string[];
+  onCardSelection?: (cardId: string) => void;
+  onSelectAll?: (cardIds: string[]) => void;
 }
 
 export default function CardDisplay({ 
@@ -31,10 +36,15 @@ export default function CardDisplay({
   onCardPress, 
   bookId, 
   bookTitle, 
+  bookCover,
   headerColor, 
   backgroundEndColor,
   buttonTextBorderColor, 
-  buttonCircleColor 
+  buttonCircleColor,
+  isEditMode = false,
+  selectedCardIds = [],
+  onCardSelection,
+  onSelectAll
 }: CardDisplayProps) {
   const handleSectionPress = (section: Section) => {
     router.push({
@@ -44,6 +54,7 @@ export default function CardDisplay({
         sectionTitle: section.title,
         bookId: bookId || '',
         bookTitle: bookTitle || '',
+        bookCover: bookCover || '',
         headerColor: headerColor || '#1D1D1F',
         backgroundEndColor: backgroundEndColor || '#1E40AF',
         buttonTextBorderColor: buttonTextBorderColor || '#FFFFFF',
@@ -66,6 +77,10 @@ export default function CardDisplay({
           }))}
           onCardPress={onCardPress}
           onSectionPress={() => handleSectionPress(section)}
+          isEditMode={isEditMode}
+          selectedCardIds={selectedCardIds}
+          onCardSelection={onCardSelection}
+          onSelectAll={onSelectAll}
         />
       ))}
     </View>

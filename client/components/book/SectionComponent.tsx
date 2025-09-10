@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { includesId } from '../../utils/idUtils';
 import CardComponent from '../common/CardComponent';
 
 interface Card {
@@ -10,12 +12,21 @@ interface Card {
 
 interface SectionComponentProps {
   title: string;
-  progressPercentage: number;
   cards?: Card[];
   onPress: () => void;
+  isEditMode?: boolean;
+  selectedCardIds?: string[];
+  onCardSelection?: (cardId: string) => void;
 }
 
-export default function SectionComponent({ title, progressPercentage, cards = [], onPress }: SectionComponentProps) {
+export default function SectionComponent({ 
+  title, 
+  cards = [], 
+  onPress, 
+  isEditMode = false, 
+  selectedCardIds = [], 
+  onCardSelection 
+}: SectionComponentProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const handleTogglePress = () => {
@@ -23,9 +34,37 @@ export default function SectionComponent({ title, progressPercentage, cards = []
   };
 
   const handleCardPress = (card: Card) => {
-    console.log('Card pressed:', card.title);
+    if (isEditMode && onCardSelection) {
+      onCardSelection(card.id);
+    } else {
+      onCardPress(card);
+    }
   };
-  if (isExpanded) {
+
+  // Select All logic for this section
+  const sectionCardIds = cards.map(card => card.id);
+  const allCardsSelected = sectionCardIds.length > 0 && sectionCardIds.every(cardId => includesId(selectedCardIds, cardId));
+  
+  const handleSelectAll = () => {
+    if (!onCardSelection) return;
+    
+    if (allCardsSelected) {
+      // Deselect all cards in this section
+      sectionCardIds.forEach(cardId => {
+        if (includesId(selectedCardIds, cardId)) {
+          onCardSelection(cardId);
+        }
+      });
+    } else {
+      // Select all unselected cards in this section
+      sectionCardIds.forEach(cardId => {
+        if (!includesId(selectedCardIds, cardId)) {
+          onCardSelection(cardId);
+        }
+      });
+    }
+  };
+  if (isExpanded || isEditMode) {
     return (
       <View style={styles.sectionContainer}>
         {/* Expanded Container */}
@@ -37,27 +76,32 @@ export default function SectionComponent({ title, progressPercentage, cards = []
           >
             <Text style={styles.title}>{title}</Text>
             <View style={styles.rightContainer}>
-              {/* Progress Bar */}
-              <View style={styles.progressBarContainer}>
-                <View 
-                  style={[
-                    styles.progressBar,
-                    { width: `${progressPercentage}%` }
-                  ]}
-                />
-              </View>
-              {/* Triangle Toggle */}
-              <TouchableOpacity 
-                style={styles.triangleContainer}
-                onPress={handleTogglePress}
-                activeOpacity={0.5}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              >
-                <View style={[
-                  styles.triangle,
-                  { transform: [{ rotate: '180deg' }] }
-                ]} />
-              </TouchableOpacity>
+              {/* Selection Toggle - Show in edit mode, otherwise show triangle toggle */}
+              {isEditMode && onCardSelection ? (
+                <TouchableOpacity 
+                  onPress={handleSelectAll} 
+                  style={styles.selectAllButton}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons 
+                    name={allCardsSelected ? "checkmark" : "square-outline"} 
+                    size={14} 
+                    color={allCardsSelected ? "black" : "#8E8E93"} 
+                  />
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity 
+                  style={styles.triangleContainer}
+                  onPress={handleTogglePress}
+                  activeOpacity={0.5}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                  <View style={[
+                    styles.triangle,
+                    { transform: [{ rotate: '180deg' }] }
+                  ]} />
+                </TouchableOpacity>
+              )}
             </View>
           </TouchableOpacity>
           
@@ -70,6 +114,7 @@ export default function SectionComponent({ title, progressPercentage, cards = []
                 isBookmarked={card.isBookmarked}
                 onPress={() => handleCardPress(card)}
                 size="small"
+                isSelected={includesId(selectedCardIds, card.id)}
               />
             ))}
           </View>
@@ -88,15 +133,6 @@ export default function SectionComponent({ title, progressPercentage, cards = []
       >
         <Text style={styles.title}>{title}</Text>
         <View style={styles.rightContainer}>
-          {/* Progress Bar */}
-          <View style={styles.progressBarContainer}>
-            <View 
-              style={[
-                styles.progressBar,
-                { width: `${progressPercentage}%` }
-              ]}
-            />
-          </View>
           {/* Triangle Toggle */}
           <TouchableOpacity 
             style={styles.triangleContainer}
@@ -155,17 +191,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
   },
-  progressBarContainer: {
-    width: 32,
-    height: 2,
-    backgroundColor: '#D1D1D6',
-    borderRadius: 1,
-    overflow: 'hidden',
-  },
-  progressBar: {
-    height: '100%',
-    backgroundColor: '#8E8E93',
-    borderRadius: 1,
+  selectAllButton: {
+    padding: 4,
+    minWidth: 24,
+    minHeight: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   triangleContainer: {
     padding: 8, // Increased padding for better touch target

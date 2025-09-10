@@ -1,6 +1,9 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { useState, useEffect } from 'react';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useBookDetails } from '../../../hooks/useBookDetails';
+import { useQuizitConfig } from '../../../context/QuizitConfigContext';
+import { normalizeId, compareIds } from '../../../utils/idUtils';
 import ContentHeader from '../../../components/common/ContentHeader';
 import GradientBackground from '../../../components/common/GradientBackground';
 import Card from '../../../components/common/Card';
@@ -13,6 +16,8 @@ export default function CardScreen() {
     cardId, 
     cardTitle, 
     bookId, 
+    bookTitle,
+    bookCover,
     headerColor, 
     backgroundEndColor,
     buttonTextBorderColor, 
@@ -20,6 +25,8 @@ export default function CardScreen() {
   } = useLocalSearchParams();
   
   const { bookDetails, loading, error } = useBookDetails(bookId);
+  const { showQuizitConfig } = useQuizitConfig();
+
   // Find the specific card data
   const cardData = (() => {
     if (!bookDetails || !(bookDetails as any).sections) return null;
@@ -27,13 +34,11 @@ export default function CardScreen() {
     // Search through all sections for the card
     for (const section of (bookDetails as any).sections) {
       const card = section.cards?.find((card: any) => 
-        card.id === cardId || 
-        card.id === String(cardId) || 
-        String(card.id) === cardId
+        compareIds(card.id, cardId)
       );
       if (card) {
         return {
-          id: card.id,
+          id: normalizeId(card.id),
           title: card.title || (cardTitle as string) || 'Unknown Card',
           description: card.description || '',
           content: card.content || '',
@@ -54,25 +59,46 @@ export default function CardScreen() {
   };
 
   const handleStartQuizit = () => {
-    router.push({
-      pathname: '/quizit',
-      params: { 
-        quizitId: cardId,
-        quizitType: 'card',
-        quizitTitle: cardTitle
+    showQuizitConfig({
+      screenType: 'card',
+      bookCover: bookCover as string,
+      title: bookTitle as string,
+      isEditMode: false,
+      currentBookId: bookId as string,
+      bookSelections: [{
+        bookId: bookId as string,
+        bookTitle: bookTitle as string,
+        bookCover: bookCover as string,
+        selectedCardIds: [cardId as string],
+        headerColor: headerColor as string || (bookDetails && (bookDetails as any).book ? (bookDetails as any).book.header_color : undefined) || 'green',
+        backgroundEndColor: backgroundEndColor as string || (bookDetails && (bookDetails as any).book ? (bookDetails as any).book.background_end_color : undefined) || 'green',
+        buttonTextBorderColor: buttonTextBorderColor as string || (bookDetails && (bookDetails as any).book ? (bookDetails as any).book.button_text_border_color : undefined) || 'green',
+        buttonCircleColor: buttonCircleColor as string || (bookDetails && (bookDetails as any).book ? (bookDetails as any).book.button_circle_color : undefined) || 'green'
+      }],
+      onStartQuizit: () => {
+        router.push({
+          pathname: '/quizit',
+          params: { 
+            quizitId: cardId,
+            quizitType: 'card',
+            quizitTitle: cardTitle as string
+          }
+        });
       }
     });
   };
 
   const handleCheckConflicts = () => {
     // TODO: Implement check conflicts functionality
-    console.log('Check conflicts for card:', cardId);
   };
 
   const handleViewPastQuizits = () => {
     // TODO: Navigate to past quizits screen
-    console.log('View past quizits for card:', cardId);
   };
+
+  // Get modal data for edit mode
+  const { modalData } = useQuizitConfig();
+  const isEditMode = modalData?.isEditMode || false;
 
   return (
     <View style={styles.container}>
@@ -84,11 +110,18 @@ export default function CardScreen() {
         headerColor={headerColor as string || (bookDetails && (bookDetails as any).book ? (bookDetails as any).book.header_color : undefined) || '#1D1D1F'}
         buttonTextBorderColor={buttonTextBorderColor as string || (bookDetails && (bookDetails as any).book ? (bookDetails as any).book.button_text_border_color : undefined) || '#FFFFFF'}
         buttonCircleColor={buttonCircleColor as string || (bookDetails && (bookDetails as any).book ? (bookDetails as any).book.button_circle_color : undefined) || '#FFFFFF'}
+        isEditMode={isEditMode}
       />
       
       <View style={[styles.growingArea, { backgroundColor: headerColor as string || (bookDetails && (bookDetails as any).book ? (bookDetails as any).book.header_color : undefined) || '#1D1D1F' }]} />
       
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.content}
+        contentContainerStyle={[
+          isEditMode && { paddingBottom: 150 }
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Card Display - Skeleton or Real */}
         {loading ? (
           <SkeletonCardDisplay

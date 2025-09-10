@@ -2,6 +2,7 @@ import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-nat
 import { useLocalSearchParams, router } from 'expo-router';
 import { useViewMode } from '../../../context/ViewModeContext';
 import { useBookDetails } from '../../../hooks/useBookDetails';
+import { useQuizitConfig } from '../../../context/QuizitConfigContext';
 import ContentHeader from '../../../components/common/ContentHeader';
 import SectionDisplay from '../../../components/section/SectionDisplay';
 import ContentDescription from '../../../components/common/ContentDescription';
@@ -19,6 +20,7 @@ export default function SectionScreen() {
     sectionTitle, 
     bookId, 
     bookTitle, 
+    bookCover,
     headerColor, 
     backgroundEndColor,
     buttonTextBorderColor, 
@@ -26,17 +28,25 @@ export default function SectionScreen() {
   } = useLocalSearchParams();
   const { viewMode, setViewMode } = useViewMode();
   const { bookDetails, loading, error } = useBookDetails(bookId);
+  const { showQuizitConfig } = useQuizitConfig();
 
   const handleBack = () => {
     router.back();
   };
 
   const handleStartQuizit = () => {
-    router.push({
-      pathname: '/quizit',
-      params: { 
-        quizitId: sectionId,
-        quizitType: 'section'
+    showQuizitConfig({
+      screenType: 'section',
+      bookCover: bookCover as string,
+      title: bookTitle as string,
+      onStartQuizit: () => {
+        router.push({
+          pathname: '/quizit',
+          params: { 
+            quizitId: sectionId,
+            quizitType: 'section'
+          }
+        });
       }
     });
   };
@@ -59,6 +69,7 @@ export default function SectionScreen() {
         sectionTitle,
         bookId,
         bookTitle,
+        bookCover,
         headerColor: headerColor as string || bookDetails?.book?.header_color || '#1D1D1F',
         backgroundEndColor: backgroundEndColor as string || bookDetails?.book?.background_end_color || '#1E40AF',
         buttonTextBorderColor: buttonTextBorderColor as string || bookDetails?.book?.button_text_border_color || '#FFFFFF',

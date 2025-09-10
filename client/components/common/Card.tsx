@@ -1,4 +1,5 @@
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 interface CardProps {
   title: string;
@@ -6,9 +7,10 @@ interface CardProps {
   banner?: string;
   onPress?: () => void;
   size?: 'small' | 'medium' | 'large';
+  isSelected?: boolean;
 }
 
-export default function Card({ title, description, banner, onPress, size = 'medium' }: CardProps) {
+export default function Card({ title, description, banner, onPress, size = 'medium', isSelected = false }: CardProps) {
   const sizeStyles = getSizeStyles(size);
   
   return (
@@ -48,6 +50,15 @@ export default function Card({ title, description, banner, onPress, size = 'medi
       <View style={[styles.badgeContainer, sizeStyles.badgeContainer]}>
         <Text style={[styles.badgeText, sizeStyles.badgeText]}>Inquizit</Text>
       </View>
+      
+      {/* Selection Overlay */}
+      {isSelected && (
+        <View style={[styles.selectionOverlay, sizeStyles.selectionOverlay] as any}>
+          <View style={[styles.checkmarkContainer, sizeStyles.checkmarkContainer] as any}>
+            <Ionicons name="checkmark" size={sizeStyles.checkmarkIcon.size} color="white" />
+          </View>
+        </View>
+      )}
     </TouchableOpacity>
   );
 }
@@ -87,6 +98,33 @@ const getSizeStyles = (size: 'small' | 'medium' | 'large') => {
         paddingHorizontal: 6,
         paddingVertical: 2,
       },
+      selectionOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.2)',
+        borderRadius: 8,
+        justifyContent: 'center',
+        alignItems: 'center',
+      },
+      checkmarkContainer: {
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        backgroundColor: '#000000',
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        elevation: 4,
+      },
+      checkmarkIcon: {
+        size: 14,
+      },
     },
     medium: {
       container: {
@@ -120,6 +158,33 @@ const getSizeStyles = (size: 'small' | 'medium' | 'large') => {
         fontSize: 8, // 3.33% of height (like small: 6/184 = 3.26%)
         paddingHorizontal: 8, // 3.33% of height (like small: 6/184 = 3.26%)
         paddingVertical: 3, // 1.25% of height (like small: 2/184 = 1.09%)
+      },
+      selectionOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.2)',
+        borderRadius: 10,
+        justifyContent: 'center',
+        alignItems: 'center',
+      },
+      checkmarkContainer: {
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        backgroundColor: '#000000',
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        elevation: 4,
+      },
+      checkmarkIcon: {
+        size: 16,
       },
     },
     large: {
@@ -155,6 +220,33 @@ const getSizeStyles = (size: 'small' | 'medium' | 'large') => {
         fontSize: 10, // 3.13% of height (like small: 6/184 = 3.26%)
         paddingHorizontal: 10, // 3.13% of height (like small: 6/184 = 3.26%)
         paddingVertical: 3, // 0.94% of height (like small: 2/184 = 1.09%)
+      },
+      selectionOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.2)',
+        borderRadius: 14,
+        justifyContent: 'center',
+        alignItems: 'center',
+      },
+      checkmarkContainer: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: '#000000',
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        elevation: 4,
+      },
+      checkmarkIcon: {
+        size: 18,
       },
     },
   };
@@ -214,5 +306,21 @@ const styles = StyleSheet.create({
   badgeText: {
     fontWeight: '400',
     color: '#6B7280',
+  },
+  selectionOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkmarkContainer: {
+    backgroundColor: '#000000',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

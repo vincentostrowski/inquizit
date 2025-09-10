@@ -1,20 +1,37 @@
 import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { includesId } from '../../utils/idUtils';
 import { useViewMode } from '../../context/ViewModeContext';
-import { useState } from 'react';
-
 interface BookDisplayToggleProps {
-  // No props needed - using global context
+  filterMode: 'all' | 'main' | 'saved';
+  setFilterMode: (mode: 'all' | 'main' | 'saved') => void;
+  isEditMode?: boolean;
+  selectedCardIds?: string[];
+  allCardIds?: string[];
+  onSelectAll?: () => void;
+  loading?: boolean;
 }
 
-export default function BookDisplayToggle({}: BookDisplayToggleProps) {
+export default function BookDisplayToggle({ 
+  filterMode, 
+  setFilterMode, 
+  isEditMode = false, 
+  selectedCardIds = [], 
+  allCardIds = [], 
+  onSelectAll,
+  loading = false
+}: BookDisplayToggleProps) {
   const { viewMode, setViewMode } = useViewMode();
-  const [filterMode, setFilterMode] = useState<'all' | 'main' | 'saved'>('all');
+  
+  // Check if all cards are selected
+  const allCardsSelected = allCardIds.length > 0 && allCardIds.every(cardId => includesId(selectedCardIds, cardId));
   
   return (
     <View style={styles.container}>
-      {/* All/Main/Saved Filter Toggle */}
-      <View style={styles.filterToggle}>
+      {/* Left side: Filter and View toggles */}
+      <View style={styles.leftSection}>
+        {/* All/Main/Saved Filter Toggle */}
+        <View style={styles.filterToggle}>
         <TouchableOpacity 
           onPress={() => setFilterMode('all')} 
           style={[styles.filterButton, filterMode === 'all' && styles.activeFilterButton]}
@@ -59,6 +76,16 @@ export default function BookDisplayToggle({}: BookDisplayToggleProps) {
           <View style={[styles.iconLine, viewMode === 'list' && styles.activeIconLine]} />
         </View>
       </TouchableOpacity>
+      </View>
+      
+      {/* Select All Button - Only show in edit mode, when not loading, and when data is available */}
+      {isEditMode && onSelectAll && !loading && allCardIds.length > 0 && (
+        <TouchableOpacity onPress={onSelectAll} style={styles.selectAllButton}>
+          <Text style={[styles.selectAllText, allCardsSelected && styles.selectAllTextSelected]}>
+            {allCardsSelected ? "Deselect All" : "Select All"}
+          </Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -67,10 +94,14 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-start',
+    justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 10,
     backgroundColor: '#FFFFFF',
+  },
+  leftSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   verticalLine: {
     width: 1,
@@ -139,5 +170,19 @@ const styles = StyleSheet.create({
   },
   activeIconLine: {
     backgroundColor: '#1D1D1F',
+  },
+  selectAllButton: {
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 6,
+    backgroundColor: '#F2F2F7',
+  },
+  selectAllText: {
+    fontSize: 12,
+    color: '#8E8E93',
+    fontWeight: '500',
+  },
+  selectAllTextSelected: {
+    color: '#8E8E93',
   },
 });

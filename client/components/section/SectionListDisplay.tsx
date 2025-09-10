@@ -1,4 +1,5 @@
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { includesId } from '../../utils/idUtils';
 import CardComponent from '../common/CardComponent';
 
 interface Card {
@@ -10,9 +11,18 @@ interface Card {
 interface SectionListDisplayProps {
   cards: Card[];
   onCardPress?: (card: Card) => void;
+  isEditMode?: boolean;
+  selectedCardIds?: string[];
+  onCardSelection?: (cardId: string) => void;
 }
 
-export default function SectionListDisplay({ cards, onCardPress }: SectionListDisplayProps) {
+export default function SectionListDisplay({ 
+  cards, 
+  onCardPress, 
+  isEditMode = false, 
+  selectedCardIds = [], 
+  onCardSelection 
+}: SectionListDisplayProps) {
   if (!cards || cards.length === 0) {
     return (
       <View style={styles.emptyContainer}>
@@ -29,8 +39,15 @@ export default function SectionListDisplay({ cards, onCardPress }: SectionListDi
             key={card.id}
             title={card.title}
             isBookmarked={card.isBookmarked}
-            onPress={() => onCardPress?.(card)}
+            onPress={() => {
+              if (isEditMode && onCardSelection) {
+                onCardSelection(card.id);
+              } else {
+                onCardPress?.(card);
+              }
+            }}
             size="medium"
+            isSelected={includesId(selectedCardIds, card.id)}
           />
         ))}
       </View>

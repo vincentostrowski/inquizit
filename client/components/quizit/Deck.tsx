@@ -1,6 +1,7 @@
 import React, { useRef, useState, useMemo } from 'react';
 import { View, StyleSheet, Animated, Dimensions, ScrollView, Pressable, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { compareIds } from '../../utils/idUtils';
 import { Card } from './Card';
 
 type CardState = 'question' | 'empty' | 'checkmark';
@@ -432,7 +433,7 @@ export default function Deck({ quizitItems, onGestureStart, onGestureEnd, onView
                     
                     // For concept cards (index > 0), find the card by its original position
                     const cardId = positionMap[index];
-                    const card = deck.find(item => item.conceptData?.id === cardId);
+                    const card = deck.find(item => item.conceptData?.id && compareIds(item.conceptData.id, cardId));
                     const isCompleted = card?.conceptData && 
                       card.conceptData.recognitionScore !== undefined && 
                       card.conceptData.reasoningScore !== undefined;
@@ -465,7 +466,7 @@ export default function Deck({ quizitItems, onGestureStart, onGestureEnd, onView
                   
                   // For concept cards (index > 0), find the card by its original position
                   const cardId = positionMap[index];
-                  const card = deck.find(item => item.conceptData?.id === cardId);
+                  const card = deck.find(item => item.conceptData?.id && compareIds(item.conceptData.id, cardId));
                   const state = card?.conceptData?.status || 'question';
                   const isCompleted = card?.conceptData && 
                     card.conceptData.recognitionScore !== undefined && 

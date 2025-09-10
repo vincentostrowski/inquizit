@@ -1,7 +1,10 @@
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import { useState, useEffect } from 'react';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useViewMode } from '../../../context/ViewModeContext';
 import { useBookDetails } from '../../../hooks/useBookDetails';
+import { useQuizitConfig } from '../../../context/QuizitConfigContext';
+import { includesId, compareIds } from '../../../utils/idUtils';
 import ContentHeader from '../../../components/common/ContentHeader';
 import SectionDisplay from '../../../components/section/SectionDisplay';
 import ContentDescription from '../../../components/common/ContentDescription';
@@ -19,6 +22,7 @@ export default function SectionScreen() {
     sectionTitle, 
     bookId, 
     bookTitle, 
+    bookCover,
     headerColor, 
     backgroundEndColor,
     buttonTextBorderColor, 
@@ -26,28 +30,149 @@ export default function SectionScreen() {
   } = useLocalSearchParams();
   const { viewMode, setViewMode } = useViewMode();
   const { bookDetails, loading, error } = useBookDetails(bookId);
+  const { showQuizitConfig, toggleCardSelection } = useQuizitConfig();
+  
+  // Local filter state
+  const [filterMode, setFilterMode] = useState<'all' | 'saved'>('all');
+
+  // Card filter states
+  const [allCardIds, setAllCardIds] = useState<string[]>([]);
+  const [savedCardIds, setSavedCardIds] = useState<string[]>([]);
+
+  // Populate card IDs when book details load
+  useEffect(() => {
+    if (bookDetails?.sections) {
+      // Find the current section and get its cards only
+      const currentSection = bookDetails.sections.find(section => 
+        section.id === sectionId || 
+        section.id === String(sectionId) || 
+        String(section.id) === sectionId
+      );
+      
+      if (currentSection?.cards) {
+        const sectionCards = currentSection.cards;
+        
+        setAllCardIds(sectionCards.map((card: any) => card.id));
+        setSavedCardIds(sectionCards.filter((card: any) => card.isSaved).map((card: any) => card.id));
+      }
+    }
+  }, [bookDetails, sectionId]);
 
   const handleBack = () => {
     router.back();
   };
 
   const handleStartQuizit = () => {
-    router.push({
-      pathname: '/quizit',
-      params: { 
-        quizitId: sectionId,
-        quizitType: 'section',
-        quizitTitle: sectionTitle
+    // Get current filter's card IDs
+    const currentCardIds = filterMode === 'all' ? allCardIds : savedCardIds;
+
+    showQuizitConfig({
+      screenType: 'section',
+      bookCover: bookCover as string,
+      title: bookTitle as string,
+      isEditMode: false,
+      currentBookId: bookId as string,
+      bookSelections: [{
+        bookId: bookId as string,
+        bookTitle: bookTitle as string,
+        bookCover: bookCover as string,
+        selectedCardIds: currentCardIds,
+        headerColor: headerColor as string || bookDetails?.book?.header_color || 'green',
+        backgroundEndColor: backgroundEndColor as string || bookDetails?.book?.background_end_color || 'green',
+        buttonTextBorderColor: buttonTextBorderColor as string || bookDetails?.book?.button_text_border_color || 'green',
+        buttonCircleColor: buttonCircleColor as string || bookDetails?.book?.button_circle_color || 'green'
+      }],
+      onStartQuizit: () => {
+        router.push({
+          pathname: '/quizit',
+          params: { 
+            quizitId: sectionId,
+            quizitType: 'section',
+            quizitTitle: sectionTitle
+          }
+        });
       }
     });
   };
 
   const handleCheckConflicts = () => {
-    console.log('Check for conflicts');
+    // TODO: Implement check conflicts functionality
   };
 
   const handleViewPastQuizits = () => {
-    console.log('View past quizits');
+    // TODO: Implement view past quizits functionality
+  };
+
+  // Get modal data for edit mode
+  const { modalData } = useQuizitConfig();
+  const isEditMode = modalData?.isEditMode || false;
+  const bookSelections = modalData?.bookSelections || [];
+  const selectedCardIds = bookSelections.find(book => book.bookId === bookId)?.selectedCardIds || [];
+  const handleCardSelection = (cardId: string) => {
+    toggleCardSelection(
+      bookId as string, 
+      bookTitle as string, 
+      bookCover as string, 
+      cardId,
+      {
+        headerColor: headerColor as string || bookDetails?.book?.header_color || 'green',
+        backgroundEndColor: backgroundEndColor as string || bookDetails?.book?.background_end_color || 'green',
+        buttonTextBorderColor: buttonTextBorderColor as string || bookDetails?.book?.button_text_border_color || 'green',
+        buttonCircleColor: buttonCircleColor as string || bookDetails?.book?.button_circle_color || 'green'
+      }
+    );
+  };
+
+  const handleSelectAll = (cardIds: string[]) => {
+    const allSelected = cardIds.every(cardId => includesId(selectedCardIds, cardId));
+    
+    if (allSelected) {
+      // Deselect all cards in this section
+      const cardsToDeselect = cardIds.filter(cardId => includesId(selectedCardIds, cardId));
+      cardsToDeselect.forEach(cardId => {
+        toggleCardSelection(
+          bookId as string, 
+          bookTitle as string, 
+          bookCover as string, 
+          cardId,
+          {
+            headerColor: headerColor as string || bookDetails?.book?.header_color || 'green',
+            backgroundEndColor: backgroundEndColor as string || bookDetails?.book?.background_end_color || 'green',
+            buttonTextBorderColor: buttonTextBorderColor as string || bookDetails?.book?.button_text_border_color || 'green',
+            buttonCircleColor: buttonCircleColor as string || bookDetails?.book?.button_circle_color || 'green'
+          }
+        );
+      });
+    } else {
+      // Select all unselected cards in this section
+      const cardsToSelect = cardIds.filter(cardId => !includesId(selectedCardIds, cardId));
+      cardsToSelect.forEach(cardId => {
+        toggleCardSelection(
+          bookId as string, 
+          bookTitle as string, 
+          bookCover as string, 
+          cardId,
+          {
+            headerColor: headerColor as string || bookDetails?.book?.header_color || 'green',
+            backgroundEndColor: backgroundEndColor as string || bookDetails?.book?.background_end_color || 'green',
+            buttonTextBorderColor: buttonTextBorderColor as string || bookDetails?.book?.button_text_border_color || 'green',
+            buttonCircleColor: buttonCircleColor as string || bookDetails?.book?.button_circle_color || 'green'
+          }
+        );
+      });
+    }
+  };
+
+  const handleSelectAllCards = () => {
+    // Get all cards based on current filter mode
+    let currentCardIds: string[] = [];
+    if (filterMode === 'all') {
+      currentCardIds = allCardIds;
+    } else if (filterMode === 'saved') {
+      currentCardIds = savedCardIds;
+    }
+    
+    handleSelectAll(currentCardIds);
   };
 
   const handleCardPress = (card: any) => {
@@ -60,6 +185,7 @@ export default function SectionScreen() {
         sectionTitle,
         bookId,
         bookTitle,
+        bookCover,
         headerColor: headerColor as string || bookDetails?.book?.header_color || '#1D1D1F',
         backgroundEndColor: backgroundEndColor as string || bookDetails?.book?.background_end_color || '#1E40AF',
         buttonTextBorderColor: buttonTextBorderColor as string || bookDetails?.book?.button_text_border_color || '#FFFFFF',
@@ -71,9 +197,7 @@ export default function SectionScreen() {
   // Find the section and get its cards
   // Handle both string and number comparison for sectionId
   const currentSection = bookDetails?.sections?.find(section => 
-    section.id === sectionId || 
-    section.id === String(sectionId) || 
-    String(section.id) === sectionId
+    compareIds(section.id, sectionId)
   );
   const currentSectionTitle = currentSection?.title || (sectionTitle as string) || 'Section';
   const sectionCards = currentSection?.cards || [];
@@ -95,12 +219,19 @@ export default function SectionScreen() {
         headerColor={headerColor as string || bookDetails?.book?.header_color || '#1D1D1F'}
         buttonTextBorderColor={buttonTextBorderColor as string || bookDetails?.book?.button_text_border_color || '#FFFFFF'}
         buttonCircleColor={buttonCircleColor as string || bookDetails?.book?.button_circle_color || '#FFFFFF'}
+        isEditMode={isEditMode}
       />
       
       {/* Growing view that expands in bounce space */}
       <View style={[styles.growingArea, { backgroundColor: headerColor as string || bookDetails?.book?.header_color || '#1D1D1F' }]} />
       
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.content}
+        contentContainerStyle={[
+          isEditMode && { paddingBottom: 200 }
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
         {error ? (
           <View style={styles.errorContainer}>
             <Text style={styles.errorText}>Error: {error}</Text>
@@ -136,7 +267,15 @@ export default function SectionScreen() {
             ) : null}
 
             {/* Display Toggle - Always show */}
-            <DisplayToggle />
+             <DisplayToggle 
+               filterMode={filterMode}
+               setFilterMode={setFilterMode}
+               isEditMode={isEditMode}
+               selectedCardIds={selectedCardIds}
+               allCardIds={allCardIds}
+               onSelectAll={handleSelectAllCards}
+               loading={loading}
+             />
 
             {/* Cards/List Display - Skeleton or Real */}
             {loading ? (
@@ -150,6 +289,9 @@ export default function SectionScreen() {
                 <SectionCardDisplay
                   cards={sectionCards}
                   onCardPress={handleCardPress}
+                  isEditMode={isEditMode}
+                  selectedCardIds={selectedCardIds}
+                  onCardSelection={handleCardSelection}
                 />
               ) : (
                 <SectionListDisplay
@@ -159,6 +301,9 @@ export default function SectionScreen() {
                     isBookmarked: index > 0,
                   }))}
                   onCardPress={handleCardPress}
+                  isEditMode={isEditMode}
+                  selectedCardIds={selectedCardIds}
+                  onCardSelection={handleCardSelection}
                 />
               )
             ) : !loading && currentSection ? (

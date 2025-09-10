@@ -1,9 +1,13 @@
 import { Stack } from 'expo-router';
 import { ViewModeProvider } from '../context/ViewModeContext';
+import { QuizitConfigProvider, useQuizitConfig } from '../context/QuizitConfigContext';
+import QuizitConfigModal from '../components/quizit/QuizitConfigModal';
 
-export default function RootLayout() {
+function RootLayoutContent() {
+  const { showModal, modalData, hideQuizitConfig } = useQuizitConfig();
+
   return (
-    <ViewModeProvider>
+    <>
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen 
@@ -14,6 +18,29 @@ export default function RootLayout() {
           }} 
         />
       </Stack>
+      
+      {/* Global Quizit Config Modal */}
+      <QuizitConfigModal
+        visible={showModal}
+        screenType={modalData?.screenType || 'book'}
+        bookCover={modalData?.bookCover || ''}
+        title={modalData?.title || ''}
+        onStartQuizit={() => {
+          hideQuizitConfig();
+          modalData?.onStartQuizit();
+        }}
+        onClose={hideQuizitConfig}
+      />
+    </>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <ViewModeProvider>
+      <QuizitConfigProvider>
+        <RootLayoutContent />
+      </QuizitConfigProvider>
     </ViewModeProvider>
   );
 }
