@@ -25,7 +25,18 @@ export default function CardScreen() {
   } = useLocalSearchParams();
   
   const { bookDetails, loading, error } = useBookDetails(bookId);
-  const { showQuizitConfig } = useQuizitConfig();
+  const { showQuizitConfig, pushToNavigationStack, popFromNavigationStack } = useQuizitConfig();
+
+  // Manage navigation stack
+  useEffect(() => {
+    if (bookId) {
+      pushToNavigationStack(bookId as string);
+      
+      return () => {
+        popFromNavigationStack(bookId as string);
+      };
+    }
+  }, [bookId, pushToNavigationStack, popFromNavigationStack]);
 
   // Find the specific card data
   const cardData = (() => {
@@ -59,12 +70,14 @@ export default function CardScreen() {
   };
 
   const handleStartQuizit = () => {
+    console.log('Start quizit for card:', cardId);
+    console.log('Book title:', bookTitle);
+    console.log('Book ID:', bookId);
     showQuizitConfig({
       screenType: 'card',
       bookCover: bookCover as string,
       title: bookTitle as string,
       isEditMode: false,
-      currentBookId: bookId as string,
       bookSelections: [{
         bookId: bookId as string,
         bookTitle: bookTitle as string,
@@ -90,10 +103,12 @@ export default function CardScreen() {
 
   const handleCheckConflicts = () => {
     // TODO: Implement check conflicts functionality
+    console.log('Check conflicts for card:', cardId);
   };
 
   const handleViewPastQuizits = () => {
     // TODO: Navigate to past quizits screen
+    console.log('View past quizits for card:', cardId);
   };
 
   // Get modal data for edit mode
@@ -110,7 +125,6 @@ export default function CardScreen() {
         headerColor={headerColor as string || (bookDetails && (bookDetails as any).book ? (bookDetails as any).book.header_color : undefined) || '#1D1D1F'}
         buttonTextBorderColor={buttonTextBorderColor as string || (bookDetails && (bookDetails as any).book ? (bookDetails as any).book.button_text_border_color : undefined) || '#FFFFFF'}
         buttonCircleColor={buttonCircleColor as string || (bookDetails && (bookDetails as any).book ? (bookDetails as any).book.button_circle_color : undefined) || '#FFFFFF'}
-        isEditMode={isEditMode}
       />
       
       <View style={[styles.growingArea, { backgroundColor: headerColor as string || (bookDetails && (bookDetails as any).book ? (bookDetails as any).book.header_color : undefined) || '#1D1D1F' }]} />

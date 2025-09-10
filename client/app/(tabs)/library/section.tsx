@@ -30,10 +30,21 @@ export default function SectionScreen() {
   } = useLocalSearchParams();
   const { viewMode, setViewMode } = useViewMode();
   const { bookDetails, loading, error } = useBookDetails(bookId);
-  const { showQuizitConfig, toggleCardSelection } = useQuizitConfig();
+  const { showQuizitConfig, toggleCardSelection, pushToNavigationStack, popFromNavigationStack } = useQuizitConfig();
   
   // Local filter state
   const [filterMode, setFilterMode] = useState<'all' | 'saved'>('all');
+
+  // Manage navigation stack
+  useEffect(() => {
+    if (bookId) {
+      pushToNavigationStack(bookId as string);
+      
+      return () => {
+        popFromNavigationStack(bookId as string);
+      };
+    }
+  }, [bookId, pushToNavigationStack, popFromNavigationStack]);
 
   // Card filter states
   const [allCardIds, setAllCardIds] = useState<string[]>([]);
@@ -71,7 +82,6 @@ export default function SectionScreen() {
       bookCover: bookCover as string,
       title: bookTitle as string,
       isEditMode: false,
-      currentBookId: bookId as string,
       bookSelections: [{
         bookId: bookId as string,
         bookTitle: bookTitle as string,
@@ -96,18 +106,21 @@ export default function SectionScreen() {
   };
 
   const handleCheckConflicts = () => {
-    // TODO: Implement check conflicts functionality
+    console.log('Check for conflicts');
   };
 
   const handleViewPastQuizits = () => {
-    // TODO: Implement view past quizits functionality
+    console.log('View past quizits');
   };
 
   // Get modal data for edit mode
   const { modalData } = useQuizitConfig();
   const isEditMode = modalData?.isEditMode || false;
   const bookSelections = modalData?.bookSelections || [];
+  console.log('Book selections:', bookSelections);
   const selectedCardIds = bookSelections.find(book => book.bookId === bookId)?.selectedCardIds || [];
+
+  console.log('Selected card IDs:', selectedCardIds);
   const handleCardSelection = (cardId: string) => {
     toggleCardSelection(
       bookId as string, 
@@ -219,7 +232,6 @@ export default function SectionScreen() {
         headerColor={headerColor as string || bookDetails?.book?.header_color || '#1D1D1F'}
         buttonTextBorderColor={buttonTextBorderColor as string || bookDetails?.book?.button_text_border_color || '#FFFFFF'}
         buttonCircleColor={buttonCircleColor as string || bookDetails?.book?.button_circle_color || '#FFFFFF'}
-        isEditMode={isEditMode}
       />
       
       {/* Growing view that expands in bounce space */}

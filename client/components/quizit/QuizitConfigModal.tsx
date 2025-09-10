@@ -35,6 +35,9 @@ export default function QuizitConfigModal({
   const bookSelections = modalData?.bookSelections || [];
   const totalCardCount = getTotalCardCount();
   
+  // Debug logging
+  console.log('QuizitConfigModal - bookSelections:', bookSelections);
+  console.log('QuizitConfigModal - modalData:', modalData);
   
   // Get current book's card count for normal mode
   const currentBookId = modalData?.bookSelections?.[0]?.bookId || '';
@@ -98,22 +101,36 @@ export default function QuizitConfigModal({
       </Animated.View>
 
       {/* Modal Content */}
-      <Animated.View style={[isEditMode ? styles.modalEditMode : styles.modal, animatedSheetStyle]}>
-        <View style={[styles.content, { paddingBottom: insets.bottom + 20 }, isEditMode && styles.contentEditMode]}>
-          {/* Header with Title */}
-          <View style={styles.header}>
-            <Text style={styles.title}>
-              {isEditMode ? 'Selection Edit' : (bookSelections.length > 1 ? 'Custom Quizit Set' : title)}
-            </Text>
-          </View>
+      <Animated.View style={[styles.modal, isEditMode && { pointerEvents: 'box-none', borderTopLeftRadius: 0, borderTopRightRadius: 0 }, animatedSheetStyle]}>
+        <View style={[styles.content, { paddingBottom: insets.bottom + 20 }, isEditMode && { pointerEvents: 'auto' }]}>
+          {/* Header with Title - Only in normal mode */}
+          {!isEditMode && (
+            <View style={styles.header}>
+              <Text style={styles.title}>
+                {bookSelections.length > 1 ? 'Custom Quizit Set' : title}
+              </Text>
+            </View>
+          )}
           
           {/* Cover Image(s) - Always shown */}
-          <ScrollView 
-            horizontal 
-            showsHorizontalScrollIndicator={false} 
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
             style={styles.coversScrollView}
             contentContainerStyle={styles.coversScrollContent}
           >
+            {/* Add Book Placeholder - Always first */}
+            <TouchableOpacity 
+              style={styles.addBookContainer}
+              onPress={() => {
+                // TODO: Navigate to book selection
+                console.log('Add book pressed');
+              }}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="add" size={20} color="#8E8E93" />
+            </TouchableOpacity>
+            
             {bookSelections.length > 0 ? (
               bookSelections.map(book => (
                 <TouchableOpacity 
@@ -170,7 +187,15 @@ export default function QuizitConfigModal({
                   onPress={onClose}
                   activeOpacity={0.8}
                 >
-                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                  <Text style={styles.saveButtonText}>Save</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={styles.bottomButton}
+                  onPress={onClose}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.cancelButtonText}>Clear</Text>
                 </TouchableOpacity>
               </>
             )}
@@ -224,34 +249,12 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 10,
   },
-  modalEditMode: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: 'white',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    elevation: 10,
-    pointerEvents: 'box-none', // Allow touch events to pass through to background
-  },
   content: {
-    padding: 8,
     alignItems: 'center',
-  },
-  contentEditMode: {
-    pointerEvents: 'auto', // Make the content area touchable
-    backgroundColor: 'white', // Ensure content has background
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
   },
   header: {
     width: '100%',
-    marginBottom: 24,
+    paddingTop: 8,
   },
   title: {
     fontSize: 16,
@@ -260,10 +263,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   coversScrollView: {
-    marginBottom: 16,
+    padding: 12,
+    width: '100%',
   },
   coversScrollContent: {
-    paddingHorizontal: 12,
+    paddingHorizontal: 0,
   },
   coverContainer: {
     alignItems: 'center',
@@ -305,24 +309,18 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#1D1D1F',
   },
-  backButton: {
-    padding: 4,
-  },
-  headerTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#1D1D1F',
-    textAlign: 'center',
-    flex: 1,
-  },
-  headerSpacer: {
-    width: 32, // Same width as back button to center the title
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#8E8E93',
-    textAlign: 'center',
-    marginBottom: 16,
+  addBookContainer: {
+    alignItems: 'center',
+    position: 'relative',
+    marginRight: 8,
+    width: 60,
+    height: 80,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: '#CEC5BC',
+    backgroundColor: '#F9F9F9',
+    justifyContent: 'center',
   },
   divider: {
     width: '100%',
@@ -337,7 +335,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   bottomButton: {
-    width: '30%',
+    width: '25%',
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 8,
@@ -351,6 +349,11 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   cancelButtonText: {
+    color: '#1D1D1F',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  saveButtonText: {
     color: '#1D1D1F',
     fontSize: 14,
     fontWeight: '500',

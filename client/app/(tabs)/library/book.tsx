@@ -28,7 +28,7 @@ export default function BookScreen() {
   } = useLocalSearchParams();
   const { bookDetails, loading, error } = useBookDetails(bookId);
   const { viewMode, setViewMode } = useViewMode();
-  const { showQuizitConfig, modalData, toggleCardSelection } = useQuizitConfig();
+  const { showQuizitConfig, modalData, toggleCardSelection, pushToNavigationStack, popFromNavigationStack } = useQuizitConfig();
   
   // Get edit mode and selections from modal data
   const isEditMode = modalData?.isEditMode || false;
@@ -36,6 +36,17 @@ export default function BookScreen() {
   
   // Get selected card IDs for current book
   const selectedCardIds = bookSelections.find(book => book.bookId === bookId)?.selectedCardIds || [];
+
+  // Manage navigation stack
+  useEffect(() => {
+    if (bookId) {
+      pushToNavigationStack(bookId as string);
+      
+      return () => {
+        popFromNavigationStack(bookId as string);
+      };
+    }
+  }, [bookId, pushToNavigationStack, popFromNavigationStack]);
   
   // Local filter state
   const [filterMode, setFilterMode] = useState<'all' | 'main' | 'saved'>('all');
@@ -71,7 +82,6 @@ export default function BookScreen() {
       bookCover: bookCover as string,
       title: bookTitle as string,
       isEditMode: false,
-      currentBookId: bookId as string,
       bookSelections: [{
         bookId: bookId as string,
         bookTitle: bookTitle as string,
@@ -92,11 +102,11 @@ export default function BookScreen() {
   };
 
   const handleCheckConflicts = () => {
-    // TODO: Implement check conflicts functionality
+    console.log('Check for conflicts');
   };
 
   const handleViewPastQuizits = () => {
-    // TODO: Implement view past quizits functionality
+    console.log('View past quizits');
   };
 
 

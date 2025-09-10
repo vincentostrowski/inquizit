@@ -37,7 +37,7 @@ export default function SectionComponent({
     if (isEditMode && onCardSelection) {
       onCardSelection(card.id);
     } else {
-      onCardPress(card);
+      console.log('Card pressed:', card.title);
     }
   };
 

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
 import { router } from 'expo-router';
 import { normalizeId, compareIds, includesId } from '../utils/idUtils';
 
@@ -20,7 +20,6 @@ interface QuizitConfigData {
   isEditMode: boolean;
   bookSelections: BookSelection[];
   onStartQuizit: () => void;
-  currentBookId?: string; // Add current book ID for comparison
 }
 
 interface QuizitConfigContextType {
@@ -36,6 +35,10 @@ interface QuizitConfigContextType {
   getTotalCardCount: () => number;
   isCardSelected: (bookId: string, cardId: string) => boolean;
   navigateToBookEdit: (book: BookSelection) => void;
+  navigationStack: string[];
+  pushToNavigationStack: (bookId: string) => void;
+  popFromNavigationStack: (bookId: string) => void;
+  isCurrentlyOnBook: (bookId: string) => boolean;
 }
 
 const QuizitConfigContext = createContext<QuizitConfigContextType | undefined>(undefined);
@@ -55,8 +58,11 @@ interface QuizitConfigProviderProps {
 export const QuizitConfigProvider = ({ children }: QuizitConfigProviderProps) => {
   const [showModal, setShowModal] = useState(false);
   const [modalData, setModalData] = useState<QuizitConfigData | null>(null);
+  const [navigationStack, setNavigationStack] = useState<string[]>([]);
 
   const showQuizitConfig = (data: QuizitConfigData) => {
+    console.log('QuizitConfigContext - showQuizitConfig called with data:', data);
+    console.log('QuizitConfigContext - bookSelections:', data.bookSelections);
     setModalData(data);
     setShowModal(true);
   };
@@ -153,13 +159,31 @@ export const QuizitConfigProvider = ({ children }: QuizitConfigProviderProps) =>
     return book ? includesId(book.selectedCardIds, normalizedCardId) : false;
   };
 
-  const navigateToBookEdit = (book: BookSelection) => {
-    // Check if we're already on the same book
-    const currentBookId = modalData?.currentBookId;
-    const isSameBook = currentBookId && compareIds(currentBookId, book.bookId);
-    
-    if (isSameBook) {
-      // If we're already on the same book, just switch to edit mode
+  const pushToNavigationStack = useCallback((bookId: string) => {
+    const normalizedBookId = normalizeId(bookId);
+    setNavigationStack(prev => {
+      // Only add if not already in stack
+      if (!prev.includes(normalizedBookId)) {
+        return [...prev, normalizedBookId];
+      }
+      return prev;
+    });
+  }, []);
+
+  const popFromNavigationStack = useCallback((bookId: string) => {
+    const normalizedBookId = normalizeId(bookId);
+    setNavigationStack(prev => prev.filter(id => id !== normalizedBookId));
+  }, []);
+
+  const isCurrentlyOnBook = useCallback((bookId: string) => {
+    const normalizedBookId = normalizeId(bookId);
+    return navigationStack.includes(normalizedBookId);
+  }, [navigationStack]);
+
+  const navigateToBookEdit = useCallback((book: BookSelection) => {
+    // Check if we're already on this book
+    if (isCurrentlyOnBook(book.bookId)) {
+      // Just switch to edit mode, no navigation needed
       if (modalData) {
         setModalData({
           ...modalData,
@@ -167,7 +191,7 @@ export const QuizitConfigProvider = ({ children }: QuizitConfigProviderProps) =>
         });
       }
     } else {
-      // Switch to edit mode first
+      // Switch to edit mode and navigate to the book page
       if (modalData) {
         setModalData({
           ...modalData,
@@ -175,7 +199,6 @@ export const QuizitConfigProvider = ({ children }: QuizitConfigProviderProps) =>
         });
       }
       
-      // Navigate to the book page with all necessary data
       router.push({
         pathname: '/library/book',
         params: {
@@ -189,7 +212,7 @@ export const QuizitConfigProvider = ({ children }: QuizitConfigProviderProps) =>
         }
       });
     }
-  };
+  }, [isCurrentlyOnBook, modalData]);
 
   return (
     <QuizitConfigContext.Provider
@@ -206,6 +229,10 @@ export const QuizitConfigProvider = ({ children }: QuizitConfigProviderProps) =>
         getTotalCardCount,
         isCardSelected,
         navigateToBookEdit,
+        navigationStack,
+        pushToNavigationStack,
+        popFromNavigationStack,
+        isCurrentlyOnBook,
       }}
     >
       {children}
