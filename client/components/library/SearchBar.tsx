@@ -5,10 +5,9 @@ interface SearchBarProps {
   value: string;
   onChangeText: (text: string) => void;
   onClear: () => void;
-  loading?: boolean;
 }
 
-export default function SearchBar({ value, onChangeText, onClear, loading = false }: SearchBarProps) {
+export default function SearchBar({ value, onChangeText, onClear }: SearchBarProps) {
   return (
     <View style={styles.container}>
       <View style={styles.searchContainer}>
@@ -22,18 +21,13 @@ export default function SearchBar({ value, onChangeText, onClear, loading = fals
           autoCapitalize="none"
           autoCorrect={false}
         />
-        <View style={styles.rightActions}>
-          {value.length > 0 && (
-            <TouchableOpacity onPress={onClear} style={styles.clearButton}>
-              <Ionicons name="close-circle" size={20} color="#8E8E93" />
-            </TouchableOpacity>
-          )}
-          {loading && (
-            <View style={styles.loadingContainer}>
-              <Ionicons name="hourglass" size={16} color="#007AFF" />
-            </View>
-          )}
-        </View>
+        <TouchableOpacity 
+          onPress={onClear} 
+          style={[styles.clearButton, { opacity: value.length > 0 ? 1 : 0 }]}
+          disabled={value.length === 0}
+        >
+          <Ionicons name="close-circle" size={20} color="#8E8E93" />
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -71,18 +65,12 @@ const styles = StyleSheet.create({
     color: '#1D1D1F',
     minHeight: 24,
   },
-  rightActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    minWidth: 32,
-    justifyContent: 'flex-end',
-  },
   clearButton: {
     padding: 4,
     marginLeft: 8,
-  },
-  loadingContainer: {
-    padding: 4,
-    marginLeft: 8,
+    minWidth: 28,
+    minHeight: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

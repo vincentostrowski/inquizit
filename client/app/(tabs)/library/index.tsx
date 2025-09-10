@@ -38,7 +38,7 @@ export default function LibraryScreen() {
   const isEditMode = modalData?.isEditMode || false;
   
   // Show back button if there are multiple items in stack (user navigated here)
-  const shouldShowBackButton = navigationStack.length > 1 && navigationStack[-1] != 'library';
+  const shouldShowBackButton = navigationStack.length > 1 && navigationStack[-2] != 'library';
 
   const handleBackPress = () => {
     router.back();
@@ -131,7 +131,6 @@ export default function LibraryScreen() {
             value={searchQuery}
             onChangeText={search}
             onClear={clearSearch}
-            loading={searchLoading}
           />
         </View>
         <FilterGroup />

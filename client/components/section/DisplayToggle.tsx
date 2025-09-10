@@ -1,6 +1,5 @@
 import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { includesId } from '../../utils/idUtils';
 import { useViewMode } from '../../context/ViewModeContext';
 
 interface DisplayToggleProps {
@@ -10,7 +9,6 @@ interface DisplayToggleProps {
   selectedCardIds?: string[];
   allCardIds?: string[];
   onSelectAll?: () => void;
-  loading?: boolean;
 }
 
 export default function DisplayToggle({ 
@@ -19,13 +17,12 @@ export default function DisplayToggle({
   isEditMode = false, 
   selectedCardIds = [], 
   allCardIds = [], 
-  onSelectAll,
-  loading = false
+  onSelectAll 
 }: DisplayToggleProps) {
   const { viewMode, setViewMode } = useViewMode();
   
   // Check if all cards are selected
-  const allCardsSelected = allCardIds.length > 0 && allCardIds.every(cardId => includesId(selectedCardIds, cardId));
+  const allCardsSelected = allCardIds.length > 0 && allCardIds.every(cardId => selectedCardIds.includes(cardId));
   
   return (
     <View style={styles.container}>
@@ -78,8 +75,8 @@ export default function DisplayToggle({
         </View>
       </View>
       
-      {/* Select All Button - Only show in edit mode, when not loading, and when data is available */}
-      {isEditMode && onSelectAll && !loading && allCardIds.length > 0 && (
+      {/* Select All Button - Only show in edit mode */}
+      {isEditMode && onSelectAll && (
         <TouchableOpacity onPress={onSelectAll} style={styles.selectAllButton}>
           <Text style={[styles.selectAllText, allCardsSelected && styles.selectAllTextSelected]}>
             {allCardsSelected ? "Deselect All" : "Select All"}
@@ -174,17 +171,19 @@ const styles = StyleSheet.create({
     backgroundColor: '#1D1D1F',
   },
   selectAllButton: {
-    paddingVertical: 4,
+    paddingVertical: 6,
     paddingHorizontal: 8,
-    borderRadius: 6,
-    backgroundColor: '#F2F2F7',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 28,
   },
   selectAllText: {
     fontSize: 12,
     color: '#8E8E93',
-    fontWeight: '500',
+    fontWeight: '400',
   },
   selectAllTextSelected: {
     color: '#8E8E93',
+    fontWeight: '400',
   },
 });

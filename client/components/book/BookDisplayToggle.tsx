@@ -172,17 +172,19 @@ const styles = StyleSheet.create({
     backgroundColor: '#1D1D1F',
   },
   selectAllButton: {
-    paddingVertical: 4,
+    paddingVertical: 6,
     paddingHorizontal: 8,
-    borderRadius: 6,
-    backgroundColor: '#F2F2F7',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 28,
   },
   selectAllText: {
     fontSize: 12,
     color: '#8E8E93',
-    fontWeight: '500',
+    fontWeight: '400',
   },
   selectAllTextSelected: {
     color: '#8E8E93',
+    fontWeight: '400',
   },
 });
