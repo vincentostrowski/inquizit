@@ -179,7 +179,6 @@ function QuizitScreenContent() {
                        quizitItems={items}
                        onGestureStart={() => setVerticalScrollEnabled(false)} // Lock scroll for each deck
                        onGestureEnd={() => setVerticalScrollEnabled(true)} // Unlock scroll for each deck
-                       blockGesture={!verticalScrollEnabled}
                        onViewReasoning={() => {
                          // Find the reasoning from the current deck's concept cards
                          const conceptCard = items.find(item => item.faceType === 'concept' && item.conceptData);

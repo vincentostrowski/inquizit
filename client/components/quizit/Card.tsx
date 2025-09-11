@@ -18,7 +18,7 @@ interface QuizitData {
 }
 
 interface CardProps {
-  faceType: 'concept' | 'quizit';
+  faceType: 'concept' | 'quizit' | 'blank';
   conceptData?: ConceptData;
   quizitData?: QuizitData;
   onConceptTap?: () => void;
@@ -68,6 +68,12 @@ export function CardComponent({
       );
     }
     
+    if (faceType === 'blank') {
+      return (
+        <View style={styles.blankFace} />
+      );
+    }
+    
     return null;
   };
 
@@ -84,6 +90,11 @@ const styles = StyleSheet.create({
     height: '100%',
     backgroundColor: '#FFF7ED',
     borderRadius: 24,
+  },
+  blankFace: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: 'transparent',
   },
 });
 
