@@ -56,6 +56,9 @@ export default function BookScreen() {
   const [mainCardIds, setMainCardIds] = useState<string[]>([]);
   const [savedCardIds, setSavedCardIds] = useState<string[]>([]);
 
+  // Section expansion state
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
+
   // Populate card IDs when book details load
   useEffect(() => {
     if (bookDetails?.sections) {
@@ -201,6 +204,34 @@ export default function BookScreen() {
     handleSelectAll(currentCardIds);
   };
 
+  // Section expansion handlers
+  const handleToggleSection = (sectionId: string) => {
+    setExpandedSections(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(sectionId)) {
+        newSet.delete(sectionId);
+      } else {
+        newSet.add(sectionId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleExpandAllSections = () => {
+    if (bookDetails?.sections) {
+      const allSectionIds = bookDetails.sections.map((section: any) => section.id);
+      setExpandedSections(new Set(allSectionIds));
+    }
+  };
+
+  const handleCollapseAllSections = () => {
+    setExpandedSections(new Set());
+  };
+
+  // Check if all sections are expanded
+  const isAllSectionsExpanded = bookDetails?.sections ? 
+    bookDetails.sections.every((section: any) => expandedSections.has(section.id)) : false;
+
   const getFirstThreeCards = () => {
     if (!bookDetails?.sections) return [];
     
@@ -283,6 +314,10 @@ export default function BookScreen() {
           allCardIds={allCardIds}
           onSelectAll={handleSelectAllCards}
           loading={loading}
+          viewMode={viewMode}
+          isAllSectionsExpanded={isAllSectionsExpanded}
+          onExpandAllSections={handleExpandAllSections}
+          onCollapseAllSections={handleCollapseAllSections}
         />
 
             {/* Cards/List Display - Skeleton or Real */}
@@ -323,6 +358,8 @@ export default function BookScreen() {
                   isEditMode={isEditMode}
                   selectedCardIds={selectedCardIds}
                   onCardSelection={handleCardSelection}
+                  expandedSections={expandedSections}
+                  onToggleSection={handleToggleSection}
                 />
               )
             ) : null}

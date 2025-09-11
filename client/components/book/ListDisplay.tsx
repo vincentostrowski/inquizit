@@ -29,6 +29,8 @@ interface ListDisplayProps {
   isEditMode?: boolean;
   selectedCardIds?: string[];
   onCardSelection?: (cardId: string) => void;
+  expandedSections?: Set<string>;
+  onToggleSection?: (sectionId: string) => void;
 }
 
 export default function ListDisplay({ 
@@ -43,7 +45,9 @@ export default function ListDisplay({
   buttonCircleColor,
   isEditMode = false,
   selectedCardIds = [],
-  onCardSelection
+  onCardSelection,
+  expandedSections,
+  onToggleSection
 }: ListDisplayProps) {
 
   const handleSectionPress = (section: Section) => {
@@ -92,6 +96,8 @@ export default function ListDisplay({
             isEditMode={isEditMode}
             selectedCardIds={selectedCardIds}
             onCardSelection={onCardSelection}
+            isExpanded={expandedSections?.has(section.id)}
+            onToggleExpanded={onToggleSection ? () => onToggleSection(section.id) : undefined}
           />
         ))}
       </View>

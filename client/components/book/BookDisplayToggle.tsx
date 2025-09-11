@@ -10,6 +10,10 @@ interface BookDisplayToggleProps {
   allCardIds?: string[];
   onSelectAll?: () => void;
   loading?: boolean;
+  viewMode?: 'cards' | 'list';
+  isAllSectionsExpanded?: boolean;
+  onExpandAllSections?: () => void;
+  onCollapseAllSections?: () => void;
 }
 
 export default function BookDisplayToggle({ 
@@ -19,9 +23,14 @@ export default function BookDisplayToggle({
   selectedCardIds = [], 
   allCardIds = [], 
   onSelectAll,
-  loading = false
+  loading = false,
+  viewMode: externalViewMode,
+  isAllSectionsExpanded = false,
+  onExpandAllSections,
+  onCollapseAllSections
 }: BookDisplayToggleProps) {
-  const { viewMode, setViewMode } = useViewMode();
+  const { viewMode: contextViewMode, setViewMode } = useViewMode();
+  const viewMode = externalViewMode || contextViewMode;
   
   // Check if all cards are selected
   const allCardsSelected = allCardIds.length > 0 && allCardIds.every(cardId => includesId(selectedCardIds, cardId));
@@ -78,14 +87,34 @@ export default function BookDisplayToggle({
       </TouchableOpacity>
       </View>
       
-      {/* Select All Button - Only show in edit mode, when not loading, and when data is available */}
-      {isEditMode && onSelectAll && !loading && allCardIds.length > 0 && (
-        <TouchableOpacity onPress={onSelectAll} style={styles.selectAllButton}>
-          <Text style={[styles.selectAllText, allCardsSelected && styles.selectAllTextSelected]}>
-            {allCardsSelected ? "Deselect All" : "Select All"}
-          </Text>
-        </TouchableOpacity>
-      )}
+      {/* Right side buttons */}
+      <View style={styles.rightSection}>
+        {/* Select All Button - Only show in edit mode, when not loading, and when data is available */}
+        {isEditMode && onSelectAll && !loading && allCardIds.length > 0 && (
+          <TouchableOpacity onPress={onSelectAll} style={styles.selectAllButton}>
+            <Text style={[styles.selectAllText, allCardsSelected && styles.selectAllTextSelected]}>
+              {allCardsSelected ? "Deselect All" : "Select All"}
+            </Text>
+          </TouchableOpacity>
+        )}
+        
+        {/* Expand/Collapse All Button - Only show in list view mode and not in edit mode */}
+        {viewMode === 'list' && !isEditMode && onExpandAllSections && onCollapseAllSections && (
+          <TouchableOpacity 
+            onPress={isAllSectionsExpanded ? onCollapseAllSections : onExpandAllSections} 
+            style={styles.expandCollapseButton}
+          >
+            <Text style={styles.expandCollapseText}>
+              {isAllSectionsExpanded ? "Collapse" : "Expand"}
+            </Text>
+            <Ionicons 
+              name={isAllSectionsExpanded ? "chevron-up" : "chevron-down"} 
+              size={16} 
+              color="#8E8E93" 
+            />
+          </TouchableOpacity>
+        )}
+      </View>
     </View>
   );
 }
@@ -102,6 +131,11 @@ const styles = StyleSheet.create({
   leftSection: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  rightSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
   verticalLine: {
     width: 1,
@@ -184,6 +218,19 @@ const styles = StyleSheet.create({
     fontWeight: '400',
   },
   selectAllTextSelected: {
+    color: '#8E8E93',
+    fontWeight: '400',
+  },
+  expandCollapseButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    gap: 4,
+    minHeight: 28,
+  },
+  expandCollapseText: {
+    fontSize: 12,
     color: '#8E8E93',
     fontWeight: '400',
   },

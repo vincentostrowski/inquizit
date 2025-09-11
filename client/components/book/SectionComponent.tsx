@@ -17,6 +17,8 @@ interface SectionComponentProps {
   isEditMode?: boolean;
   selectedCardIds?: string[];
   onCardSelection?: (cardId: string) => void;
+  isExpanded?: boolean;
+  onToggleExpanded?: () => void;
 }
 
 export default function SectionComponent({ 
@@ -25,12 +27,21 @@ export default function SectionComponent({
   onPress, 
   isEditMode = false, 
   selectedCardIds = [], 
-  onCardSelection 
+  onCardSelection,
+  isExpanded: externalIsExpanded,
+  onToggleExpanded: externalOnToggleExpanded
 }: SectionComponentProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [internalIsExpanded, setInternalIsExpanded] = useState(false);
+  
+  // Use external control if provided, otherwise use internal state
+  const isExpanded = externalIsExpanded !== undefined ? externalIsExpanded : internalIsExpanded;
 
   const handleTogglePress = () => {
-    setIsExpanded(!isExpanded);
+    if (externalOnToggleExpanded) {
+      externalOnToggleExpanded();
+    } else {
+      setInternalIsExpanded(!internalIsExpanded);
+    }
   };
 
   const handleCardPress = (card: Card) => {
