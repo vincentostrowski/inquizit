@@ -9,7 +9,6 @@ interface ConceptData {
   title: string;
   description: string;
   reasoning: string;
-  hidden: boolean;
   recognitionScore?: number;
   reasoningScore?: number;
 }
@@ -52,7 +51,6 @@ export function CardComponent({
           title={conceptData.title}
           description={conceptData.description}
           reasoning={conceptData.reasoning}
-          hidden={conceptData.hidden}
           recognitionScore={conceptData.recognitionScore}
           reasoningScore={conceptData.reasoningScore}
           onTap={onConceptTap}

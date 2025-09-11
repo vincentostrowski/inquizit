@@ -15,7 +15,6 @@ interface DeckProps {
       title: string;
       description: string;
       reasoning: string;
-      hidden: boolean;
       status?: CardState;
       recognitionScore?: number;
       reasoningScore?: number;
@@ -43,9 +42,18 @@ export default function Deck({ quizitItems, onGestureStart, onGestureEnd, onView
       } : undefined
     }))
   );
+  const [viewedCards, setViewedCards] = useState<Set<string>>(new Set());
   const [isTransitioningNext, setIsTransitioningNext] = useState(false);
   const [isTransitioningPrev, setIsTransitioningPrev] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
+
+  // Mark initial card as viewed when component mounts
+  React.useEffect(() => {
+    const initialCard = deck[0];
+    if (initialCard?.conceptData?.id) {
+      setViewedCards(prev => new Set([...prev, initialCard.conceptData!.id]));
+    }
+  }, []);
 
   // Create position mapping for concept cards (position 1, 2, 3...)
   const positionMap = useMemo(() => {
@@ -82,7 +90,6 @@ export default function Deck({ quizitItems, onGestureStart, onGestureEnd, onView
           ...newDeck[cardIndex],
           conceptData: {
             ...newDeck[cardIndex].conceptData!,
-            hidden: false,
             status: 'empty' as CardState
           }
         };
@@ -131,7 +138,15 @@ export default function Deck({ quizitItems, onGestureStart, onGestureEnd, onView
 
   // Helper function for next card animation
   const animateToNext = () => {
-    setCurrentIndex(prevIndex => (prevIndex + 1) % deck.length);
+    const newIndex = (currentIndex + 1) % deck.length;
+    setCurrentIndex(newIndex);
+    
+    // Mark the new card as viewed
+    const newCard = deck[newIndex];
+    if (newCard.conceptData?.id) {
+      setViewedCards(prev => new Set([...prev, newCard.conceptData!.id]));
+    }
+    
     Animated.timing(position, {
       toValue: { x: OFF_SCREEN_X, y: 0 },
       duration: 250,
@@ -163,7 +178,15 @@ export default function Deck({ quizitItems, onGestureStart, onGestureEnd, onView
       duration: 80,
       useNativeDriver: false,
     }).start(() => {
-      setCurrentIndex(prevIndex => (prevIndex - 1 + deck.length) % deck.length);
+      const newIndex = (currentIndex - 1 + deck.length) % deck.length;
+      setCurrentIndex(newIndex);
+      
+      // Mark the new card as viewed
+      const newCard = deck[newIndex];
+      if (newCard.conceptData?.id) {
+        setViewedCards(prev => new Set([...prev, newCard.conceptData!.id]));
+      }
+      
       Animated.timing(backOffScreenPosition, {
         toValue: { x: 0, y: 0 },
         duration: 200,
@@ -467,30 +490,34 @@ export default function Deck({ quizitItems, onGestureStart, onGestureEnd, onView
                   // For concept cards (index > 0), find the card by its original position
                   const cardId = positionMap[index];
                   const card = deck.find(item => item.conceptData?.id && compareIds(item.conceptData.id, cardId));
-                  const state = card?.conceptData?.status || 'question';
                   const isCompleted = card?.conceptData && 
                     card.conceptData.recognitionScore !== undefined && 
                     card.conceptData.reasoningScore !== undefined;
+                  const isViewed = card?.conceptData?.id && viewedCards.has(card.conceptData.id);
                   
-                  return (
-                    <>
-                      {state === 'question' && !isCompleted && (
-                        <Ionicons 
-                          name="help-outline" 
-                          size={12} 
-                          color={isActive ? '#ffffff' : '#6b6b6b'} 
-                        />
-                      )}
-                      {state === 'empty' && !isCompleted && null}
-                      {(state === 'checkmark' || isCompleted) && (
-                        <Ionicons 
-                          name="checkmark" 
-                          size={12} 
-                          color={isCompleted ? '#ffffff' : (isActive ? '#ffffff' : '#6b6b6b')} 
-                        />
-                      )}
-                    </>
-                  );
+                  // Only show checkmark for completed cards, nothing for viewed but incomplete cards
+                  if (isCompleted) {
+                    return (
+                      <Ionicons 
+                        name="checkmark" 
+                        size={12} 
+                        color="#ffffff" 
+                      />
+                    );
+                  }
+                  
+                  // Show nothing for viewed but incomplete cards, question mark for unviewed cards
+                  if (!isViewed) {
+                    return (
+                      <Ionicons 
+                        name="help-outline" 
+                        size={12} 
+                        color={isActive ? '#ffffff' : '#6b6b6b'} 
+                      />
+                    );
+                  }
+                  
+                  return null;
                 })()}
               </View>
             );
