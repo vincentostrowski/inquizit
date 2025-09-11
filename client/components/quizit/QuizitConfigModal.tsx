@@ -116,16 +116,7 @@ export default function QuizitConfigModal({
             style={styles.coversScrollView}
             contentContainerStyle={styles.coversScrollContent}
           >
-            {/* Add Book Placeholder - Always first */}
-            <TouchableOpacity 
-              style={styles.addBookContainer}
-              onPress={navigateToLibraryEdit}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="add" size={20} color="#8E8E93" />
-            </TouchableOpacity>
-            
-            {bookSelections.length > 0 ? (
+            {bookSelections.length > 0 && (
               bookSelections.map(book => (
                 <TouchableOpacity 
                   key={book.bookId} 
@@ -143,11 +134,16 @@ export default function QuizitConfigModal({
                   </View>
                 </TouchableOpacity>
               ))
-            ) : (
-              <View style={styles.noSelectionsContainer}>
-                <Text style={styles.noSelectionsText}>No selections</Text>
-              </View>
             )}
+            
+            {/* Add Book Placeholder - Always last */}
+            <TouchableOpacity 
+              style={styles.addBookContainer}
+              onPress={navigateToLibraryEdit}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="add" size={20} color="#8E8E93" />
+            </TouchableOpacity>
           </ScrollView>
           
           

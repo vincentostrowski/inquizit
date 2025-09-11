@@ -34,7 +34,7 @@ export default function LibraryScreen() {
     clearSearch
   } = useSearch();
 
-  const { modalData, toggleEditMode, navigationStack } = useQuizitConfig();
+  const { modalData, toggleEditMode, navigationStack, showQuizitConfig, pushToNavigationStack, popFromNavigationStack } = useQuizitConfig();
   const isEditMode = modalData?.isEditMode || false;
   const [shouldShowBackButton, setShouldShowBackButton] = useState(false);
 
@@ -42,8 +42,33 @@ export default function LibraryScreen() {
     setShouldShowBackButton(navigationStack.length > 0);
   }, []);
 
+  // Manage navigation stack - add library if not root screen
+  useEffect(() => {
+    if (navigationStack.length > 0) {
+      pushToNavigationStack('library');
+      
+      return () => {
+        popFromNavigationStack('library');
+      };
+    }
+  }, []);
+
   const handleBackPress = () => {
     router.back();
+  };
+
+  const handleStartQuizit = () => {
+    showQuizitConfig({
+      screenType: 'book',
+      bookCover: '', // Empty for library start
+      title: 'Custom List',
+      isEditMode: false,
+      bookSelections: [], // Empty for library start
+      onStartQuizit: () => {
+        // Navigate to quizit screen
+        router.push('/quizit');
+      }
+    });
   };
 
   // No need to push library to navigation stack - it's the default starting point
@@ -112,7 +137,24 @@ export default function LibraryScreen() {
   return (
     <SafeAreaWrapper backgroundColor="white">
       <View style={styles.container}>
-        {!shouldShowBackButton && <LibraryHeader />}
+
+        {/* Start Quizit Session Button */}
+        {!shouldShowBackButton && !isEditMode && (
+          <TouchableOpacity 
+            style={styles.startQuizitButton}
+            onPress={handleStartQuizit}
+            activeOpacity={0.85}
+          >
+            <View style={styles.startQuizitButtonCircle}>
+              <Ionicons name="document-text" size={16} color="#FFFFFF" />
+            </View>
+            <Text style={styles.startQuizitText}>
+              Start Quizit{'\n'}Session
+            </Text>
+          </TouchableOpacity>
+        )}
+
+    
         <View style={styles.searchContainer}>
           {shouldShowBackButton && (
             <TouchableOpacity 
@@ -219,5 +261,41 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#FF3B30',
     textAlign: 'center',
+  },
+  startQuizitButton: {
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E5E5EA',
+    borderRadius: 20,
+    padding: 6,
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 4,
+    zIndex: 100,
+    opacity: 0.9,
+  },
+  startQuizitButtonCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#636366',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 6,
+  },
+  startQuizitText: {
+    color: '#636366',
+    fontSize: 11,
+    textAlign: 'left',
+    lineHeight: 13,
+    fontWeight: '500',
+    paddingRight: 16,
   },
 });

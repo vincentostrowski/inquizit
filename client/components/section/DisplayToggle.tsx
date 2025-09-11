@@ -1,6 +1,7 @@
 import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useViewMode } from '../../context/ViewModeContext';
+import { includesId } from '../../utils/idUtils';
 
 interface DisplayToggleProps {
   filterMode: 'all' | 'saved';
@@ -22,7 +23,7 @@ export default function DisplayToggle({
   const { viewMode, setViewMode } = useViewMode();
   
   // Check if all cards are selected
-  const allCardsSelected = allCardIds.length > 0 && allCardIds.every(cardId => selectedCardIds.includes(cardId));
+  const allCardsSelected = allCardIds.length > 0 && allCardIds.every(cardId => includesId(selectedCardIds, cardId));
   
   return (
     <View style={styles.container}>
