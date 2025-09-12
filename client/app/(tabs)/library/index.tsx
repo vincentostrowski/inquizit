@@ -145,12 +145,12 @@ export default function LibraryScreen() {
             onPress={handleStartQuizit}
             activeOpacity={0.85}
           >
-            <View style={styles.startQuizitButtonCircle}>
-              <Ionicons name="document-text" size={16} color="#FFFFFF" />
-            </View>
             <Text style={styles.startQuizitText}>
               Start Quizit{'\n'}Session
             </Text>
+            <View style={styles.startQuizitButtonCircle}>
+              <Ionicons name="document-text" size={16} color="#FFFFFF" />
+            </View>
           </TouchableOpacity>
         )}
 
@@ -288,14 +288,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#636366',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 6,
+    marginLeft: 8,
   },
   startQuizitText: {
     color: '#636366',
     fontSize: 11,
-    textAlign: 'left',
+    textAlign: 'right',
     lineHeight: 13,
     fontWeight: '500',
-    paddingRight: 16,
+    paddingLeft: 8,
   },
 });

@@ -26,7 +26,7 @@ function RootLayoutContent() {
         bookCover={modalData?.bookCover || ''}
         title={modalData?.title || ''}
         onStartQuizit={() => {
-          hideQuizitConfig();
+          //hideQuizitConfig();
           modalData?.onStartQuizit();
         }}
         onClose={hideQuizitConfig}

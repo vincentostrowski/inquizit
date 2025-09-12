@@ -31,9 +31,10 @@ interface DeckProps {
   onGestureStart: () => void;
   onGestureEnd: () => void;
   onViewReasoning?: () => void;
+  fadeIn?: boolean;
 }
 
-export default function Deck({ quizitItems, onGestureStart, onGestureEnd, onViewReasoning }: DeckProps) {
+export default function Deck({ quizitItems, onGestureStart, onGestureEnd, onViewReasoning, fadeIn = false }: DeckProps) {
   // Enhanced deck state with all card data
   const [deck, setDeck] = useState(() => 
     quizitItems.map(item => ({
@@ -50,6 +51,21 @@ export default function Deck({ quizitItems, onGestureStart, onGestureEnd, onView
   const [isTransitioningPrev, setIsTransitioningPrev] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
+  
+  // Fade-in animation for navigation and indicators
+  const fadeAnim = useRef(new Animated.Value(fadeIn ? 0 : 1)).current;
+  
+  // Trigger fade-in animation on mount if fadeIn is true
+  useEffect(() => {
+    if (fadeIn) {
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [fadeIn, fadeAnim]);
+  
   // Single source of truth for card view states
   const [cardViewStates, setCardViewStates] = useState<CardViewState[]>([]);
   
@@ -477,7 +493,7 @@ export default function Deck({ quizitItems, onGestureStart, onGestureEnd, onView
         </Animated.View>
       )}
       {/* Card Indicators and Navigation */}
-      <View style={styles.indicatorsAndNavigation}>
+      <Animated.View style={[styles.indicatorsAndNavigation, { opacity: fadeAnim }]}>
         {/* Card Indicators */}
         <View style={styles.cardIndicatorContainer}>
           {deck.map((_: any, index: number) => {
@@ -546,7 +562,7 @@ export default function Deck({ quizitItems, onGestureStart, onGestureEnd, onView
             </View>
           </TouchableOpacity>
         </View>
-      </View>
+      </Animated.View>
     </View>
   );
 }
