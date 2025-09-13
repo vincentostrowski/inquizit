@@ -93,6 +93,7 @@ export default function ListDisplay({
             title={section.title}
             cards={transformCards(section)}
             onPress={() => handleSectionPress(section)}
+            onCardPress={onCardPress}
             isEditMode={isEditMode}
             selectedCardIds={selectedCardIds}
             onCardSelection={onCardSelection}

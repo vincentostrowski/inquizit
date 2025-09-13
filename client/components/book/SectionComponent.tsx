@@ -14,6 +14,7 @@ interface SectionComponentProps {
   title: string;
   cards?: Card[];
   onPress: () => void;
+  onCardPress?: (card: Card) => void;
   isEditMode?: boolean;
   selectedCardIds?: string[];
   onCardSelection?: (cardId: string) => void;
@@ -25,6 +26,7 @@ export default function SectionComponent({
   title, 
   cards = [], 
   onPress, 
+  onCardPress,
   isEditMode = false, 
   selectedCardIds = [], 
   onCardSelection,
@@ -48,7 +50,7 @@ export default function SectionComponent({
     if (isEditMode && onCardSelection) {
       onCardSelection(card.id);
     } else {
-      console.log('Card pressed:', card.title);
+      onCardPress?.(card);
     }
   };
 
