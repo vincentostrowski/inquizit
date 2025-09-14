@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
 import { router } from 'expo-router';
 import { normalizeId, compareIds, includesId } from '../utils/idUtils';
+import { createQuizitSession } from '../services/quizitSessionService';
 
 interface BookSelection {
   bookId: string;
@@ -13,18 +14,27 @@ interface BookSelection {
   buttonCircleColor?: string;
 }
 
+interface QuizitSession {
+  sessionId: string;
+  title: string;
+  createdAt: number;
+  selectedCards: BookSelection[];
+}
+
 interface QuizitConfigData {
   screenType: 'book' | 'section' | 'card';
   bookCover: string;
   title: string;
   isEditMode: boolean;
   bookSelections: BookSelection[];
-  onStartQuizit: () => void;
+  onStartQuizit: (modalData: QuizitConfigData) => void;
 }
 
 interface QuizitConfigContextType {
   showModal: boolean;
   modalData: QuizitConfigData | null;
+  activeSessionId: string | null;
+  sessionHistory: QuizitSession[];
   showQuizitConfig: (data: QuizitConfigData) => void;
   hideQuizitConfig: () => void;
   toggleEditMode: () => void;
@@ -40,6 +50,10 @@ interface QuizitConfigContextType {
   popFromNavigationStack: (bookId: string) => void;
   isCurrentlyOnBook: (bookId: string) => boolean;
   navigateToLibraryEdit: () => void;
+  startQuizitSession: (modalData?: QuizitConfigData) => Promise<{ sessionId: string; cardCount: number }>;
+  clearSession: () => void;
+  addSessionToHistory: (session: QuizitSession) => void;
+  getSessionHistory: () => QuizitSession[];
 }
 
 const QuizitConfigContext = createContext<QuizitConfigContextType | undefined>(undefined);
@@ -60,6 +74,8 @@ export const QuizitConfigProvider = ({ children }: QuizitConfigProviderProps) =>
   const [showModal, setShowModal] = useState(false);
   const [modalData, setModalData] = useState<QuizitConfigData | null>(null);
   const [navigationStack, setNavigationStack] = useState<string[]>([]);
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+  const [sessionHistory, setSessionHistory] = useState<QuizitSession[]>([]);
 
   const showQuizitConfig = (data: QuizitConfigData) => {
     setModalData(data);
@@ -227,11 +243,70 @@ export const QuizitConfigProvider = ({ children }: QuizitConfigProviderProps) =>
     router.push('/library');
   }, [modalData]);
 
+  const addSessionToHistory = useCallback((session: QuizitSession) => {
+    setSessionHistory(prev => {
+      // Remove existing session with same ID if it exists
+      const filtered = prev.filter(s => s.sessionId !== session.sessionId);
+      
+      // Add new session to the beginning
+      const updated = [session, ...filtered];
+      
+      // Keep only the 5 most recent sessions
+      return updated.slice(0, 5);
+    });
+  }, []);
+
+
+  const getSessionHistory = useCallback(() => {
+    return sessionHistory;
+  }, [sessionHistory]);
+
+  const startQuizitSession = useCallback(async (passedModalData?: QuizitConfigData) => {
+    const dataToUse = passedModalData || modalData;
+    
+    if (!dataToUse) {
+      throw new Error('No modal data available');
+    }
+
+    // Get ALL selected card IDs from the modal state
+    const allSelectedCardIds = dataToUse.bookSelections.flatMap(book => book.selectedCardIds);
+    
+    if (allSelectedCardIds.length === 0) {
+      throw new Error('No cards selected');
+    }
+
+    try {
+      const sessionData = await createQuizitSession(allSelectedCardIds);
+      setActiveSessionId(sessionData.sessionId);
+      
+      // Add session to history
+      const sessionTitle = dataToUse.title || 'Quizit Session';
+      const newSession: QuizitSession = {
+        sessionId: sessionData.sessionId,
+        title: sessionTitle,
+        createdAt: Date.now(),
+        selectedCards: dataToUse.bookSelections
+      };
+      addSessionToHistory(newSession);
+      
+      return sessionData;
+    } catch (error) {
+      console.error('Failed to create quizit session:', error);
+      throw error;
+    }
+  }, [modalData, addSessionToHistory]);
+
+  const clearSession = useCallback(() => {
+    setActiveSessionId(null);
+  }, []);
+
   return (
     <QuizitConfigContext.Provider
       value={{
         showModal,
         modalData,
+        activeSessionId,
+        sessionHistory,
         showQuizitConfig,
         hideQuizitConfig,
         toggleEditMode,
@@ -247,6 +322,10 @@ export const QuizitConfigProvider = ({ children }: QuizitConfigProviderProps) =>
         popFromNavigationStack,
         isCurrentlyOnBook,
         navigateToLibraryEdit,
+        startQuizitSession,
+        clearSession,
+        addSessionToHistory,
+        getSessionHistory,
       }}
     >
       {children}

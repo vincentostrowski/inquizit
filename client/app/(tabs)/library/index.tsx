@@ -5,7 +5,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useCollections } from '../../../hooks/useCollections';
 import { useSearch } from '../../../hooks/useSearch';
 import { useQuizitConfig } from '../../../context/QuizitConfigContext';
-import LibraryHeader from '../../../components/library/LibraryHeader';
 import SearchBar from '../../../components/library/SearchBar';
 import FilterGroup from '../../../components/library/FilterGroup';
 import BookRow from '../../../components/library/BookRow';
@@ -34,7 +33,7 @@ export default function LibraryScreen() {
     clearSearch
   } = useSearch();
 
-  const { modalData, toggleEditMode, navigationStack, showQuizitConfig, pushToNavigationStack, popFromNavigationStack } = useQuizitConfig();
+  const { modalData, toggleEditMode, navigationStack, showQuizitConfig, pushToNavigationStack, popFromNavigationStack, startQuizitSession } = useQuizitConfig();
   const isEditMode = modalData?.isEditMode || false;
   const [shouldShowBackButton, setShouldShowBackButton] = useState(false);
 
@@ -64,9 +63,25 @@ export default function LibraryScreen() {
       title: 'Custom List',
       isEditMode: false,
       bookSelections: [], // Empty for library start
-      onStartQuizit: () => {
-        // Navigate to quizit screen
-        router.push('/quizit');
+      onStartQuizit: async (modalData) => {
+        try {
+          // Use context to create session with actual selected cards
+          const sessionData = await startQuizitSession(modalData);
+          
+          // Navigate to quizit screen with session ID
+          router.push({
+            pathname: '/quizit',
+            params: { 
+              sessionId: sessionData.sessionId,
+              quizitId: 'library',
+              quizitType: 'library',
+              quizitTitle: 'Custom List'
+            }
+          });
+        } catch (error) {
+          console.error('Failed to start quizit:', error);
+          // You could show an error message to the user here
+        }
       }
     });
   };

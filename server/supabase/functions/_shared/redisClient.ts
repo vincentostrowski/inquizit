@@ -1,18 +1,15 @@
-import { connect } from "https://deno.land/x/redis@v0.30.0/mod.ts";
+import { Redis } from "https://esm.sh/@upstash/redis@1.19.3";
 
-// Connect to Redis
+// Connect to Upstash Redis
 let redisClient;
 try {
-  redisClient = await connect({
-    hostname: Deno.env.get("REDIS_HOST")!,
-    port: Number(Deno.env.get("REDIS_PORT")!),
-    password: Deno.env.get("REDIS_PASSWORD"),
-    tls: true,
+  redisClient = new Redis({
+    url: Deno.env.get("UPSTASH_REDIS_REST_URL")!,
+    token: Deno.env.get("UPSTASH_REDIS_REST_TOKEN")!,
   });
-  console.log("Connected to Redis successfully");
+  console.log("Connected to Upstash Redis successfully");
 } catch (error) {
-  console.error("Error connecting to Redis:", error);
-  // Optionally, you might want to exit here if the connection is critical
+  console.error("Error connecting to Upstash Redis:", error);
   throw error;
 }
 

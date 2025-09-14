@@ -30,7 +30,7 @@ export default function SectionScreen() {
   } = useLocalSearchParams();
   const { viewMode, setViewMode } = useViewMode();
   const { bookDetails, loading, error } = useBookDetails(bookId);
-  const { showQuizitConfig, toggleCardSelection, pushToNavigationStack, popFromNavigationStack } = useQuizitConfig();
+  const { showQuizitConfig, toggleCardSelection, pushToNavigationStack, popFromNavigationStack, startQuizitSession } = useQuizitConfig();
   
   // Local filter state
   const [filterMode, setFilterMode] = useState<'all' | 'saved'>('all');
@@ -92,15 +92,25 @@ export default function SectionScreen() {
         buttonTextBorderColor: buttonTextBorderColor as string || bookDetails?.book?.button_text_border_color || 'green',
         buttonCircleColor: buttonCircleColor as string || bookDetails?.book?.button_circle_color || 'green'
       }],
-      onStartQuizit: () => {
-        router.push({
-          pathname: '/quizit',
-          params: { 
-            quizitId: sectionId,
-            quizitType: 'section',
-            quizitTitle: sectionTitle
-          }
-        });
+      onStartQuizit: async (modalData) => {
+        try {
+          // Use context to create session with actual selected cards
+          const sessionData = await startQuizitSession(modalData);
+          
+          // Navigate to quizit screen with session ID
+          router.push({
+            pathname: '/quizit',
+            params: { 
+              sessionId: sessionData.sessionId,
+              quizitId: sectionId,
+              quizitType: 'section',
+              quizitTitle: sectionTitle
+            }
+          });
+        } catch (error) {
+          console.error('Failed to start quizit:', error);
+          // You could show an error message to the user here
+        }
       }
     });
   };

@@ -23,7 +23,7 @@ export default function CardScreen() {
   } = useLocalSearchParams();
   
   const { bookDetails, loading, error } = useBookDetails(bookId);
-  const { showQuizitConfig } = useQuizitConfig();
+  const { showQuizitConfig, startQuizitSession } = useQuizitConfig();
   // Find the specific card data
   const cardData = (() => {
     if (!bookDetails || !(bookDetails as any).sections) return null;
@@ -62,14 +62,24 @@ export default function CardScreen() {
       screenType: 'card',
       bookCover: bookCover as string,
       title: bookDetails?.book?.title || (bookTitle as string) || 'Unknown Book',
-      onStartQuizit: () => {
-        router.push({
-          pathname: '/quizit',
-          params: { 
-            quizitId: cardId,
-            quizitType: 'card'
-          }
-        });
+      onStartQuizit: async (modalData) => {
+        try {
+          // Use context to create session with actual selected cards
+          const sessionData = await startQuizitSession(modalData);
+          
+          // Navigate to quizit screen with session ID
+          router.push({
+            pathname: '/quizit',
+            params: { 
+              sessionId: sessionData.sessionId,
+              quizitId: cardId,
+              quizitType: 'card'
+            }
+          });
+        } catch (error) {
+          console.error('Failed to start quizit:', error);
+          // You could show an error message to the user here
+        }
       }
     });
   };

@@ -28,7 +28,7 @@ export default function SectionScreen() {
   } = useLocalSearchParams();
   const { viewMode, setViewMode } = useViewMode();
   const { bookDetails, loading, error } = useBookDetails(bookId);
-  const { showQuizitConfig } = useQuizitConfig();
+  const { showQuizitConfig, startQuizitSession } = useQuizitConfig();
 
   const handleBack = () => {
     router.back();
@@ -39,14 +39,36 @@ export default function SectionScreen() {
       screenType: 'section',
       bookCover: bookCover as string,
       title: bookTitle as string,
-      onStartQuizit: () => {
-        router.push({
-          pathname: '/quizit',
-          params: { 
-            quizitId: sectionId,
-            quizitType: 'section'
-          }
-        });
+      isEditMode: false,
+      bookSelections: [{
+        bookId: bookId as string,
+        bookTitle: bookTitle as string,
+        bookCover: bookCover as string,
+        selectedCardIds: [], // Will be populated by user in modal
+        headerColor: headerColor as string || bookDetails?.book?.header_color || 'green',
+        backgroundEndColor: backgroundEndColor as string || bookDetails?.book?.background_end_color || 'green',
+        buttonTextBorderColor: buttonTextBorderColor as string || bookDetails?.book?.button_text_border_color || 'green',
+        buttonCircleColor: buttonCircleColor as string || bookDetails?.book?.button_circle_color || 'green'
+      }],
+      onStartQuizit: async (modalData) => {
+        try {
+          // Use context to create session with actual selected cards
+          const sessionData = await startQuizitSession(modalData);
+          
+          // Navigate to quizit screen with session ID
+          router.push({
+            pathname: '/quizit',
+            params: { 
+              sessionId: sessionData.sessionId,
+              quizitId: sectionId,
+              quizitType: 'section',
+              quizitTitle: sectionTitle
+            }
+          });
+        } catch (error) {
+          console.error('Failed to start quizit:', error);
+          // You could show an error message to the user here
+        }
       }
     });
   };

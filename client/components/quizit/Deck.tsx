@@ -194,7 +194,7 @@ export default function Deck({ quizitItems, onGestureStart, onGestureEnd, onView
     }).start(() => {
       // Animate offScreen card into position
       Animated.timing(offScreenPosition, {
-        toValue: { x: 8, y: 8 },
+        toValue: { x: (deck.length - 1) * 4, y: (deck.length - 1) * 4 },
         duration: 100,
         useNativeDriver: true,
       }).start(() => {

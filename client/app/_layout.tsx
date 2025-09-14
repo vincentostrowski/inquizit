@@ -27,7 +27,7 @@ function RootLayoutContent() {
         title={modalData?.title || ''}
         onStartQuizit={() => {
           //hideQuizitConfig();
-          modalData?.onStartQuizit();
+          modalData?.onStartQuizit(modalData);
         }}
         onClose={hideQuizitConfig}
       />
