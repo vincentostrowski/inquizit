@@ -72,8 +72,7 @@ export default function CardScreen() {
             pathname: '/quizit',
             params: { 
               sessionId: sessionData.sessionId,
-              quizitId: cardId,
-              quizitType: 'card'
+              sessionTitle: cardTitle
             }
           });
         } catch (error) {

@@ -33,7 +33,10 @@ export default function BookScreen() {
   const handleStartQuizit = () => {
     router.push({
       pathname: '/quizit',
-      params: { quizitId: bookId }
+      params: { 
+        sessionId: 'temp-session-id', // This should be replaced with actual session creation
+        sessionTitle: bookTitle 
+      }
     });
   };
 

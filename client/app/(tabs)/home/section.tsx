@@ -60,9 +60,7 @@ export default function SectionScreen() {
             pathname: '/quizit',
             params: { 
               sessionId: sessionData.sessionId,
-              quizitId: sectionId,
-              quizitType: 'section',
-              quizitTitle: sectionTitle
+              sessionTitle: sectionTitle
             }
           });
         } catch (error) {

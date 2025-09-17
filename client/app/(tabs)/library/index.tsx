@@ -73,9 +73,7 @@ export default function LibraryScreen() {
             pathname: '/quizit',
             params: { 
               sessionId: sessionData.sessionId,
-              quizitId: 'library',
-              quizitType: 'library',
-              quizitTitle: 'Custom List'
+              sessionTitle: 'Custom List'
             }
           });
         } catch (error) {

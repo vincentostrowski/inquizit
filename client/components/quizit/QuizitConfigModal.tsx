@@ -165,11 +165,12 @@ export default function QuizitConfigModal({
               // Normal Mode Buttons
               <>
                 <TouchableOpacity 
-                  style={styles.bottomButton}
-                  onPress={onStartQuizit}
-                  activeOpacity={0.8}
+                  style={[styles.bottomButton, totalCardCount === 0 && styles.disabledButton]}
+                  onPress={totalCardCount > 0 ? onStartQuizit : undefined}
+                  activeOpacity={totalCardCount > 0 ? 0.8 : 1}
+                  disabled={totalCardCount === 0}
                 >
-                  <Text style={styles.startButtonText}>Start</Text>
+                  <Text style={[styles.startButtonText, totalCardCount === 0 && styles.disabledButtonText]}>Start</Text>
                 </TouchableOpacity>
                 
                 <TouchableOpacity 
@@ -369,5 +370,12 @@ const styles = StyleSheet.create({
     color: '#1D1D1F',
     fontSize: 14,
     fontWeight: '500',
+  },
+  disabledButton: {
+    backgroundColor: '#F2F2F7',
+    borderColor: '#E5E5EA',
+  },
+  disabledButtonText: {
+    color: '#8E8E93',
   },
 });

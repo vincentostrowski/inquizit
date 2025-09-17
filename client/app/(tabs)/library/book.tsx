@@ -105,8 +105,7 @@ export default function BookScreen() {
             pathname: '/quizit',
             params: { 
               sessionId: sessionData.sessionId,
-              quizitId: bookId, 
-              quizitTitle: bookTitle 
+              sessionTitle: bookTitle 
             }
           });
         } catch (error) {

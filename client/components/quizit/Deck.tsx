@@ -3,6 +3,7 @@ import { View, StyleSheet, Animated, Dimensions, ScrollView, Pressable, Touchabl
 import { Ionicons } from '@expo/vector-icons';
 import { compareIds } from '../../utils/idUtils';
 import { Card } from './Card';
+import { createDebouncedUpdateScores, updateScores } from '../../services/updateScoresService';
 
 type CardViewState = 'unviewed' | 'viewed' | 'completed';
 
@@ -26,15 +27,17 @@ interface DeckProps {
     };
     quizitData?: {
       quizit: string;
+      quizitId: string;
     };
   }>;
   onGestureStart: () => void;
   onGestureEnd: () => void;
   onViewReasoning?: () => void;
   fadeIn?: boolean;
+  sessionId?: string;
 }
 
-export default function Deck({ quizitItems, onGestureStart, onGestureEnd, onViewReasoning, fadeIn = false }: DeckProps) {
+export default function Deck({ quizitItems, onGestureStart, onGestureEnd, onViewReasoning, fadeIn = false, sessionId }: DeckProps) {
   // Enhanced deck state with all card data
   const [deck, setDeck] = useState(() => 
     quizitItems.map(item => ({
@@ -51,6 +54,23 @@ export default function Deck({ quizitItems, onGestureStart, onGestureEnd, onView
   const [isTransitioningPrev, setIsTransitioningPrev] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
+
+  // Extract the specific value we care about
+  const quizitId = quizitItems[0]?.quizitData?.quizitId;
+
+  // Create debounced update function for scores (created once, never changes)
+  const debouncedUpdateScores = useMemo(() => {
+    if (!sessionId || !quizitId) return null;
+    
+    return createDebouncedUpdateScores(async (cardData) => {
+      try {
+        await updateScores(sessionId, quizitId, cardData);
+        console.log('Scores updated successfully for card:', cardData.id);
+      } catch (error) {
+        console.error('Failed to update scores:', error);
+      }
+    }, 2000); // 2 second debounce
+  }, []); // Empty dependency array - create once and never change
   
   // Fade-in animation for navigation and indicators
   const fadeAnim = useRef(new Animated.Value(fadeIn ? 0 : 1)).current;
@@ -169,6 +189,16 @@ export default function Deck({ quizitItems, onGestureStart, onGestureEnd, onView
     
     // This only occurs for concept cards that just completed, check quizit card too
     checkAndMarkCompleted(0, updatedDeck);
+
+    // Call debounced API update if we have the required data
+    if (debouncedUpdateScores && updatedDeck[0].conceptData) {
+      const cardData = {
+        id: updatedDeck[0].conceptData.id,
+        recognitionScore: updatedDeck[0].conceptData.recognitionScore,
+        reasoningScore: updatedDeck[0].conceptData.reasoningScore
+      };
+      debouncedUpdateScores(cardData);
+    }
   };
 
   const { width } = Dimensions.get('window');

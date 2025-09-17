@@ -98,9 +98,7 @@ export default function CardScreen() {
             pathname: '/quizit',
             params: { 
               sessionId: sessionData.sessionId,
-              quizitId: cardId,
-              quizitType: 'card',
-              quizitTitle: cardTitle as string
+              sessionTitle: cardTitle as string
             }
           });
         } catch (error) {

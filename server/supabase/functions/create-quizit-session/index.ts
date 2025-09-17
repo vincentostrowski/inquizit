@@ -1,4 +1,4 @@
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import "jsr:@supabase/functions-js@2.5.0/edge-runtime.d.ts";
 import { Redis } from "https://esm.sh/@upstash/redis@1.19.3";
 
 // Simple interface for card IDs
@@ -83,7 +83,21 @@ Deno.serve(async (req) => {
 
     // Store in Redis with expiration (24 hours)
     await redisClient.setex(`quizit-session:${sessionId}:cards`, 86400, JSON.stringify(cardIds));
-    await redisClient.setex(`quizit-session:${sessionId}:created-at`, 86400, Date.now().toString());
+    
+    // Initialize turn counter
+    await redisClient.setex(`quizit-session:${sessionId}:currentTurn`, 86400, "0");
+    
+    // Initialize card usage tracking for all cards
+    for (const cardId of cardIds) {
+      await redisClient.hset(`quizit-session:${sessionId}:card:${cardId}`, {
+        totalUses: "0",
+        recognitionScore: "0.0",
+        reasoningScore: "0.0",
+        lastUsedTurn: "0"
+      });
+      // Set expiration for card data
+      await redisClient.expire(`quizit-session:${sessionId}:card:${cardId}`, 86400);
+    }
 
     console.log(`Created quizit session ${sessionId} with ${cardIds.length} cards`);
 
