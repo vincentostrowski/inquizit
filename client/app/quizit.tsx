@@ -145,17 +145,15 @@ function QuizitScreenContent() {
   const handleCloseReasoning = () => {
     setShowReasoningSheet(false);
   };
-
-  const handleScrollEnd = (event: any) => {
+  
+  // Real-time scroll detection for immediate response
+  const handleScroll = (event: any) => {
     const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
-    const atBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - 20;
+    const atBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - 200;
     
-    if (atBottom) {
-      // User reached bottom
-      if (reachedBottom) return; // Already handled, exit early
-      
-      setReachedBottom(true);
+    if (atBottom && !reachedBottom) {
       loadNextDeckProactively();
+      setReachedBottom(true);
     }
   };
 
@@ -176,7 +174,7 @@ function QuizitScreenContent() {
         snapToInterval={availableHeight}
         snapToAlignment="start"
         decelerationRate="fast"
-        onMomentumScrollEnd={handleScrollEnd}
+        onScroll={handleScroll}
       >
         
         {
@@ -193,13 +191,14 @@ function QuizitScreenContent() {
                     handleViewReasoning(conceptCard.conceptData.reasoning);
                   }
                 }}
-                fadeIn={index === 0 || index === newlyLoadedDeckIndex} // Fade in first deck and newly loaded decks
+                fadeIn={true} // Fade in first deck and newly loaded decks
                 sessionId={sessionId as string}
               />
             </View>
           ))
         }
-        {/* Skeleton deck always at bottom */}
+        {/* Skeleton deck only when loading */}
+        {(quizitItems.length === 0 || reachedBottom) && (
           <View style={[styles.deckContainer, {height: availableHeight}]}>
             <SkeletonLoadingDeck 
               quizitItems={[]}
@@ -208,6 +207,7 @@ function QuizitScreenContent() {
               onViewReasoning={() => {}}
             />
           </View>
+        )}
         
       </ScrollView>
       
