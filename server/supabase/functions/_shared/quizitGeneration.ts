@@ -154,37 +154,75 @@ export async function getIndicesPairedCards(cardId1: string, cardId2: string): P
   const supabaseClient = getSupabaseClient();
   
   try {
-    // Get latest quizit for card1
-    const { data: card1Data, error: card1Error } = await supabaseClient
+    // Get latest permutation index for card1
+    const { data: quizitWithCard1Data, error: quizitWithCard1Error } = await supabaseClient
       .from('quizits')
-      .select('permutation_index_1, seed_bundle_index')
-      .eq('chosen_card_for_seed', cardId1)
+      .select('permutation_index_1, permutation_index_2, seed_bundle_index, chosen_card_for_seed, card_id_1, card_id_2')
+      .or(`card_id_1.eq.${cardId1},card_id_2.eq.${cardId1}`)
       .order('created_at', { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
-    if (card1Error && card1Error.code !== 'PGRST116') {
-      console.error('Error getting card1 indices:', card1Error);
-      throw card1Error;
+    if (quizitWithCard1Error && quizitWithCard1Error.code !== 'PGRST116') {
+      console.error('Error getting card1 indices:', quizitWithCard1Error);
+      throw quizitWithCard1Error;
     }
 
-    // Get latest quizit for card2
-    const { data: card2Data, error: card2Error } = await supabaseClient
+    // Get latest permutation index for card2
+    const { data: quizitWithCard2Data, error: quizitWithCard2Error } = await supabaseClient
       .from('quizits')
-      .select('permutation_index, seed_bundle_index')
-      .eq('chosen_card_for_seed', cardId2)
+      .select('permutation_index_1, permutation_index_2, seed_bundle_index, chosen_card_for_seed, card_id_1, card_id_2')
+      .or(`card_id_1.eq.${cardId2},card_id_2.eq.${cardId2}`)
       .order('created_at', { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
-    if (card2Error && card2Error.code !== 'PGRST116') {
-      console.error('Error getting card2 indices:', card2Error);
-      throw card2Error;
+    if (quizitWithCard2Error && quizitWithCard2Error.code !== 'PGRST116') {
+      console.error('Error getting card2 indices:', quizitWithCard2Error);
+      throw quizitWithCard2Error;
+    }
+    
+    let card1SeedIndex = 0;
+    if (quizitWithCard1Data) {
+      if (cardId1 === quizitWithCard1Data.chosen_card_for_seed) {
+        card1SeedIndex = quizitWithCard1Data.seed_bundle_index + 1;
+      } else {
+        const { data: quizitWithCard1SeedData, error: quizitWithCard1SeedError } = await supabaseClient
+          .from('quizits')
+          .select('seed_bundle_index')
+          .eq('chosen_card_for_seed', cardId1)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (quizitWithCard1SeedError && quizitWithCard1SeedError.code !== 'PGRST116') {
+          console.error('Error getting card1 indices:', quizitWithCard1SeedError);
+          throw quizitWithCard1SeedError;
+        }
+        card1SeedIndex = quizitWithCard1SeedData ? quizitWithCard1SeedData.seed_bundle_index + 1 : 0;
+      }
     }
 
-    // Determine which card has the lower seed index
-    const card1SeedIndex = card1Data ? card1Data.seed_bundle_index : -1;
-    const card2SeedIndex = card2Data ? card2Data.seed_bundle_index : -1;
+    let card2SeedIndex = 0;
+    if (quizitWithCard2Data) {
+      if (cardId2 === quizitWithCard2Data.chosen_card_for_seed) {
+        card2SeedIndex = quizitWithCard2Data.seed_bundle_index + 1;
+      } else {
+        const { data: quizitWithCard2SeedData, error: quizitWithCard2SeedError } = await supabaseClient
+          .from('quizits')
+          .select('seed_bundle_index')
+          .eq('chosen_card_for_seed', cardId2)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (quizitWithCard2SeedError && quizitWithCard2SeedError.code !== 'PGRST116') {
+          console.error('Error getting card2 indices:', quizitWithCard2SeedError);
+          throw quizitWithCard2SeedError;
+        }
+        card2SeedIndex = quizitWithCard2SeedData ? quizitWithCard2SeedData.seed_bundle_index + 1 : 0;
+      }
+    }
     
     let chosenCardForSeed: string;
     let seedBundleIndex: number;
@@ -192,20 +230,40 @@ export async function getIndicesPairedCards(cardId1: string, cardId2: string): P
     if (card1SeedIndex < card2SeedIndex) {
       // Card1 has lower seed index, use it as the seed source
       chosenCardForSeed = cardId1;
-      seedBundleIndex = card1Data ? card1Data.seed_bundle_index + 1 : 0;
+      seedBundleIndex = card1SeedIndex;
     } else if (card2SeedIndex < card1SeedIndex) {
       // Card2 has lower seed index, use it as the seed source
       chosenCardForSeed = cardId2;
-      seedBundleIndex = card2Data ? card2Data.seed_bundle_index + 1 : 0;
+      seedBundleIndex = card2SeedIndex;
     } else {
       // Both have same seed index (including both being -1), default to card1
       chosenCardForSeed = cardId1;
-      seedBundleIndex = card1Data ? card1Data.seed_bundle_index + 1 : 0;
+      seedBundleIndex = card1SeedIndex;
+    }
+
+    // Determine permutation indices based on card position in their respective quizits
+    let permutationIndex1 = 0;
+    let permutationIndex2 = 0;
+    
+    if (quizitWithCard1Data) {
+      if (quizitWithCard1Data.card_id_1 === parseInt(cardId1)) {
+        permutationIndex1 = quizitWithCard1Data.permutation_index_1 + 1;
+      } else if (quizitWithCard1Data.card_id_2 === parseInt(cardId1)) {
+        permutationIndex1 = quizitWithCard1Data.permutation_index_2 + 1;
+      }
+    }
+    
+    if (quizitWithCard2Data) {
+      if (quizitWithCard2Data.card_id_1 === parseInt(cardId2)) {
+        permutationIndex2 = quizitWithCard2Data.permutation_index_1 + 1;
+      } else if (quizitWithCard2Data.card_id_2 === parseInt(cardId2)) {
+        permutationIndex2 = quizitWithCard2Data.permutation_index_2 + 1;
+      }
     }
 
     return {
-      permutationIndex1: card1Data ? card1Data.permutation_index + 1 : 0,
-      permutationIndex2: card2Data ? card2Data.permutation_index + 1 : 0,
+      permutationIndex1,
+      permutationIndex2,
       seedBundleIndex,
       chosenCardForSeed
     };
