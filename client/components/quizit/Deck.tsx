@@ -54,9 +54,8 @@ export default function Deck({ quizitItems, onGestureStart, onGestureEnd, onView
   const [isTransitioningPrev, setIsTransitioningPrev] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
-
-  // Extract the specific value we care about
-  const quizitId = quizitItems[0]?.quizitData?.quizitId;
+  // Extract the specific value we care abou
+  const quizitId = quizitItems.find(item => item.quizitData)?.quizitData?.quizitId;
 
   // Create debounced update function for scores (created once, never changes)
   const debouncedUpdateScores = useMemo(() => {
@@ -159,6 +158,7 @@ export default function Deck({ quizitItems, onGestureStart, onGestureEnd, onView
 
   const handleScoreChange = (type: 'recognition' | 'reasoning', score: number) => {
     // Calculate updated deck locally
+    console.log('type: ', type, 'score: ', score, 'quizitId: ', quizitId);
     const updatedDeck = [...deck];
     if (updatedDeck[0].conceptData) {
       updatedDeck[0] = {
@@ -194,8 +194,8 @@ export default function Deck({ quizitItems, onGestureStart, onGestureEnd, onView
     if (debouncedUpdateScores && updatedDeck[0].conceptData) {
       const cardData = {
         id: updatedDeck[0].conceptData.id,
-        recognitionScore: updatedDeck[0].conceptData.recognitionScore,
-        reasoningScore: updatedDeck[0].conceptData.reasoningScore
+        recognitionScore: updatedDeck[0].conceptData.recognitionScore || 0.0,
+        reasoningScore: updatedDeck[0].conceptData.reasoningScore || 0.0
       };
       debouncedUpdateScores(cardData);
     }

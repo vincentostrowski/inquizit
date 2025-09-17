@@ -9,8 +9,8 @@ export interface QuizitItem {
     description: string;
     reasoning: string;
     status?: 'question' | 'empty' | 'checkmark';
-    recognitionScore?: number;
-    reasoningScore?: number;
+    recognitionScore?: number; // 0.0-1.0 scale
+    reasoningScore?: number;   // 0.0-1.0 scale
   };
   quizitData?: {
     quizit: string;

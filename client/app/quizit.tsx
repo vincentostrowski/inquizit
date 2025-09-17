@@ -31,7 +31,6 @@ function QuizitScreenContent() {
   const scrollViewRef = useRef(null);
   const [quizitItems, setQuizitItems] = useState<any[]>([]);
   const [isLoadingNext, setIsLoadingNext] = useState(false);
-  const [newlyLoadedDeckIndex, setNewlyLoadedDeckIndex] = useState<number | null>(null);
   const [verticalScrollEnabled, setVerticalScrollEnabled] = useState(true);
   const [showReasoningSheet, setShowReasoningSheet] = useState(false);
   const [currentReasoning, setCurrentReasoning] = useState('');
@@ -62,14 +61,14 @@ function QuizitScreenContent() {
       console.log('Current card IDs to exclude:', latestCardIds);
       
       const response = await getNextQuizit(sessionId as string, latestCardIds);
-      
+
       if (response.quizitItems && response.quizitItems.length > 0) {
         // Convert API response to the expected format
         const formattedItems = response.quizitItems.map((item: any) => ({
           faceType: item.faceType,
           quizitData: item.quizitData ? {
             ...item.quizitData,
-            quizitId: item.quizitId // Add quizitId if not present
+            quizitId: item.quizitData.quizitId // Add quizitId if not present
           } : undefined,
           conceptData: item.conceptData
         }));
@@ -110,7 +109,7 @@ function QuizitScreenContent() {
             faceType: item.faceType,
             quizitData: item.quizitData ? {
               ...item.quizitData,
-              quizitId: item.quizitId // Add quizitId if not present
+              quizitId: item.quizitData.quizitId // Add quizitId if not present
             } : undefined,
             conceptData: item.conceptData
           }));

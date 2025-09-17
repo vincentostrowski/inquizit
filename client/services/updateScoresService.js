@@ -4,20 +4,20 @@ import { supabase } from './supabaseClient';
  * Update scores for a quizit
  * @param {string} sessionId - The session ID
  * @param {string} quizitId - The quizit ID
- * @param {Object} cardId1 - Card 1 data with scores
- * @param {Object} cardId2 - Card 2 data with scores (optional)
+ * @param {Object} cardData - Card data with scores {id, recognitionScore, reasoningScore}
  * @returns {Promise<Object>} Response from the update-scores function
  */
-export const updateScores = async (sessionId, quizitId, cardId1, cardId2 = null) => {
+export const updateScores = async (sessionId, quizitId, cardData) => {
   try {
-    console.log('Updating scores:', { sessionId, quizitId, cardId1, cardId2 });
+    console.log('Updating scores:', { sessionId, quizitId, cardData });
 
     const { data, error } = await supabase.functions.invoke('update-scores', {
       body: {
         sessionId,
         quizitId,
-        cardId1,
-        cardId2
+        cardId: cardData.id,
+        recognitionScore: cardData.recognitionScore,
+        reasoningScore: cardData.reasoningScore
       }
     });
 

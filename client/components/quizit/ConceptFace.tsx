@@ -6,11 +6,11 @@ interface ConceptFaceProps {
   title: string;
   description: string;
   reasoning: string;
-  recognitionScore?: number;
-  reasoningScore?: number;
+  recognitionScore?: number; // 0.0-1.0 scale
+  reasoningScore?: number;   // 0.0-1.0 scale
   onTap?: () => void;
   onViewReasoning?: () => void;
-  onScoreChange?: (type: 'recognition' | 'reasoning', score: number) => void;
+  onScoreChange?: (type: 'recognition' | 'reasoning', score: number) => void; // score is 0.0-1.0
 }
 
 export default function ConceptFace({
@@ -58,20 +58,20 @@ export default function ConceptFace({
             <Text style={styles.scoreLabel}>Recognition</Text>
             <View style={styles.scoreButtonsContainer}>
               <Pressable 
-                style={[styles.scoreButton, recognitionScore === 3 && styles.scoreButtonSelected]}
-                onPress={() => handleScorePress('recognition', 3)}
+                style={[styles.scoreButton, recognitionScore === 0.0 && styles.scoreButtonSelected]}
+                onPress={() => handleScorePress('recognition', 0.0)}
               >
                 <Text style={styles.scoreButtonText}>Hard</Text>
               </Pressable>
               <Pressable 
-                style={[styles.scoreButton, recognitionScore === 2 && styles.scoreButtonSelected]}
-                onPress={() => handleScorePress('recognition', 2)}
+                style={[styles.scoreButton, recognitionScore === 0.5 && styles.scoreButtonSelected]}
+                onPress={() => handleScorePress('recognition', 0.5)}
               >
                 <Text style={styles.scoreButtonText}>Medium</Text>
               </Pressable>
               <Pressable 
-                style={[styles.scoreButton, recognitionScore === 1 && styles.scoreButtonSelected]}
-                onPress={() => handleScorePress('recognition', 1)}
+                style={[styles.scoreButton, recognitionScore === 1.0 && styles.scoreButtonSelected]}
+                onPress={() => handleScorePress('recognition', 1.0)}
               >
                 <Text style={styles.scoreButtonText}>Easy</Text>
               </Pressable>
@@ -83,20 +83,20 @@ export default function ConceptFace({
             <Text style={styles.scoreLabel}>Reasoning</Text>
             <View style={styles.scoreButtonsContainer}>
               <Pressable 
-                style={[styles.scoreButton, reasoningScore === 3 && styles.scoreButtonSelected]}
-                onPress={() => handleScorePress('reasoning', 3)}
+                style={[styles.scoreButton, reasoningScore === 0.0 && styles.scoreButtonSelected]}
+                onPress={() => handleScorePress('reasoning', 0.0)}
               >
                 <Text style={styles.scoreButtonText}>Hard</Text>
               </Pressable>
               <Pressable 
-                style={[styles.scoreButton, reasoningScore === 2 && styles.scoreButtonSelected]}
-                onPress={() => handleScorePress('reasoning', 2)}
+                style={[styles.scoreButton, reasoningScore === 0.5 && styles.scoreButtonSelected]}
+                onPress={() => handleScorePress('reasoning', 0.5)}
               >
                 <Text style={styles.scoreButtonText}>Medium</Text>
               </Pressable>
               <Pressable 
-                style={[styles.scoreButton, reasoningScore === 1 && styles.scoreButtonSelected]}
-                onPress={() => handleScorePress('reasoning', 1)}
+                style={[styles.scoreButton, reasoningScore === 1.0 && styles.scoreButtonSelected]}
+                onPress={() => handleScorePress('reasoning', 1.0)}
               >
                 <Text style={styles.scoreButtonText}>Easy</Text>
               </Pressable>

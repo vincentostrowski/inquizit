@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js@2.5.0/edge-runtime.d.ts";
 import { Redis } from "https://esm.sh/@upstash/redis@1.19.3";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
 // Interface for score data
 interface ScoreData {
@@ -10,16 +11,17 @@ interface ScoreData {
 interface UpdateScoresRequest {
   sessionId: string;
   quizitId: string;
-  cardId1: {
-    id: string;
-    recognitionScore: number;
-    reasoningScore: number;
-  };
-  cardId2?: {
-    id: string;
-    recognitionScore: number;
-    reasoningScore: number;
-  };
+  cardId: string;
+  recognitionScore: number;
+  reasoningScore: number;
+}
+
+// Get Supabase client
+function getSupabaseClient() {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  
+  return createClient(supabaseUrl, supabaseServiceKey);
 }
 
 Deno.serve(async (req) => {
@@ -65,12 +67,12 @@ Deno.serve(async (req) => {
     });
 
     // Get the request data
-    const { sessionId, quizitId, cardId1, cardId2 }: UpdateScoresRequest = await req.json();
+    const { sessionId, quizitId, cardId, recognitionScore, reasoningScore }: UpdateScoresRequest = await req.json();
     
     // Validate required fields
-    if (!sessionId || !quizitId || !cardId1) {
+    if (!sessionId || !quizitId || !cardId) {
       return new Response(JSON.stringify({
-        error: "sessionId, quizitId, and cardId1 are required"
+        error: "sessionId, quizitId, and cardId are required"
       }), {
         status: 400,
         headers: {
@@ -87,13 +89,8 @@ Deno.serve(async (req) => {
       }
     };
 
-    validateScore(cardId1.recognitionScore, 'cardId1.recognitionScore');
-    validateScore(cardId1.reasoningScore, 'cardId1.reasoningScore');
-    
-    if (cardId2) {
-      validateScore(cardId2.recognitionScore, 'cardId2.recognitionScore');
-      validateScore(cardId2.reasoningScore, 'cardId2.reasoningScore');
-    }
+    validateScore(recognitionScore, 'recognitionScore');
+    validateScore(reasoningScore, 'reasoningScore');
 
     // Check if session exists
     const sessionExists = await redisClient.exists(`quizit-session:${sessionId}:cards`);
@@ -109,28 +106,88 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Update card1 scores
-    await redisClient.hset(`quizit-session:${sessionId}:card:${cardId1.id}`, {
-      recognitionScore: cardId1.recognitionScore.toString(),
-      reasoningScore: cardId1.reasoningScore.toString()
+    // Update card scores in Redis
+    await redisClient.hset(`quizit-session:${sessionId}:card:${cardId}`, {
+      recognitionScore: recognitionScore.toString(),
+      reasoningScore: reasoningScore.toString()
     });
 
-    console.log(`Updated scores for card ${cardId1.id}: recognition=${cardId1.recognitionScore}, reasoning=${cardId1.reasoningScore}`);
+    console.log(`Updated Redis scores for card ${cardId}: recognition=${recognitionScore}, reasoning=${reasoningScore}`);
 
-    // Update card2 scores if provided
-    if (cardId2) {
-      await redisClient.hset(`quizit-session:${sessionId}:card:${cardId2.id}`, {
-        recognitionScore: cardId2.recognitionScore.toString(),
-        reasoningScore: cardId2.reasoningScore.toString()
+    // Update scores in database
+    const supabaseClient = getSupabaseClient();
+    
+    // Determine which card column to update based on card position
+    const updateData: any = {};
+    
+    // Check if this card is card_id_1 or card_id_2 in the quizit
+    const { data: quizitData, error: quizitError } = await supabaseClient
+      .from('quizits')
+      .select('card_id_1, card_id_2')
+      .eq('id', quizitId)
+      .single();
+
+    if (quizitError) {
+      console.error('Error fetching quizit data:', quizitError);
+      return new Response(JSON.stringify({
+        error: "Failed to fetch quizit data",
+        details: quizitError.message
+      }), {
+        status: 500,
+        headers: {
+          "Content-Type": "application/json",
+          'Access-Control-Allow-Origin': '*',
+        }
       });
-
-      console.log(`Updated scores for card ${cardId2.id}: recognition=${cardId2.recognitionScore}, reasoning=${cardId2.reasoningScore}`);
     }
+
+    if (quizitData.card_id_1 === parseInt(cardId)) {
+      // Update card_1 scores
+      updateData.card_1_recognition_score = recognitionScore;
+      updateData.card_1_reasoning_score = reasoningScore;
+    } else if (quizitData.card_id_2 === parseInt(cardId)) {
+      // Update card_2 scores
+      updateData.card_2_recognition_score = recognitionScore;
+      updateData.card_2_reasoning_score = reasoningScore;
+    } else {
+      console.error(`Card ${cardId} not found in quizit ${quizitId}`);
+      return new Response(JSON.stringify({
+        error: "Card not found in quizit"
+      }), {
+        status: 400,
+        headers: {
+          "Content-Type": "application/json",
+          'Access-Control-Allow-Origin': '*',
+        }
+      });
+    }
+
+    // Update the quizit record in database
+    const { error: updateError } = await supabaseClient
+      .from('quizits')
+      .update(updateData)
+      .eq('id', quizitId);
+
+    if (updateError) {
+      console.error('Error updating quizit scores in database:', updateError);
+      return new Response(JSON.stringify({
+        error: "Failed to update scores in database",
+        details: updateError.message
+      }), {
+        status: 500,
+        headers: {
+          "Content-Type": "application/json",
+          'Access-Control-Allow-Origin': '*',
+        }
+      });
+    }
+
+    console.log(`Updated database scores for quizit ${quizitId}, card ${cardId}: recognition=${recognitionScore}, reasoning=${reasoningScore}`);
 
     return new Response(JSON.stringify({
       success: true,
       message: "Scores updated successfully",
-      updatedCards: cardId2 ? [cardId1.id, cardId2.id] : [cardId1.id]
+      updatedCard: cardId
     }), {
       status: 200,
       headers: {
