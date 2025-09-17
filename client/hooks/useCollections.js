@@ -1,8 +1,30 @@
 import { useState, useEffect, useCallback } from 'react';
 import { collectionsService } from '../services/collectionsService';
 
+// Mock collections data for skeleton loading
+const MOCK_COLLECTIONS = [
+  {
+    id: -1,
+    title: '...',
+    created_at: new Date().toISOString(),
+    isMock: true
+  },
+  {
+    id: -2, 
+    title: '...',
+    created_at: new Date().toISOString(),
+    isMock: true
+  },
+  {
+    id: -3,
+    title: '...',
+    created_at: new Date().toISOString(),
+    isMock: true
+  }
+];
+
 export const useCollections = () => {
-  const [collections, setCollections] = useState([]);
+  const [collections, setCollections] = useState(MOCK_COLLECTIONS);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(null);

@@ -2,6 +2,7 @@ import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-nat
 import { useBooks } from '../../hooks/useBooks';
 import { Book } from '../../types/books';
 import BookRowItem from './BookRowItem';
+import SkeletonBookRowItem from './SkeletonBookRowItem';
 
 interface BookRowProps {
   title: string;
@@ -11,6 +12,9 @@ interface BookRowProps {
 
 export default function BookRow({ title, collectionId, onBookPress }: BookRowProps) {
   const { books, loading, error, loadingMore, hasMore, loadMoreBooks } = useBooks(collectionId);
+  
+  // Check if this is a mock collection (negative ID indicates mock)
+  const isMockCollection = collectionId < 0;
 
   return (
     <View style={styles.container}>
@@ -29,7 +33,14 @@ export default function BookRow({ title, collectionId, onBookPress }: BookRowPro
         scrollEventThrottle={400}
       >
         <View style={styles.bookContainer}>
-          {loading ? (
+          {isMockCollection ? (
+            // Show skeleton items for mock collections
+            <>
+              {Array.from({ length: 4 }, (_, index) => (
+                <SkeletonBookRowItem key={`skeleton-${index}`} />
+              ))}
+            </>
+          ) : loading ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="small" color="#007AFF" />
             </View>

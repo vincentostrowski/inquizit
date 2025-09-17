@@ -7,11 +7,28 @@ interface BookRowItemProps {
 }
 
 export default function BookRowItem({ book, onPress }: BookRowItemProps) {
+  // Check if this is a mock book (negative ID indicates mock)
+  const isMockBook = book.id < 0;
+  
   const handlePress = () => {
-    if (onPress) {
+    if (onPress && !isMockBook) {
       onPress(book);
     }
   };
+
+  if (isMockBook) {
+    // Render skeleton content for mock books
+    return (
+      <View style={styles.container}>
+        <View style={[styles.bookCover, styles.defaultCover]}>
+          <Text style={styles.bookIcon}>📚</Text>
+        </View>
+        <Text style={styles.bookTitle} numberOfLines={2}>
+          {book.title}
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <TouchableOpacity
@@ -74,5 +91,6 @@ const styles = StyleSheet.create({
     lineHeight: 14,
     marginTop: 4,
     width: 100,
+    height: 32, // Fixed height to accommodate 2 lines (2 × 14px lineHeight + 4px marginTop)
   },
 });

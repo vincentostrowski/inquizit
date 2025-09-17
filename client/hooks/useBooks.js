@@ -1,8 +1,45 @@
 import { useState, useEffect, useCallback } from 'react';
 import { booksService } from '../services/booksService';
 
+// Mock books data for skeleton loading
+const MOCK_BOOKS = [
+  {
+    id: -1,
+    title: 'Loading...',
+    cover: '',
+    collection: 0,
+    header_color: '',
+    background_end_color: '',
+    button_text_border_color: '',
+    button_circle_color: '',
+    isMock: true
+  },
+  {
+    id: -2,
+    title: 'Loading...',
+    cover: '',
+    collection: 0,
+    header_color: '',
+    background_end_color: '',
+    button_text_border_color: '',
+    button_circle_color: '',
+    isMock: true
+  },
+  {
+    id: -3,
+    title: 'Loading...',
+    cover: '',
+    collection: 0,
+    header_color: '',
+    background_end_color: '',
+    button_text_border_color: '',
+    button_circle_color: '',
+    isMock: true
+  }
+];
+
 export const useBooks = (collectionId) => {
-  const [books, setBooks] = useState([]);
+  const [books, setBooks] = useState(MOCK_BOOKS);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(null);

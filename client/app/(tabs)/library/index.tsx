@@ -108,15 +108,6 @@ export default function LibraryScreen() {
   };
 
   const renderEmpty = () => {
-    if (loading) {
-      return (
-        <View style={styles.emptyContainer}>
-          <ActivityIndicator size="large" color="#007AFF" />
-          <Text style={styles.emptyText}>Loading collections...</Text>
-        </View>
-      );
-    }
-    
     if (error) {
       return (
         <View style={styles.emptyContainer}>
