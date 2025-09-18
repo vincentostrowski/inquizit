@@ -291,22 +291,13 @@ export default function BookScreen() {
           </View>
         ) : (
           <>
-            {/* Cover Display - Skeleton or Real */}
-            {loading ? (
-              <SkeletonCoverDisplay
-                headerColor={headerColor as string || '#3B82F6'}
-                backgroundEndColor={backgroundEndColor as string || '#1E40AF'}
-                showCards={false}
-                cardSize="small"
-              />
-            ) : bookDetails?.book ? (
-              <CoverDisplay
-                cover={bookCover as string}
-                headerColor={headerColor as string || bookDetails.book.header_color}
-                backgroundEndColor={backgroundEndColor as string || bookDetails.book.background_end_color}
-                cards={getFirstThreeCards()}
-              />
-            ) : null}
+            {/* Cover Display - Always show immediately */}
+            <CoverDisplay
+              cover={bookCover as string}
+              headerColor={headerColor as string || bookDetails?.book?.header_color || '#3B82F6'}
+              backgroundEndColor={backgroundEndColor as string || bookDetails?.book?.background_end_color || '#1E40AF'}
+              cards={loading ? [] : getFirstThreeCards()}
+            />
 
             {/* Description - Skeleton or Real */}
             {loading ? (
