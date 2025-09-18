@@ -8,6 +8,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import ThemeInputModal from './ThemeInputModal';
+import ConfirmationView from './ConfirmationView';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuizitConfig } from '../../context/QuizitConfigContext';
 
@@ -18,7 +20,7 @@ interface QuizitConfigModalProps {
   screenType: 'book' | 'section' | 'card';
   bookCover: string;
   title: string;
-  onStartQuizit: () => void;
+  onStartQuizit: (config: { isPairedMode: boolean; biasText: string }) => void;
   onClose: () => void;
 }
 
@@ -38,14 +40,41 @@ export default function QuizitConfigModal({
   
   // Get current book's card count for normal mode
   const currentBookId = modalData?.bookSelections?.[0]?.bookId || '';
-  const currentBookCardCount = bookSelections.find(book => book.bookId === currentBookId)?.selectedCardIds.length || 0;
   const insets = useSafeAreaInsets();
   const translateY = useSharedValue(SCREEN_HEIGHT);
   const backdropOpacity = useSharedValue(0);
   const [isVisible, setIsVisible] = useState(false);
+  const [isPairedMode, setIsPairedMode] = useState(false);
+  const [biasText, setBiasText] = useState<string | undefined>(undefined);
+  const [showThemeModal, setShowThemeModal] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [initialCards, setInitialCards] = useState<any[]>([]);
+
+  const handleBackdropPress = () => {
+    // Check if there are any changes
+    const hasThemeChanges = biasText && biasText.trim() !== '';
+    const hasCardSelectionChanges = JSON.stringify(bookSelections) !== JSON.stringify(initialCards);
+    
+    if (hasThemeChanges || hasCardSelectionChanges) {
+      // Show confirmation instead of closing
+      setShowConfirmation(true);
+    } else {
+      // No changes, close immediately
+      onClose();
+    }
+  };
 
   useEffect(() => {
     if (visible) {
+      // Reset state when modal becomes visible
+      setBiasText(undefined);
+      setIsPairedMode(false);
+      setShowThemeModal(false);
+      setShowConfirmation(false);
+      
+      // Capture initial card selection for comparison
+      setInitialCards([...bookSelections]);
+      
       setIsVisible(true);
       translateY.value = withTiming(0, { duration: 300 });
       backdropOpacity.value = withTiming(0.5, { duration: 300 });
@@ -91,7 +120,7 @@ export default function QuizitConfigModal({
         {!isEditMode && (
           <TouchableOpacity 
             style={styles.backdropTouchable} 
-            onPress={onClose}
+            onPress={handleBackdropPress}
             activeOpacity={1}
           />
         )}
@@ -100,7 +129,17 @@ export default function QuizitConfigModal({
       {/* Modal Content */}
       <Animated.View style={[styles.modal, isEditMode && { pointerEvents: 'box-none', borderTopLeftRadius: 0, borderTopRightRadius: 0 }, animatedSheetStyle]}>
         <View style={[styles.content, { paddingBottom: insets.bottom + 20 }, isEditMode && { pointerEvents: 'auto' }]}>
-          {/* Header with Title - Only in normal mode */}
+          {showConfirmation ? (
+            <ConfirmationView
+              onDiscard={() => {
+                onClose();
+              }}
+              onRestore={() => setShowConfirmation(false)}
+            />
+          ) : (
+            /* Normal Modal Content */
+            <>
+              {/* Header with Title - Only in normal mode */}
           {!isEditMode && (
             <View style={styles.header}>
               <Text style={styles.title}>
@@ -146,6 +185,53 @@ export default function QuizitConfigModal({
             </TouchableOpacity>
           </ScrollView>
           
+          {/* Quizit Configuration Options */}
+          {!isEditMode && (
+          <View style={styles.configContainer}>
+            {/* Single/Pairs Toggle */}
+            <View style={styles.toggleContainer}>
+              <Text style={styles.toggleLabel}>Cards per Quizit</Text>
+              <View style={styles.toggleWrapper}>
+                <TouchableOpacity
+                  style={[styles.toggleOption, !isPairedMode && styles.toggleOptionActive]}
+                  onPress={() => setIsPairedMode(false)}
+                  activeOpacity={0.7} 
+                >
+                  <Text style={[styles.toggleText, !isPairedMode && styles.toggleTextActive]}>
+                    Single
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.toggleOption, isPairedMode && styles.toggleOptionActive]}
+                  onPress={() => setIsPairedMode(true)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.toggleText, isPairedMode && styles.toggleTextActive]}>
+                    Pairs
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+            
+             {/* Theme Input Button */}
+             <View style={styles.inputContainer}>
+               <Text style={styles.inputLabel}>
+                 Theme for Quizits <Text style={styles.optionalText}>(optional)</Text>
+               </Text>
+               <TouchableOpacity 
+                 style={styles.themeInputButton}
+                 onPress={() => setShowThemeModal(true)}
+                 activeOpacity={0.7}
+               >
+                 <Text style={[
+                   styles.themeInputText,
+                   !biasText && styles.themeInputPlaceholder
+                 ]}>
+                   {biasText || "Tap to add theme..."}
+                 </Text>
+               </TouchableOpacity>
+             </View>
+          </View>)}
           
           {/* Divider - Always in same position */}
           <View style={styles.divider} />
@@ -166,7 +252,7 @@ export default function QuizitConfigModal({
               <>
                 <TouchableOpacity 
                   style={[styles.bottomButton, totalCardCount === 0 && styles.disabledButton]}
-                  onPress={totalCardCount > 0 ? onStartQuizit : undefined}
+                  onPress={totalCardCount > 0 ? () => onStartQuizit({ isPairedMode, biasText: biasText || '' }) : undefined}
                   activeOpacity={totalCardCount > 0 ? 0.8 : 1}
                   disabled={totalCardCount === 0}
                 >
@@ -191,8 +277,18 @@ export default function QuizitConfigModal({
               </>
             )}
           </View>
+            </>
+          )}
         </View>
       </Animated.View>
+      
+      {/* Theme Input Modal */}
+      <ThemeInputModal
+        visible={showThemeModal}
+        onClose={() => setShowThemeModal(false)}
+        onSave={(theme) => setBiasText(theme)}
+        initialValue={biasText || ''}
+      />
     </GestureHandlerRootView>
   );
 }
@@ -254,7 +350,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   coversScrollView: {
-    padding: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
     width: '100%',
   },
   coversScrollContent: {
@@ -318,6 +415,129 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: '#E5E5E7',
     marginBottom: 20,
+  },
+  configContainer: {
+    width: '100%',
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+  },
+  toggleContainer: {
+    marginBottom: 16,
+  },
+  toggleLabel: {
+    fontSize: 12,
+    fontWeight: '400',
+    color: '#1D1D1F',
+    marginBottom: 6,
+  },
+  toggleWrapper: {
+    flexDirection: 'row',
+    backgroundColor: '#F2F2F7',
+    borderRadius: 8,
+    padding: 2,
+    alignSelf: 'flex-start',
+    width: 160,
+  },
+  toggleOption: {
+    flex: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    alignItems: 'center',
+  },
+  toggleOptionActive: {
+    backgroundColor: 'white',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  toggleText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#8E8E93',
+  },
+  toggleTextActive: {
+    color: '#1D1D1F',
+    fontWeight: '600',
+  },
+  inputContainer: {
+    marginBottom: 8,
+  },
+  inputLabel: {
+    fontSize: 12,
+    fontWeight: '400',
+    color: '#1D1D1F',
+    marginBottom: 6,
+  },
+  optionalText: {
+    fontSize: 12,
+    fontWeight: '400',
+    color: '#C7C7CC',
+  },
+  themeInputButton: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E5E5EA',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    backgroundColor: '#F9F9F9',
+    minHeight: 48,
+  },
+  themeInputText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#1D1D1F',
+    marginRight: 8,
+  },
+  themeInputPlaceholder: {
+    color: '#C7C7CC',
+  },
+  themeInputIcon: {
+    fontSize: 16,
+    color: '#8E8E93',
+  },
+  textInput: {
+    borderWidth: 1,
+    borderColor: '#E5E5EA',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: '#1D1D1F',
+    backgroundColor: '#F9F9F9',
+    minHeight: 56,
+    maxHeight: 80,
+    textAlignVertical: 'top',
+  },
+  characterCount: {
+    fontSize: 12,
+    color: '#8E8E93',
+    textAlign: 'right',
+    marginTop: 4,
+  },
+  summaryContainer: {
+    backgroundColor: '#F0F9FF',
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: '#3B82F6',
+  },
+  summaryLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#1E40AF',
+    marginBottom: 4,
+  },
+  summaryText: {
+    fontSize: 12,
+    color: '#1E40AF',
+    lineHeight: 16,
   },
   buttonContainer: {
     flexDirection: 'row',
