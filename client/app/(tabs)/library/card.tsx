@@ -25,7 +25,7 @@ export default function CardScreen() {
   } = useLocalSearchParams();
   
   const { bookDetails, loading, error } = useBookDetails(bookId);
-  const { showQuizitConfig, pushToNavigationStack, popFromNavigationStack, startQuizitSession } = useQuizitConfig();
+  const { showQuizitConfig, pushToNavigationStack, popFromNavigationStack } = useQuizitConfig();
 
   // Manage navigation stack
   useEffect(() => {
@@ -74,8 +74,6 @@ export default function CardScreen() {
     console.log('Book title:', bookTitle);
     console.log('Book ID:', bookId);
     showQuizitConfig({
-      screenType: 'card',
-      bookCover: bookCover as string,
       title: bookTitle as string,
       isEditMode: false,
       bookSelections: [{
@@ -88,24 +86,8 @@ export default function CardScreen() {
         buttonTextBorderColor: buttonTextBorderColor as string || (bookDetails && (bookDetails as any).book ? (bookDetails as any).book.button_text_border_color : undefined) || 'green',
         buttonCircleColor: buttonCircleColor as string || (bookDetails && (bookDetails as any).book ? (bookDetails as any).book.button_circle_color : undefined) || 'green'
       }],
-      onStartQuizit: async (modalData) => {
-        try {
-          // Use context to create session with actual selected cards
-          const sessionData = await startQuizitSession(modalData);
-          
-          // Navigate to quizit screen with session ID
-          router.push({
-            pathname: '/quizit',
-            params: { 
-              sessionId: sessionData.sessionId,
-              sessionTitle: cardTitle as string
-            }
-          });
-        } catch (error) {
-          console.error('Failed to start quizit:', error);
-          // You could show an error message to the user here
-        }
-      }
+      isPairedMode: false,
+      biasText: undefined
     });
   };
 

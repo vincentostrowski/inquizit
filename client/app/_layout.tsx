@@ -22,13 +22,7 @@ function RootLayoutContent() {
       {/* Global Quizit Config Modal */}
       <QuizitConfigModal
         visible={showModal}
-        screenType={modalData?.screenType || 'book'}
-        bookCover={modalData?.bookCover || ''}
         title={modalData?.title || ''}
-        onStartQuizit={() => {
-          //hideQuizitConfig();
-          modalData?.onStartQuizit(modalData);
-        }}
         onClose={hideQuizitConfig}
       />
     </>

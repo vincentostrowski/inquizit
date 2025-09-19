@@ -18,16 +18,28 @@ interface QuizitSession {
   sessionId: string;
   title: string;
   createdAt: number;
+  
+  // Card Selections
   selectedCards: BookSelection[];
+  
+  // Quizit Configuration
+  isPairedMode: boolean;
+  biasText?: string;
 }
 
 interface QuizitConfigData {
-  screenType: 'book' | 'section' | 'card';
-  bookCover: string;
-  title: string;
-  isEditMode: boolean;
+  // Core Data
   bookSelections: BookSelection[];
-  onStartQuizit: (modalData: QuizitConfigData) => void;
+  
+  // Display Info
+  title: string;
+  
+  // Quizit Configuration
+  isPairedMode: boolean;
+  biasText?: string;
+  
+  // UI State
+  isEditMode: boolean;
 }
 
 interface QuizitConfigContextType {
@@ -50,7 +62,9 @@ interface QuizitConfigContextType {
   popFromNavigationStack: (bookId: string) => void;
   isCurrentlyOnBook: (bookId: string) => boolean;
   navigateToLibraryEdit: () => void;
-  startQuizitSession: (modalData?: QuizitConfigData) => Promise<{ sessionId: string; cardCount: number }>;
+  setIsPairedMode: (isPairedMode: boolean) => void;
+  setBiasText: (biasText: string | undefined) => void;
+  startQuizitSession: () => Promise<{ sessionId: string; cardCount: number }>;
   clearSession: () => void;
   addSessionToHistory: (session: QuizitSession) => void;
   getSessionHistory: () => QuizitSession[];
@@ -261,33 +275,53 @@ export const QuizitConfigProvider = ({ children }: QuizitConfigProviderProps) =>
     return sessionHistory;
   }, [sessionHistory]);
 
-  const startQuizitSession = useCallback(async (passedModalData?: QuizitConfigData) => {
-    const dataToUse = passedModalData || modalData;
-    
-    if (!dataToUse) {
+  const setIsPairedMode = useCallback((isPairedMode: boolean) => {
+    setModalData(prev => prev ? { ...prev, isPairedMode } : null);
+  }, []);
+
+  const setBiasText = useCallback((biasText: string | undefined) => {
+    setModalData(prev => prev ? { ...prev, biasText } : null);
+  }, []);
+
+  const startQuizitSession = useCallback(async () => {
+    if (!modalData) {
       throw new Error('No modal data available');
     }
 
-    // Get ALL selected card IDs from the modal state
-    const allSelectedCardIds = dataToUse.bookSelections.flatMap(book => book.selectedCardIds);
+    // Create unified config object
+    const config = {
+      selectedCardIds: modalData.bookSelections.flatMap(book => book.selectedCardIds),
+      isPairedMode: modalData.isPairedMode,
+      biasText: modalData.biasText || ''
+    };
     
-    if (allSelectedCardIds.length === 0) {
+    if (config.selectedCardIds.length === 0) {
       throw new Error('No cards selected');
     }
 
     try {
-      const sessionData = await createQuizitSession(allSelectedCardIds);
+      const sessionData = await createQuizitSession(config);
       setActiveSessionId(sessionData.sessionId);
       
-      // Add session to history
-      const sessionTitle = dataToUse.title || 'Quizit Session';
+      // Add session to history with complete configuration
       const newSession: QuizitSession = {
         sessionId: sessionData.sessionId,
-        title: sessionTitle,
+        title: modalData.title || 'Quizit Session',
         createdAt: Date.now(),
-        selectedCards: dataToUse.bookSelections
+        selectedCards: modalData.bookSelections,
+        isPairedMode: modalData.isPairedMode,
+        biasText: modalData.biasText
       };
       addSessionToHistory(newSession);
+      
+      // Navigate to quizit screen with session data
+      router.push({
+        pathname: '/quizit',
+        params: { 
+          sessionId: sessionData.sessionId,
+          sessionTitle: modalData.title || 'Quizit Session'
+        }
+      });
       
       return sessionData;
     } catch (error) {
@@ -322,6 +356,8 @@ export const QuizitConfigProvider = ({ children }: QuizitConfigProviderProps) =>
         popFromNavigationStack,
         isCurrentlyOnBook,
         navigateToLibraryEdit,
+        setIsPairedMode,
+        setBiasText,
         startQuizitSession,
         clearSession,
         addSessionToHistory,

@@ -28,7 +28,7 @@ export default function BookScreen() {
   } = useLocalSearchParams();
   const { bookDetails, loading, error } = useBookDetails(bookId);
   const { viewMode, setViewMode } = useViewMode();
-  const { showQuizitConfig, modalData, toggleCardSelection, pushToNavigationStack, popFromNavigationStack, startQuizitSession } = useQuizitConfig();
+  const { showQuizitConfig, modalData, toggleCardSelection, pushToNavigationStack, popFromNavigationStack } = useQuizitConfig();
   
   // Get edit mode and selections from modal data
   const isEditMode = modalData?.isEditMode || false;
@@ -81,8 +81,6 @@ export default function BookScreen() {
                           filterMode === 'main' ? mainCardIds : savedCardIds;
 
     showQuizitConfig({
-      screenType: 'book',
-      bookCover: bookCover as string,
       title: bookTitle as string,
       isEditMode: false,
       bookSelections: [{
@@ -95,24 +93,8 @@ export default function BookScreen() {
         buttonTextBorderColor: buttonTextBorderColor as string || bookDetails?.book?.button_text_border_color || 'green',
         buttonCircleColor: buttonCircleColor as string || bookDetails?.book?.button_circle_color || 'green'
       }],
-      onStartQuizit: async (modalData) => {
-        try {
-          // Use context to create session with actual selected cards
-          const sessionData = await startQuizitSession(modalData);
-          
-          // Navigate to quizit screen with session ID
-          router.push({
-            pathname: '/quizit',
-            params: { 
-              sessionId: sessionData.sessionId,
-              sessionTitle: bookTitle 
-            }
-          });
-        } catch (error) {
-          console.error('Failed to start quizit:', error);
-          // You could show an error message to the user here
-        }
-      }
+      isPairedMode: false,
+      biasText: undefined
     });
   };
 

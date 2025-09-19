@@ -1,11 +1,15 @@
 import { supabase } from './supabaseClient';
 
-export const createQuizitSession = async (cardIds) => {
+export const createQuizitSession = async (config) => {
   try {
-    console.log('Creating quizit session with card IDs:', cardIds);
+    console.log('Creating quizit session with config:', config);
     
     const { data, error } = await supabase.functions.invoke('create-quizit-session', {
-      body: { cardIds }
+      body: { 
+        cardIds: config.selectedCardIds,
+        theme: config.biasText || '',
+        isPairedMode: config.isPairedMode || false
+      }
     });
 
     if (error) {

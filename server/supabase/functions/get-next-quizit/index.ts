@@ -379,7 +379,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // 1. Validate session exists
+    // 1. Validate session exists and get configuration
     const sessionCards = await redisClient.get(`quizit-session:${sessionId}:cards`);
     if (!sessionCards) {
       return new Response(JSON.stringify({
@@ -392,7 +392,15 @@ Deno.serve(async (req) => {
         }
       });
     }
+    
+    // Get theme and mode configuration
+    const theme = await redisClient.get(`quizit-session:${sessionId}:theme`);
+    const isPairedMode = await redisClient.get(`quizit-session:${sessionId}:isPairedMode`);
+    
     console.log("Session cards:", sessionCards);
+    console.log("Session theme:", theme || 'none');
+    console.log("Session isPairedMode:", isPairedMode);
+    
     const cardIds = sessionCards as string[];
     console.log(`Session ${sessionId} has ${cardIds.length} cards:`, cardIds);
 
@@ -427,9 +435,12 @@ Deno.serve(async (req) => {
 
     console.log(`✅ Primary card selected: ${primaryCard.cardId}`);
 
-    // 5. Select secondary card
-    const secondaryCard = selectSecondaryCard(cardUsageData, primaryCard.cardId, currentCardIds || []);
+    // 5. Select secondary card (only if paired mode is enabled)
+    const secondaryCard = isPairedMode 
+      ? selectSecondaryCard(cardUsageData, primaryCard.cardId, currentCardIds || [])
+      : null;
     console.log(`✅ Secondary card selected: ${secondaryCard?.cardId || 'none (single card quizit)'}`);
+    console.log(`🎯 Paired mode: ${isPairedMode ? 'enabled' : 'disabled'}`);
 
     // 6. Update usage counts and turn tracking for selected cards
     console.log("📈 Updating card usage and turn tracking...");
@@ -446,7 +457,7 @@ Deno.serve(async (req) => {
     const cardId1 = primaryCard.cardId;
     const cardId2 = secondaryCard?.cardId || null;
 
-    console.log(`🎲 Quizit type: ${isPairedQuizit ? 'paired' : 'single'}`);
+    console.log(`🎲 Quizit type: ${isPairedQuizit ? 'paired' : 'single'} (mode: ${isPairedMode ? 'paired' : 'single'})`);
     console.log(`📝 Card IDs: ${cardId1}${cardId2 ? ` + ${cardId2}` : ''}`);
 
     // 8. Generate quizit based on type
@@ -454,12 +465,12 @@ Deno.serve(async (req) => {
     let quizitItems;
     if (isPairedQuizit) {
       console.log(`🔄 Generating paired quizit for cards: ${cardId1} + ${cardId2}`);
-      // Call paired cards function
-      quizitItems = await generateQuizitItems_PairedCards(cardId1, cardId2!);
+      // Call paired cards function with theme
+      quizitItems = await generateQuizitItems_PairedCards(cardId1, cardId2!, sessionId, theme);
     } else {
       console.log(`🔄 Generating single card quizit for: ${cardId1}`);
-      // Call single card function
-      quizitItems = await generateQuizitItems_SingleCard(cardId1);
+      // Call single card function with theme
+      quizitItems = await generateQuizitItems_SingleCard(cardId1, sessionId, theme);
     }
     console.log(`✅ Generated ${quizitItems.length} quizit items`);
 

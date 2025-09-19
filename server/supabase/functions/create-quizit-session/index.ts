@@ -2,8 +2,10 @@ import "jsr:@supabase/functions-js@2.5.0/edge-runtime.d.ts";
 import { Redis } from "https://esm.sh/@upstash/redis@1.19.3";
 
 // Simple interface for card IDs
-interface CardIdsRequest {
+interface SessionRequest {
   cardIds: string[];
+  theme?: string;
+  isPairedMode?: boolean;
 }
 
 Deno.serve(async (req) => {
@@ -52,7 +54,7 @@ Deno.serve(async (req) => {
     });
 
     // Get the request data
-    const { cardIds }: CardIdsRequest = await req.json();
+    const { cardIds, theme, isPairedMode }: SessionRequest = await req.json();
     
     if (!cardIds || !Array.isArray(cardIds)) {
       return new Response(JSON.stringify({
@@ -84,6 +86,14 @@ Deno.serve(async (req) => {
     // Store in Redis with expiration (24 hours)
     await redisClient.setex(`quizit-session:${sessionId}:cards`, 86400, JSON.stringify(cardIds));
     
+    // Store theme and mode configuration
+    if (theme) {
+      await redisClient.setex(`quizit-session:${sessionId}:theme`, 86400, theme);
+    }
+    if (isPairedMode !== undefined) {
+      await redisClient.setex(`quizit-session:${sessionId}:isPairedMode`, 86400, isPairedMode.toString());
+    }
+    
     // Initialize turn counter
     await redisClient.setex(`quizit-session:${sessionId}:currentTurn`, 86400, "0");
     
@@ -99,11 +109,13 @@ Deno.serve(async (req) => {
       await redisClient.expire(`quizit-session:${sessionId}:card:${cardId}`, 86400);
     }
 
-    console.log(`Created quizit session ${sessionId} with ${cardIds.length} cards`);
+    console.log(`Created quizit session ${sessionId} with ${cardIds.length} cards, theme: ${theme || 'none'}, paired mode: ${isPairedMode || false}`);
 
     return new Response(JSON.stringify({
       sessionId,
       cardCount: cardIds.length,
+      theme: theme || null,
+      isPairedMode: isPairedMode || false,
       message: "Quizit session created successfully"
     }), {
       status: 200,

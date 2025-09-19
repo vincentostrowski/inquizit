@@ -33,7 +33,7 @@ export default function LibraryScreen() {
     clearSearch
   } = useSearch();
 
-  const { modalData, toggleEditMode, navigationStack, showQuizitConfig, pushToNavigationStack, popFromNavigationStack, startQuizitSession } = useQuizitConfig();
+  const { modalData, toggleEditMode, navigationStack, showQuizitConfig, pushToNavigationStack, popFromNavigationStack } = useQuizitConfig();
   const isEditMode = modalData?.isEditMode || false;
   const [shouldShowBackButton, setShouldShowBackButton] = useState(false);
 
@@ -58,29 +58,11 @@ export default function LibraryScreen() {
 
   const handleStartQuizit = () => {
     showQuizitConfig({
-      screenType: 'book',
-      bookCover: '', // Empty for library start
       title: 'Custom List',
       isEditMode: false,
       bookSelections: [], // Empty for library start
-      onStartQuizit: async (modalData) => {
-        try {
-          // Use context to create session with actual selected cards
-          const sessionData = await startQuizitSession(modalData);
-          
-          // Navigate to quizit screen with session ID
-          router.push({
-            pathname: '/quizit',
-            params: { 
-              sessionId: sessionData.sessionId,
-              sessionTitle: 'Custom List'
-            }
-          });
-        } catch (error) {
-          console.error('Failed to start quizit:', error);
-          // You could show an error message to the user here
-        }
-      }
+      isPairedMode: false,
+      biasText: undefined
     });
   };
 

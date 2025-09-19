@@ -28,7 +28,7 @@ export default function SectionScreen() {
   } = useLocalSearchParams();
   const { viewMode, setViewMode } = useViewMode();
   const { bookDetails, loading, error } = useBookDetails(bookId);
-  const { showQuizitConfig, startQuizitSession } = useQuizitConfig();
+  const { showQuizitConfig } = useQuizitConfig();
 
   const handleBack = () => {
     router.back();
@@ -36,8 +36,6 @@ export default function SectionScreen() {
 
   const handleStartQuizit = () => {
     showQuizitConfig({
-      screenType: 'section',
-      bookCover: bookCover as string,
       title: bookTitle as string,
       isEditMode: false,
       bookSelections: [{
@@ -50,24 +48,8 @@ export default function SectionScreen() {
         buttonTextBorderColor: buttonTextBorderColor as string || bookDetails?.book?.button_text_border_color || 'green',
         buttonCircleColor: buttonCircleColor as string || bookDetails?.book?.button_circle_color || 'green'
       }],
-      onStartQuizit: async (modalData) => {
-        try {
-          // Use context to create session with actual selected cards
-          const sessionData = await startQuizitSession(modalData);
-          
-          // Navigate to quizit screen with session ID
-          router.push({
-            pathname: '/quizit',
-            params: { 
-              sessionId: sessionData.sessionId,
-              sessionTitle: sectionTitle
-            }
-          });
-        } catch (error) {
-          console.error('Failed to start quizit:', error);
-          // You could show an error message to the user here
-        }
-      }
+      isPairedMode: false,
+      biasText: undefined
     });
   };
 

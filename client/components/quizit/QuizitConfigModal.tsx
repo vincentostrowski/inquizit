@@ -17,38 +17,31 @@ const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 interface QuizitConfigModalProps {
   visible: boolean;
-  screenType: 'book' | 'section' | 'card';
-  bookCover: string;
   title: string;
-  onStartQuizit: (config: { isPairedMode: boolean; biasText: string }) => void;
   onClose: () => void;
 }
 
 export default function QuizitConfigModal({
   visible,
-  screenType,
-  bookCover,
   title,
-  onStartQuizit,
   onClose,
 }: QuizitConfigModalProps) {
-  const { modalData, toggleEditMode, getTotalCardCount, navigateToBookEdit, navigateToLibraryEdit } = useQuizitConfig();
+  const { modalData, toggleEditMode, getTotalCardCount, navigateToBookEdit, navigateToLibraryEdit, startQuizitSession, setIsPairedMode, setBiasText } = useQuizitConfig();
   const isEditMode = modalData?.isEditMode || false;
   const bookSelections = modalData?.bookSelections || [];
   const totalCardCount = getTotalCardCount();
   
-  
-  // Get current book's card count for normal mode
-  const currentBookId = modalData?.bookSelections?.[0]?.bookId || '';
   const insets = useSafeAreaInsets();
   const translateY = useSharedValue(SCREEN_HEIGHT);
   const backdropOpacity = useSharedValue(0);
   const [isVisible, setIsVisible] = useState(false);
-  const [isPairedMode, setIsPairedMode] = useState(false);
-  const [biasText, setBiasText] = useState<string | undefined>(undefined);
   const [showThemeModal, setShowThemeModal] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [initialCards, setInitialCards] = useState<any[]>([]);
+
+  // Get values from context instead of local state
+  const isPairedMode = modalData?.isPairedMode || false;
+  const biasText = modalData?.biasText;
 
   const handleBackdropPress = () => {
     // Check if there are any changes
@@ -66,9 +59,7 @@ export default function QuizitConfigModal({
 
   useEffect(() => {
     if (visible) {
-      // Reset state when modal becomes visible
-      setBiasText(undefined);
-      setIsPairedMode(false);
+      // Reset UI state when modal becomes visible (but keep context values)
       setShowThemeModal(false);
       setShowConfirmation(false);
       
@@ -252,7 +243,7 @@ export default function QuizitConfigModal({
               <>
                 <TouchableOpacity 
                   style={[styles.bottomButton, totalCardCount === 0 && styles.disabledButton]}
-                  onPress={totalCardCount > 0 ? () => onStartQuizit({ isPairedMode, biasText: biasText || '' }) : undefined}
+                  onPress={totalCardCount > 0 ? () => startQuizitSession() : undefined}
                   activeOpacity={totalCardCount > 0 ? 0.8 : 1}
                   disabled={totalCardCount === 0}
                 >

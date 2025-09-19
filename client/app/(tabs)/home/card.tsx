@@ -23,7 +23,7 @@ export default function CardScreen() {
   } = useLocalSearchParams();
   
   const { bookDetails, loading, error } = useBookDetails(bookId);
-  const { showQuizitConfig, startQuizitSession } = useQuizitConfig();
+  const { showQuizitConfig } = useQuizitConfig();
   // Find the specific card data
   const cardData = (() => {
     if (!bookDetails || !(bookDetails as any).sections) return null;
@@ -59,27 +59,20 @@ export default function CardScreen() {
 
   const handleStartQuizit = () => {
     showQuizitConfig({
-      screenType: 'card',
-      bookCover: bookCover as string,
       title: bookDetails?.book?.title || (bookTitle as string) || 'Unknown Book',
-      onStartQuizit: async (modalData) => {
-        try {
-          // Use context to create session with actual selected cards
-          const sessionData = await startQuizitSession(modalData);
-          
-          // Navigate to quizit screen with session ID
-          router.push({
-            pathname: '/quizit',
-            params: { 
-              sessionId: sessionData.sessionId,
-              sessionTitle: cardTitle
-            }
-          });
-        } catch (error) {
-          console.error('Failed to start quizit:', error);
-          // You could show an error message to the user here
-        }
-      }
+      isEditMode: false,
+      bookSelections: [{
+        bookId: bookId as string,
+        bookTitle: bookTitle as string,
+        bookCover: bookCover as string,
+        selectedCardIds: [cardId as string],
+        headerColor: headerColor as string || (bookDetails && (bookDetails as any).book ? (bookDetails as any).book.header_color : undefined) || '#1D1D1F',
+        backgroundEndColor: backgroundEndColor as string || (bookDetails && (bookDetails as any).book ? (bookDetails as any).book.background_end_color : undefined) || '#1E40AF',
+        buttonTextBorderColor: buttonTextBorderColor as string || (bookDetails && (bookDetails as any).book ? (bookDetails as any).book.button_text_border_color : undefined) || '#FFFFFF',
+        buttonCircleColor: buttonCircleColor as string || (bookDetails && (bookDetails as any).book ? (bookDetails as any).book.button_circle_color : undefined) || '#FFFFFF'
+      }],
+      isPairedMode: false,
+      biasText: undefined
     });
   };
 

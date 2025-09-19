@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import OpenAI from 'https://esm.sh/openai@4.0.0';
+import { Redis } from 'https://esm.sh/@upstash/redis@1.19.3';
 import { QuizitItems, CardData } from './types.ts';
 import { SCENARIO_SYSTEM_PROMPT, buildScenarioPrompt, buildScenarioPrompt_PairedCards, REASONING_SYSTEM_PROMPT, buildReasoningPrompt } from './prompts.ts';
 
@@ -26,6 +27,134 @@ function getOpenAIClient() {
   return new OpenAI({
     apiKey: apiKey,
   });
+}
+
+// Get theme-based seeds for a card
+export async function getCustomSeed(cardId: string, sessionId: string, theme: string): Promise<{bundleItems: string[], bundleIndex: number}> {
+  console.log(`Getting custom seeds for card ${cardId}, theme: "${theme}"`);
+  
+  // Initialize Redis client
+  const rawUrl = Deno.env.get("UPSTASH_REDIS_REST_URL");
+  const rawToken = Deno.env.get("UPSTASH_REDIS_REST_TOKEN");
+  
+  const url = rawUrl.replace(/^"(.*)"$/, '$1');
+  const token = rawToken.replace(/^"(.*)"$/, '$1');
+  
+  const redisClient = new Redis({ url, token });
+  
+  try {
+    // 1. Check if custom seeds exist for this card in this session
+    const existingSeeds = JSON.parse(await redisClient.hget(`quizit-session:${sessionId}:custom-seeds`, cardId) || "[]");
+    const currentIndex = parseInt(await redisClient.hget(`quizit-session:${sessionId}:custom-seed-indices`, cardId) || "0");
+    
+    console.log(`[getCustomSeed] Card: ${cardId}, Session: ${sessionId}`);
+    console.log(`[getCustomSeed] Existing seeds: ${existingSeeds ? 'YES' : 'NO'}`);
+    console.log(`[getCustomSeed] Current index: ${currentIndex}`);
+    
+    // 2. Check if we need more seeds (max 20)
+    if (currentIndex >= existingSeeds.length) {
+      console.log(`[getCustomSeed] Current seeds array length: ${existingSeeds.length}`);
+      
+      if (existingSeeds.length >= 20) {
+        // Reset to beginning for variety
+        console.log(`[getCustomSeed] Reached 20 seed limit, cycling back to beginning`);
+        await redisClient.hset(`quizit-session:${sessionId}:custom-seed-indices`, cardId, "1");
+        const currentSeedSet = existingSeeds[0];
+        return { bundleItems: currentSeedSet, bundleIndex: 0 };
+      }
+      
+      // Generate more seeds (up to 20 total)
+      const seedsToGenerate = Math.min(5, 20 - existingSeeds.length);
+      console.log(`[getCustomSeed] Generating ${seedsToGenerate} new seeds`);
+      const newSeeds = await generateCustomSeeds(cardId, theme, seedsToGenerate, JSON.stringify(existingSeeds));
+      
+      // Add new seeds to existing ones
+      existingSeeds.push(...newSeeds);
+      console.log(`[getCustomSeed] Total seeds: ${existingSeeds.length} (added ${newSeeds.length} new)`);
+      
+      // Store updated seeds in Redis
+      await redisClient.hset(`quizit-session:${sessionId}:custom-seeds`, cardId, JSON.stringify(existingSeeds));
+    }
+    
+    const currentSeedSet = existingSeeds[currentIndex];
+    console.log(`[getCustomSeed] Retrieved seed set at index ${currentIndex}:`, currentSeedSet);
+    
+    await redisClient.hincrby(`quizit-session:${sessionId}:custom-seed-indices`, cardId, 1);
+    
+    console.log(`[getCustomSeed] Using custom seed set ${currentIndex} for card ${cardId}:`, currentSeedSet);
+    return {
+      bundleItems: currentSeedSet,
+      bundleIndex: currentIndex
+    };
+    
+  } catch (error) {
+    console.error("Error getting custom seeds, falling back to regular seeds:", error);
+    return await getSeed(cardId, 0);
+  }
+}
+
+// Generate custom seeds using AI
+async function generateCustomSeeds(cardId: string, theme: string, count: number, existingSeeds?: string): Promise<string[][]> {
+  console.log(`[generateCustomSeeds] Generating ${count} custom seeds for card ${cardId} with theme: "${theme}"`);
+  
+  try {
+    const cardData = await getCardData(cardId);
+    const previousSeeds = existingSeeds ? JSON.parse(existingSeeds) : [];
+    console.log(`[generateCustomSeeds] Card data: ${cardData.title} - ${cardData.description}`);
+    console.log(`[generateCustomSeeds] Previous seeds count: ${previousSeeds.length}`);
+    
+    const prompt = `
+Theme: ${theme}
+Card: ${cardData.title} - ${cardData.description}
+
+Generate ${count} different seed sets (3-5 items each) that would create 
+varied scenarios combining this theme with the card concepts.
+
+Previous seeds generated: ${JSON.stringify(previousSeeds)}
+
+Each seed set should approach the theme from a different angle:
+- Preparation/planning
+- Execution/implementation  
+- Problem-solving
+- Teaching/explaining
+- Reflection/analysis
+
+Ensure variety and avoid repeating previous approaches.
+Return as JSON array of arrays: [["item1", "item2", "item3"], ...]
+    `;
+    
+    console.log(`[generateCustomSeeds] Calling OpenAI with prompt length: ${prompt.length}`);
+    const response = await callOpenAI([{ role: 'user', content: prompt }], 'gpt-4', 0.7, 1000);
+    console.log(`[generateCustomSeeds] OpenAI response length: ${response.length}`);
+    
+    const generatedSeeds = JSON.parse(response);
+    console.log(`[generateCustomSeeds] Parsed ${generatedSeeds.length} custom seed sets for card ${cardId}:`, generatedSeeds);
+    return generatedSeeds;
+    
+  } catch (error) {
+    console.error("[generateCustomSeeds] Error generating custom seeds:", error);
+    // Fallback: return simple seed sets
+    const fallbackSeeds: string[][] = [];
+    for (let i = 0; i < count; i++) {
+      fallbackSeeds.push([`${theme} scenario ${i + 1}`, `preparation item ${i + 1}`, `execution item ${i + 1}`]);
+    }
+    console.log(`[generateCustomSeeds] Using fallback seeds:`, fallbackSeeds);
+    return fallbackSeeds;
+  }
+}
+
+// Wrapper function to choose between theme seeds or regular seeds
+export async function getSeedForQuizit(cardId: string, seedBundleIndex: number, sessionId?: string, theme?: string): Promise<{bundleItems: string[], bundleIndex: number}> {
+  console.log(`[getSeedForQuizit] Card: ${cardId}, seedBundleIndex: ${seedBundleIndex}, sessionId: ${sessionId}, theme: "${theme}"`);
+  
+  // Theme validation
+  if (!theme || theme.length < 3) {
+    console.log(`[getSeedForQuizit] No theme or theme too short (${theme?.length || 0}), using regular seeds`);
+    return await getSeed(cardId, seedBundleIndex);
+  }
+  
+  console.log(`[getSeedForQuizit] Using custom seeds for card ${cardId} with theme: "${theme}"`);
+  return await getCustomSeed(cardId, sessionId!, theme);
 }
 
 // Get seed bundle data for a card
@@ -462,7 +591,6 @@ export async function generateQuizitContent_PairedCards(cardData1: CardData, car
   }
 }
 
-
 // Store quizit in database - works for both single and paired cards
 export async function storeQuizit(
   cardId1: string, 
@@ -473,7 +601,8 @@ export async function storeQuizit(
   permutationIndex1: number, 
   permutationIndex2: number | null,
   seedBundleIndex: number,
-  chosenCardForSeed: string
+  chosenCardForSeed: string,
+  isCustomSeed: boolean = false
 ): Promise<string> {
   const supabaseClient = getSupabaseClient();
   
@@ -483,7 +612,7 @@ export async function storeQuizit(
       .insert({
         card_id_1: parseInt(cardId1),
         card_id_2: cardId2 ? parseInt(cardId2) : null,
-        seed_bundle_index: seedBundleIndex,
+        seed_bundle_index: isCustomSeed ? null : seedBundleIndex,
         scenario: scenario,
         reasoning1: reasoning1,
         reasoning2: reasoning2,
@@ -491,7 +620,7 @@ export async function storeQuizit(
         card_1_reasoning_score: 0.0,
         card_2_recognition_score: cardId2 ? 0.0 : null,
         card_2_reasoning_score: cardId2 ? 0.0 : null,
-        chosen_card_for_seed: chosenCardForSeed ? parseInt(chosenCardForSeed) : null,
+        chosen_card_for_seed: isCustomSeed ? null : (chosenCardForSeed ? parseInt(chosenCardForSeed) : null),
         permutation_index_1: permutationIndex1,
         permutation_index_2: permutationIndex2,
       })
@@ -511,15 +640,15 @@ export async function storeQuizit(
   }
 }
 
-
 // Generate single card quizit
-export async function generateQuizitItems_SingleCard(cardId: string): Promise<QuizitItems> {
+export async function generateQuizitItems_SingleCard(cardId: string, sessionId?: string, theme?: string): Promise<QuizitItems> {
   console.log(`Generating single card quizit for card: ${cardId}`);
+  console.log(`Session ID: ${sessionId || 'none'}, Theme: ${theme || 'none'}`);
   
   // Get necessary data to generate quizit
   const cardData = await getCardData(cardId);
   const indices = await getIndicesSingleCard(cardId);
-  const seedData = await getSeed(cardId, indices.seedBundleIndex);
+  const seedData = await getSeedForQuizit(cardId, indices.seedBundleIndex, sessionId, theme);
   const permutationData = await getPermutation(cardData.quizitValidPermutations, indices.permutationIndex);
   const content = await generateQuizitContent_SingleCard(cardData, permutationData.permutation, seedData.bundleItems);
   // Store in database
@@ -532,7 +661,8 @@ export async function generateQuizitItems_SingleCard(cardId: string): Promise<Qu
     permutationData.permutationIndex, 
     null,  // permutationIndex2 for single card
     seedData.bundleIndex,
-    cardId   // chosenCardForSeed
+    cardId,   // chosenCardForSeed
+    !!theme && theme.length >= 3  // isCustomSeed: true if theme is provided and long enough
   );
   // Return the quizit items for UI
   return [{
@@ -558,8 +688,9 @@ export async function generateQuizitItems_SingleCard(cardId: string): Promise<Qu
 }
 
 // Generate paired cards quizit
-export async function generateQuizitItems_PairedCards(cardId1: string, cardId2: string): Promise<QuizitItems> {
+export async function generateQuizitItems_PairedCards(cardId1: string, cardId2: string, sessionId?: string, theme?: string): Promise<QuizitItems> {
   console.log(`Generating paired cards quizit for cards: ${cardId1}, ${cardId2}`);
+  console.log(`Session ID: ${sessionId || 'none'}, Theme: ${theme || 'none'}`);
   
   // Get card data for primary card
   const cardData1 = await getCardData(cardId1);
@@ -571,9 +702,9 @@ export async function generateQuizitItems_PairedCards(cardId1: string, cardId2: 
 
   let seedData;
   if (indices.chosenCardForSeed === cardId1) {
-    seedData = await getSeed(cardId1, indices.seedBundleIndex);
+    seedData = await getSeedForQuizit(cardId1, indices.seedBundleIndex, sessionId, theme);
   } else {
-    seedData = await getSeed(cardId2, indices.seedBundleIndex);
+    seedData = await getSeedForQuizit(cardId2, indices.seedBundleIndex, sessionId, theme);
   }
   const permutationData1 = await getPermutation(cardData1.quizitValidPermutations, indices.permutationIndex1);
   const permutationData2 = await getPermutation(cardData2.quizitValidPermutations, indices.permutationIndex2);
@@ -591,7 +722,8 @@ export async function generateQuizitItems_PairedCards(cardId1: string, cardId2: 
     permutationData1.permutationIndex,  // Use permutation1 for primary card
     permutationData2.permutationIndex,  // Use permutation2 for secondary card
     indices.seedBundleIndex,
-    indices.chosenCardForSeed  // chosenCardForSeed (the one with lower seed index)
+    indices.chosenCardForSeed,  // chosenCardForSeed (the one with lower seed index)
+    !!theme && theme.length >= 3  // isCustomSeed: true if theme is provided and long enough
   );
 
   // Return the quizit items for UI
