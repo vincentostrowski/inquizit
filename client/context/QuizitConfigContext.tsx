@@ -190,18 +190,18 @@ export const QuizitConfigProvider = ({ children }: QuizitConfigProviderProps) =>
 
   const pushToNavigationStack = useCallback((bookId: string) => {
     const normalizedBookId = normalizeId(bookId);
-    setNavigationStack(prev => {
-      // Only add if not already in stack
-      if (!prev.includes(normalizedBookId)) {
-        return [...prev, normalizedBookId];
-      }
-      return prev;
-    });
+    setNavigationStack(prev => [...prev, normalizedBookId]);
   }, []);
 
   const popFromNavigationStack = useCallback((bookId: string) => {
     const normalizedBookId = normalizeId(bookId);
-    setNavigationStack(prev => prev.filter(id => id !== normalizedBookId));
+    setNavigationStack(prev => {
+      const lastIndex = prev.lastIndexOf(normalizedBookId);
+      if (lastIndex !== -1) {
+        return prev.filter((_, index) => index !== lastIndex);
+      }
+      return prev;
+    });
   }, []);
 
   const isCurrentlyOnBook = useCallback((bookId: string) => {
@@ -246,7 +246,7 @@ export const QuizitConfigProvider = ({ children }: QuizitConfigProviderProps) =>
   }, [isCurrentlyOnBook, modalData]);
 
   const navigateToLibraryEdit = useCallback(() => {
-    // Switch to edit mode and navigate to library
+    // Switch to edit mode
     if (modalData) {
       setModalData({
         ...modalData,
@@ -254,8 +254,22 @@ export const QuizitConfigProvider = ({ children }: QuizitConfigProviderProps) =>
       });
     }
     
-    router.push('/library');
-  }, [modalData]);
+    // Check if library exists in stack
+    if (navigationStack.includes('library')) {
+      // Calculate how many steps back to reach library
+      const libraryIndex = navigationStack.lastIndexOf('library');
+      const currentIndex = navigationStack.length - 1;
+      const stepsBack = currentIndex - libraryIndex;
+      
+      // Navigate back the calculated number of steps
+      for (let i = 0; i < stepsBack; i++) {
+        router.back();
+      }
+    } else {
+      // Library doesn't exist (root) → create new library
+      router.push('/library');
+    }
+  }, [modalData, navigationStack]);
 
   const addSessionToHistory = useCallback((session: QuizitSession) => {
     setSessionHistory(prev => {
