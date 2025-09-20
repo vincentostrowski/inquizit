@@ -1,12 +1,12 @@
 import "jsr:@supabase/functions-js@2.5.0/edge-runtime.d.ts";
-import { Redis } from "https://esm.sh/@upstash/redis@1.19.3";
-import { QuizitItem } from '../_shared/types.ts';
 import { generateQuizitItems_PairedCards, generateQuizitItems_SingleCard } from '../_shared/quizitGeneration.ts';
+import { redisClient } from '../_shared/redisClient.ts';
 
 interface GetNextQuizitRequest {
   sessionId: string;
   currentCardIds?: string[]; // Cards currently on screen to exclude
 }
+
 interface CardUsageData {
   cardId: string;
   totalUses: number;
@@ -16,7 +16,7 @@ interface CardUsageData {
 }
 
 // Helper function to get session card usage data
-async function getSessionCardUsage(redisClient: Redis, sessionId: string, cardIds: string[]): Promise<CardUsageData[]> {
+async function getSessionCardUsage(sessionId: string, cardIds: string[]): Promise<CardUsageData[]> {
   const cardUsageData: CardUsageData[] = [];
   
   // Get current turn for calculating turns since last use
@@ -198,7 +198,7 @@ function selectCardProbabilistically(cards: CardUsageData[]): CardUsageData | nu
 }
 
 // Helper function to increment card usage count
-async function incrementCardUsage(redisClient: Redis, sessionId: string, cardId: string): Promise<void> {
+async function incrementCardUsage(sessionId: string, cardId: string): Promise<void> {
   try {
     // Get current usage count
     const currentUses = await redisClient.hget(`quizit-session:${sessionId}:card:${cardId}`, 'totalUses');
@@ -217,7 +217,7 @@ async function incrementCardUsage(redisClient: Redis, sessionId: string, cardId:
 }
 
 // Helper function to get current turn and increment it
-async function getAndIncrementTurn(redisClient: Redis, sessionId: string): Promise<number> {
+async function getAndIncrementTurn(sessionId: string): Promise<number> {
   try {
     // Get current turn
     const currentTurn = await redisClient.get(`quizit-session:${sessionId}:currentTurn`);
@@ -235,7 +235,7 @@ async function getAndIncrementTurn(redisClient: Redis, sessionId: string): Promi
 }
 
 // Helper function to update card's last used turn
-async function updateCardLastUsedTurn(redisClient: Redis, sessionId: string, cardId: string, turnNumber: number): Promise<void> {
+async function updateCardLastUsedTurn(sessionId: string, cardId: string, turnNumber: number): Promise<void> {
   try {
     await redisClient.hset(`quizit-session:${sessionId}:card:${cardId}`, {
       lastUsedTurn: turnNumber.toString()
@@ -345,23 +345,6 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Get and clean environment variables
-    const rawUrl = Deno.env.get("UPSTASH_REDIS_REST_URL");
-    const rawToken = Deno.env.get("UPSTASH_REDIS_REST_TOKEN");
-    
-    if (!rawUrl || !rawToken) {
-      throw new Error("Missing UPSTASH_REDIS_REST_URL or UPSTASH_REDIS_REST_TOKEN environment variables");
-    }
-    
-    // Remove quotes if present
-    const url = rawUrl.replace(/^"(.*)"$/, '$1');
-    const token = rawToken.replace(/^"(.*)"$/, '$1');
-    
-    // Initialize Redis client
-    const redisClient = new Redis({
-      url: url,
-      token: token,
-    });
 
     // Get the request data
     const { sessionId, currentCardIds }: GetNextQuizitRequest = await req.json();
@@ -405,10 +388,10 @@ Deno.serve(async (req) => {
     console.log(`Session ${sessionId} has ${cardIds.length} cards:`, cardIds);
 
     // 2. Get current turn and increment it
-    const currentTurn = await getAndIncrementTurn(redisClient, sessionId);
+    const currentTurn = await getAndIncrementTurn(sessionId);
 
     // 3. Get session card usage data
-    const cardUsageData = await getSessionCardUsage(redisClient, sessionId, cardIds);
+    const cardUsageData = await getSessionCardUsage(sessionId, cardIds);
     console.log("📊 Card usage data retrieved:", cardUsageData.map(card => ({
         cardId: card.cardId,
         totalUses: card.totalUses,
@@ -444,11 +427,11 @@ Deno.serve(async (req) => {
 
     // 6. Update usage counts and turn tracking for selected cards
     console.log("📈 Updating card usage and turn tracking...");
-    await incrementCardUsage(redisClient, sessionId, primaryCard.cardId);
-    await updateCardLastUsedTurn(redisClient, sessionId, primaryCard.cardId, currentTurn);
+    await incrementCardUsage(sessionId, primaryCard.cardId);
+    await updateCardLastUsedTurn(sessionId, primaryCard.cardId, currentTurn);
     if (secondaryCard) {
-        await incrementCardUsage(redisClient, sessionId, secondaryCard.cardId);
-        await updateCardLastUsedTurn(redisClient, sessionId, secondaryCard.cardId, currentTurn);
+        await incrementCardUsage(sessionId, secondaryCard.cardId);
+        await updateCardLastUsedTurn(sessionId, secondaryCard.cardId, currentTurn);
     }
     console.log("✅ Card usage and turn tracking updated");
 

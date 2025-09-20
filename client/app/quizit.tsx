@@ -120,9 +120,6 @@ function QuizitScreenContent() {
           const cardIds = extractConceptCardIds(formattedItems);
           setLatestCardIds(cardIds);
           console.log('Initial quizit loaded, card IDs:', cardIds);
-          
-          // Start proactive loading for next deck
-          loadNextDeckProactively();
         }
       } catch (error) {
         console.error('Failed to load initial quizit:', error);

@@ -1,5 +1,5 @@
 import "jsr:@supabase/functions-js@2.5.0/edge-runtime.d.ts";
-import { Redis } from "https://esm.sh/@upstash/redis@1.19.3";
+import { redisClient } from '../_shared/redisClient.ts';
 
 // Simple interface for card IDs
 interface SessionRequest {
@@ -32,26 +32,6 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Get and clean environment variables
-    const rawUrl = Deno.env.get("UPSTASH_REDIS_REST_URL");
-    const rawToken = Deno.env.get("UPSTASH_REDIS_REST_TOKEN");
-    
-    if (!rawUrl || !rawToken) {
-      throw new Error("Missing UPSTASH_REDIS_REST_URL or UPSTASH_REDIS_REST_TOKEN environment variables");
-    }
-    
-    // Remove quotes if present
-    const url = rawUrl.replace(/^"(.*)"$/, '$1');
-    const token = rawToken.replace(/^"(.*)"$/, '$1');
-    
-    console.log("Redis URL:", url);
-    console.log("Redis Token length:", token.length);
-    
-    // Initialize Redis client
-    const redisClient = new Redis({
-      url: url,
-      token: token,
-    });
 
     // Get the request data
     const { cardIds, theme, isPairedMode }: SessionRequest = await req.json();

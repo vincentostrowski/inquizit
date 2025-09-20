@@ -1,8 +1,18 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import OpenAI from 'https://esm.sh/openai@4.0.0';
-import { Redis } from 'https://esm.sh/@upstash/redis@1.19.3';
+import { redisClient } from './redisClient.ts';
 import { QuizitItems, CardData } from './types.ts';
-import { SCENARIO_SYSTEM_PROMPT, buildScenarioPrompt, buildScenarioPrompt_PairedCards, REASONING_SYSTEM_PROMPT, buildReasoningPrompt } from './prompts.ts';
+import { 
+  SCENARIO_SYSTEM_PROMPT, 
+  buildScenarioUserPrompt, 
+  buildScenarioUserPromptPairedCards,
+  REASONING_SYSTEM_PROMPT, 
+  buildReasoningUserPrompt
+} from './prompts/quizit/index.ts';
+import { 
+  CORE_SEED_PROMPT,
+  buildRuntimeSeedPrompt
+} from './prompts/seeds/index.ts';
 
 // Initialize Supabase client
 function getSupabaseClient() {
@@ -33,19 +43,23 @@ function getOpenAIClient() {
 export async function getCustomSeed(cardId: string, sessionId: string, theme: string): Promise<{bundleItems: string[], bundleIndex: number}> {
   console.log(`Getting custom seeds for card ${cardId}, theme: "${theme}"`);
   
-  // Initialize Redis client
-  const rawUrl = Deno.env.get("UPSTASH_REDIS_REST_URL");
-  const rawToken = Deno.env.get("UPSTASH_REDIS_REST_TOKEN");
-  
-  const url = rawUrl.replace(/^"(.*)"$/, '$1');
-  const token = rawToken.replace(/^"(.*)"$/, '$1');
-  
-  const redisClient = new Redis({ url, token });
-  
   try {
     // 1. Check if custom seeds exist for this card in this session
-    const existingSeeds = JSON.parse(await redisClient.hget(`quizit-session:${sessionId}:custom-seeds`, cardId) || "[]");
-    const currentIndex = parseInt(await redisClient.hget(`quizit-session:${sessionId}:custom-seed-indices`, cardId) || "0");
+    const seedsData = await redisClient.get(`quizit-session:${sessionId}:custom-seeds:${cardId}`);
+    const indexData = await redisClient.get(`quizit-session:${sessionId}:custom-seed-indices:${cardId}`);
+    
+    console.log(`[getCustomSeed] Raw seeds data length:`, seedsData ? seedsData.length : 'null');
+    console.log(`[getCustomSeed] Raw index data:`, indexData);
+    
+    console.log(`[getCustomSeed] About to parse seeds data...`);
+    console.log(`[getCustomSeed] Raw seeds data:`, seedsData);
+    console.log(`[getCustomSeed] Raw seeds data type:`, typeof seedsData);
+    console.log(`[getCustomSeed] Raw seeds data length:`, seedsData ? seedsData.length : 'null');
+    
+    // Redis is returning the data as an array, not a string
+    const existingSeeds = seedsData ? seedsData : [];
+    const currentIndex = parseInt(indexData || "0");
+    console.log(`[getCustomSeed] Successfully parsed seeds, count: ${existingSeeds.length}, index: ${currentIndex}`);
     
     console.log(`[getCustomSeed] Card: ${cardId}, Session: ${sessionId}`);
     console.log(`[getCustomSeed] Existing seeds: ${existingSeeds ? 'YES' : 'NO'}`);
@@ -58,7 +72,7 @@ export async function getCustomSeed(cardId: string, sessionId: string, theme: st
       if (existingSeeds.length >= 20) {
         // Reset to beginning for variety
         console.log(`[getCustomSeed] Reached 20 seed limit, cycling back to beginning`);
-        await redisClient.hset(`quizit-session:${sessionId}:custom-seed-indices`, cardId, "1");
+        await redisClient.setex(`quizit-session:${sessionId}:custom-seed-indices:${cardId}`, 86400, "1");
         const currentSeedSet = existingSeeds[0];
         return { bundleItems: currentSeedSet, bundleIndex: 0 };
       }
@@ -66,20 +80,20 @@ export async function getCustomSeed(cardId: string, sessionId: string, theme: st
       // Generate more seeds (up to 20 total)
       const seedsToGenerate = Math.min(5, 20 - existingSeeds.length);
       console.log(`[getCustomSeed] Generating ${seedsToGenerate} new seeds`);
-      const newSeeds = await generateCustomSeeds(cardId, theme, seedsToGenerate, JSON.stringify(existingSeeds));
+      const newSeeds = await generateCustomSeeds(cardId, theme, seedsToGenerate, existingSeeds);
       
       // Add new seeds to existing ones
       existingSeeds.push(...newSeeds);
       console.log(`[getCustomSeed] Total seeds: ${existingSeeds.length} (added ${newSeeds.length} new)`);
       
       // Store updated seeds in Redis
-      await redisClient.hset(`quizit-session:${sessionId}:custom-seeds`, cardId, JSON.stringify(existingSeeds));
+      await redisClient.setex(`quizit-session:${sessionId}:custom-seeds:${cardId}`, 86400, JSON.stringify(existingSeeds));
     }
     
     const currentSeedSet = existingSeeds[currentIndex];
     console.log(`[getCustomSeed] Retrieved seed set at index ${currentIndex}:`, currentSeedSet);
     
-    await redisClient.hincrby(`quizit-session:${sessionId}:custom-seed-indices`, cardId, 1);
+    await redisClient.incr(`quizit-session:${sessionId}:custom-seed-indices:${cardId}`);
     
     console.log(`[getCustomSeed] Using custom seed set ${currentIndex} for card ${cardId}:`, currentSeedSet);
     return {
@@ -94,41 +108,20 @@ export async function getCustomSeed(cardId: string, sessionId: string, theme: st
 }
 
 // Generate custom seeds using AI
-async function generateCustomSeeds(cardId: string, theme: string, count: number, existingSeeds?: string): Promise<string[][]> {
-  console.log(`[generateCustomSeeds] Generating ${count} custom seeds for card ${cardId} with theme: "${theme}"`);
-  
+async function generateCustomSeeds(cardId: string, theme: string, count: number, existingSeeds?: string[][]): Promise<string[][]> {
   try {
     const cardData = await getCardData(cardId);
-    const previousSeeds = existingSeeds ? JSON.parse(existingSeeds) : [];
-    console.log(`[generateCustomSeeds] Card data: ${cardData.title} - ${cardData.description}`);
-    console.log(`[generateCustomSeeds] Previous seeds count: ${previousSeeds.length}`);
+    const previousSeeds = existingSeeds || [];
     
-    const prompt = `
-Theme: ${theme}
-Card: ${cardData.title} - ${cardData.description}
-
-Generate ${count} different seed sets (3-5 items each) that would create 
-varied scenarios combining this theme with the card concepts.
-
-Previous seeds generated: ${JSON.stringify(previousSeeds)}
-
-Each seed set should approach the theme from a different angle:
-- Preparation/planning
-- Execution/implementation  
-- Problem-solving
-- Teaching/explaining
-- Reflection/analysis
-
-Ensure variety and avoid repeating previous approaches.
-Return as JSON array of arrays: [["item1", "item2", "item3"], ...]
-    `;
+    const userPrompt = buildRuntimeSeedPrompt(theme, cardData.title, cardData.description, count, previousSeeds);
     
-    console.log(`[generateCustomSeeds] Calling OpenAI with prompt length: ${prompt.length}`);
-    const response = await callOpenAI([{ role: 'user', content: prompt }], 'gpt-4', 0.7, 1000);
-    console.log(`[generateCustomSeeds] OpenAI response length: ${response.length}`);
+    const messages = [
+      { role: 'system', content: CORE_SEED_PROMPT },
+      { role: 'user', content: userPrompt }
+    ];
+    const response = await callOpenAI(messages, 'gpt-4', 0.7, 1000);
     
     const generatedSeeds = JSON.parse(response);
-    console.log(`[generateCustomSeeds] Parsed ${generatedSeeds.length} custom seed sets for card ${cardId}:`, generatedSeeds);
     return generatedSeeds;
     
   } catch (error) {
@@ -138,22 +131,17 @@ Return as JSON array of arrays: [["item1", "item2", "item3"], ...]
     for (let i = 0; i < count; i++) {
       fallbackSeeds.push([`${theme} scenario ${i + 1}`, `preparation item ${i + 1}`, `execution item ${i + 1}`]);
     }
-    console.log(`[generateCustomSeeds] Using fallback seeds:`, fallbackSeeds);
     return fallbackSeeds;
   }
 }
 
 // Wrapper function to choose between theme seeds or regular seeds
 export async function getSeedForQuizit(cardId: string, seedBundleIndex: number, sessionId?: string, theme?: string): Promise<{bundleItems: string[], bundleIndex: number}> {
-  console.log(`[getSeedForQuizit] Card: ${cardId}, seedBundleIndex: ${seedBundleIndex}, sessionId: ${sessionId}, theme: "${theme}"`);
-  
   // Theme validation
   if (!theme || theme.length < 3) {
-    console.log(`[getSeedForQuizit] No theme or theme too short (${theme?.length || 0}), using regular seeds`);
     return await getSeed(cardId, seedBundleIndex);
   }
   
-  console.log(`[getSeedForQuizit] Using custom seeds for card ${cardId} with theme: "${theme}"`);
   return await getCustomSeed(cardId, sessionId!, theme);
 }
 
@@ -476,7 +464,7 @@ export async function callOpenAI(messages: any[], model: string, temperature: nu
 export async function generateScenario_SingleCard(scenarioComponents: string, wordsToAvoid: string, seedBundle: string[]): Promise<string> {
   try {
     // Build the prompt using the prompts file
-    const userPrompt = buildScenarioPrompt(scenarioComponents, wordsToAvoid, seedBundle);
+    const userPrompt = buildScenarioUserPrompt(scenarioComponents, wordsToAvoid, seedBundle);
     
     // Call OpenAI API
     const messages = [
@@ -500,7 +488,7 @@ export async function generateScenario_SingleCard(scenarioComponents: string, wo
 // Generate scenario using OpenAI
 export async function generateScenario_PairedCards(scenarioComponents1: string, wordsToAvoid1: string, scenarioComponents2: string, wordsToAvoid2: string, seedBundle: string[]): Promise<string> {
   try {
-    const userPrompt = buildScenarioPrompt_PairedCards(scenarioComponents1, wordsToAvoid1, scenarioComponents2, wordsToAvoid2, seedBundle);
+    const userPrompt = buildScenarioUserPromptPairedCards(scenarioComponents1, wordsToAvoid1, scenarioComponents2, wordsToAvoid2, seedBundle);
 
     const messages = [
       { role: 'system', content: SCENARIO_SYSTEM_PROMPT },
@@ -520,7 +508,7 @@ export async function generateScenario_PairedCards(scenarioComponents1: string, 
 export async function generateReasoning(scenarioComponents: string, reasoningComponents: string, cardIdea: string, generatedScenario: string): Promise<string> {
   try {
     // Build the prompt using the prompts file
-    const userPrompt = buildReasoningPrompt(scenarioComponents, reasoningComponents, cardIdea, generatedScenario);
+    const userPrompt = buildReasoningUserPrompt(scenarioComponents, reasoningComponents, cardIdea, generatedScenario);
     
     // Call OpenAI API
     const messages = [
@@ -632,7 +620,6 @@ export async function storeQuizit(
       throw error;
     }
 
-    console.log(`Stored quizit with ID: ${data.id}`);
     return data.id.toString();
   } catch (error) {
     console.error('Error storing quizit:', error);
@@ -642,8 +629,6 @@ export async function storeQuizit(
 
 // Generate single card quizit
 export async function generateQuizitItems_SingleCard(cardId: string, sessionId?: string, theme?: string): Promise<QuizitItems> {
-  console.log(`Generating single card quizit for card: ${cardId}`);
-  console.log(`Session ID: ${sessionId || 'none'}, Theme: ${theme || 'none'}`);
   
   // Get necessary data to generate quizit
   const cardData = await getCardData(cardId);
@@ -689,8 +674,6 @@ export async function generateQuizitItems_SingleCard(cardId: string, sessionId?:
 
 // Generate paired cards quizit
 export async function generateQuizitItems_PairedCards(cardId1: string, cardId2: string, sessionId?: string, theme?: string): Promise<QuizitItems> {
-  console.log(`Generating paired cards quizit for cards: ${cardId1}, ${cardId2}`);
-  console.log(`Session ID: ${sessionId || 'none'}, Theme: ${theme || 'none'}`);
   
   // Get card data for primary card
   const cardData1 = await getCardData(cardId1);
