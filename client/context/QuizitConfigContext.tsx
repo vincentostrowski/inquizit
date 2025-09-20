@@ -40,6 +40,9 @@ interface QuizitConfigData {
   
   // UI State
   isEditMode: boolean;
+  
+  // Navigation State
+  sourceStackIndex?: number;
 }
 
 interface QuizitConfigContextType {
@@ -92,7 +95,10 @@ export const QuizitConfigProvider = ({ children }: QuizitConfigProviderProps) =>
   const [sessionHistory, setSessionHistory] = useState<QuizitSession[]>([]);
 
   const showQuizitConfig = (data: QuizitConfigData) => {
-    setModalData(data);
+    setModalData({
+      ...data,
+      sourceStackIndex: navigationStack.length // Set current stack length
+    });
     setShowModal(true);
   };
 
@@ -102,6 +108,17 @@ export const QuizitConfigProvider = ({ children }: QuizitConfigProviderProps) =>
   };
 
   const toggleEditMode = () => {
+    if (modalData?.sourceStackIndex !== undefined) {
+      const currentStackLength = navigationStack.length;
+      const stepsBack = currentStackLength - modalData.sourceStackIndex;
+      
+      // Navigate back the calculated number of steps
+      for (let i = 0; i < stepsBack; i++) {
+        router.back();
+      }
+    }
+    
+    // Toggle edit mode
     setModalData(prev => prev ? { ...prev, isEditMode: !prev.isEditMode } : null);
   };
 
