@@ -461,10 +461,10 @@ export async function callOpenAI(messages: any[], model: string, temperature: nu
 }
 
 // Generate scenario using OpenAI
-export async function generateScenario_SingleCard(scenarioComponents: string, wordsToAvoid: string, seedBundle: string[]): Promise<string> {
+export async function generateScenario_SingleCard(scenarioComponents: string, wordsToAvoid: string, seedBundle: string[], theme?: string): Promise<string> {
   try {
     // Build the prompt using the prompts file
-    const userPrompt = buildScenarioUserPrompt(scenarioComponents, wordsToAvoid, seedBundle);
+    const userPrompt = buildScenarioUserPrompt(scenarioComponents, wordsToAvoid, seedBundle, theme);
     
     // Call OpenAI API
     const messages = [
@@ -486,9 +486,9 @@ export async function generateScenario_SingleCard(scenarioComponents: string, wo
 }
 
 // Generate scenario using OpenAI
-export async function generateScenario_PairedCards(scenarioComponents1: string, wordsToAvoid1: string, scenarioComponents2: string, wordsToAvoid2: string, seedBundle: string[]): Promise<string> {
+export async function generateScenario_PairedCards(scenarioComponents1: string, wordsToAvoid1: string, scenarioComponents2: string, wordsToAvoid2: string, seedBundle: string[], theme?: string): Promise<string> {
   try {
-    const userPrompt = buildScenarioUserPromptPairedCards(scenarioComponents1, wordsToAvoid1, scenarioComponents2, wordsToAvoid2, seedBundle);
+    const userPrompt = buildScenarioUserPromptPairedCards(scenarioComponents1, wordsToAvoid1, scenarioComponents2, wordsToAvoid2, seedBundle, theme);
 
     const messages = [
       { role: 'system', content: SCENARIO_SYSTEM_PROMPT },
@@ -530,14 +530,14 @@ export async function generateReasoning(scenarioComponents: string, reasoningCom
 }
 
 // Generate quizit content
-export async function generateQuizitContent_SingleCard(cardData: CardData, permutation: string, seedBundle: string[]): Promise<{scenario: string, reasoning: string}> {
+export async function generateQuizitContent_SingleCard(cardData: CardData, permutation: string, seedBundle: string[], theme?: string): Promise<{scenario: string, reasoning: string}> {
   try {
     // Extract components from card data
     const scenarioComponents = extractScenarioComponents(cardData, permutation); // Pass permutation
     const reasoningComponents = extractReasoningComponents(cardData); // No permutation needed
     
     // Generate scenario using OpenAI
-    const scenario = await generateScenario_SingleCard(scenarioComponents, cardData.wordsToAvoid, seedBundle);
+    const scenario = await generateScenario_SingleCard(scenarioComponents, cardData.wordsToAvoid, seedBundle, theme);
     
     // Generate reasoning using OpenAI
     const reasoning = await generateReasoning(scenarioComponents, reasoningComponents, cardData.cardIdea, scenario);
@@ -552,7 +552,7 @@ export async function generateQuizitContent_SingleCard(cardData: CardData, permu
   }
 }
 
-export async function generateQuizitContent_PairedCards(cardData1: CardData, cardData2: CardData, permutation1: string, permutation2: string, seedBundle: string[]): Promise<{scenario: string, reasoning1: string, reasoning2: string}> {
+export async function generateQuizitContent_PairedCards(cardData1: CardData, cardData2: CardData, permutation1: string, permutation2: string, seedBundle: string[], theme?: string): Promise<{scenario: string, reasoning1: string, reasoning2: string}> {
   try {
     // Extract components from card data
     const scenarioComponents1 = extractScenarioComponents(cardData1, permutation1); // Pass permutation
@@ -561,7 +561,7 @@ export async function generateQuizitContent_PairedCards(cardData1: CardData, car
     const reasoningComponents2 = extractReasoningComponents(cardData2); // No permutation needed
     
     // Generate scenario using OpenAI
-    const scenario = await generateScenario_PairedCards(scenarioComponents1, cardData1.wordsToAvoid, scenarioComponents2, cardData2.wordsToAvoid, seedBundle);
+    const scenario = await generateScenario_PairedCards(scenarioComponents1, cardData1.wordsToAvoid, scenarioComponents2, cardData2.wordsToAvoid, seedBundle, theme);
     
     // Generate reasoning using OpenAI
     const reasoning1 = await generateReasoning(scenarioComponents1, reasoningComponents1, cardData1.cardIdea, scenario);
@@ -635,7 +635,7 @@ export async function generateQuizitItems_SingleCard(cardId: string, sessionId?:
   const indices = await getIndicesSingleCard(cardId);
   const seedData = await getSeedForQuizit(cardId, indices.seedBundleIndex, sessionId, theme);
   const permutationData = await getPermutation(cardData.quizitValidPermutations, indices.permutationIndex);
-  const content = await generateQuizitContent_SingleCard(cardData, permutationData.permutation, seedData.bundleItems);
+  const content = await generateQuizitContent_SingleCard(cardData, permutationData.permutation, seedData.bundleItems, theme);
   // Store in database
   const quizitId = await storeQuizit(
     cardId, 
@@ -693,7 +693,7 @@ export async function generateQuizitItems_PairedCards(cardId1: string, cardId2: 
   const permutationData2 = await getPermutation(cardData2.quizitValidPermutations, indices.permutationIndex2);
 
   // Use the chosen card's data for content generation
-  const content = await generateQuizitContent_PairedCards(cardData1, cardData2, permutationData1.permutation, permutationData2.permutation, seedData.bundleItems);
+  const content = await generateQuizitContent_PairedCards(cardData1, cardData2, permutationData1.permutation, permutationData2.permutation, seedData.bundleItems, theme);
   
   // Store quizit with both cards and correct chosen card for seed
   const quizitId = await storeQuizit(
