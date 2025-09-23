@@ -55,7 +55,7 @@ export default function SectionCardDisplay({
               onCardPress?.(card);
             }
           }}
-          size="medium"
+          size="large"
           isSelected={includesId(selectedCardIds, card.id)}
         />
       ))}
