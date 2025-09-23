@@ -26,6 +26,58 @@ export default function ContentHeader({
 
   const insets = useSafeAreaInsets();
 
+  // Function to create a progress bar background that contrasts with the header color
+  const getProgressBarBackgroundColor = (color: string) => {
+    // Convert color to RGB values for brightness calculation
+    const getRGBFromColor = (colorStr: string) => {
+      // Handle hex colors
+      if (colorStr.startsWith('#')) {
+        const hex = colorStr.replace('#', '');
+        if (hex.length === 3) {
+          // Short hex like #abc -> #aabbcc
+          const r = parseInt(hex[0] + hex[0], 16);
+          const g = parseInt(hex[1] + hex[1], 16);
+          const b = parseInt(hex[2] + hex[2], 16);
+          return { r, g, b };
+        } else if (hex.length === 6) {
+          const r = parseInt(hex.substr(0, 2), 16);
+          const g = parseInt(hex.substr(2, 2), 16);
+          const b = parseInt(hex.substr(4, 2), 16);
+          return { r, g, b };
+        }
+      }
+      
+      // Handle named colors
+      const namedColors: { [key: string]: { r: number; g: number; b: number } } = {
+        'white': { r: 255, g: 255, b: 255 },
+        'black': { r: 0, g: 0, b: 0 },
+        'red': { r: 255, g: 0, b: 0 },
+        'green': { r: 0, g: 128, b: 0 },
+        'blue': { r: 0, g: 0, b: 255 },
+        'yellow': { r: 255, g: 255, b: 0 },
+        'orange': { r: 255, g: 165, b: 0 },
+        'purple': { r: 128, g: 0, b: 128 },
+        'pink': { r: 255, g: 192, b: 203 },
+        'gray': { r: 128, g: 128, b: 128 },
+        'dark': { r: 64, g: 64, b: 64 },
+        'navy': { r: 0, g: 0, b: 128 },
+        'maroon': { r: 128, g: 0, b: 0 },
+      };
+      
+      return namedColors[colorStr.toLowerCase()] || { r: 128, g: 128, b: 128 }; // fallback to gray
+    };
+    
+    const { r, g, b } = getRGBFromColor(color);
+    
+    // Calculate brightness using luminance formula
+    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+    
+    // If dark (brightness < 128), use white background, otherwise use black
+    return brightness < 128 
+      ? 'rgba(255, 255, 255, 0.2)' 
+      : 'rgba(0, 0, 0, 0.1)';
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: headerColor }]}>
       <StatusBar 
@@ -35,10 +87,19 @@ export default function ContentHeader({
       <View style={[styles.statusBarArea, { height: insets.top, backgroundColor: headerColor }]} />
       <View style={styles.content}>
         <TouchableOpacity onPress={onBack} style={[styles.backButton, { borderColor: buttonTextBorderColor }]}>
-          <Ionicons name="chevron-back" size={20} color={buttonTextBorderColor} />
+          <Ionicons name="chevron-back" size={24} color={buttonTextBorderColor} />
         </TouchableOpacity>
         
-        <View style={styles.buttons}>
+        <View style={styles.progressContainer}>
+          <View style={[styles.progressBar, { 
+            borderColor: buttonTextBorderColor,
+            backgroundColor: getProgressBarBackgroundColor(headerColor)
+          }]}>
+            <View style={[styles.progressFill, { width: '5%', backgroundColor: buttonCircleColor }]} />
+          </View>
+        </View>
+    
+        <View style={styles.buttonGroup}>
           <TouchableOpacity 
             style={[
               styles.button, 
@@ -49,11 +110,8 @@ export default function ContentHeader({
             disabled={isEditMode}
           >
             <View style={[styles.buttonCircle, { backgroundColor: buttonCircleColor }]}>
-              <Ionicons name="document-text" size={16} color={headerColor} />
+              <Ionicons name="layers" size={16} color={headerColor} />
             </View>
-            <Text style={[styles.buttonText, { color: buttonTextBorderColor }]}>
-              Start Quizit{'\n'}Session
-            </Text>
           </TouchableOpacity>
           
           <TouchableOpacity 
@@ -62,32 +120,12 @@ export default function ContentHeader({
               { borderColor: buttonTextBorderColor },
               isEditMode && styles.disabledButton
             ]} 
-            onPress={isEditMode ? undefined : onCheckConflicts}
+            onPress={isEditMode ? undefined : () => {}}
             disabled={isEditMode}
           >
             <View style={[styles.buttonCircle, { backgroundColor: buttonCircleColor }]}>
-              <Ionicons name="warning" size={16} color={headerColor} />
+              <Ionicons name="ellipsis-horizontal" size={16} color={headerColor} />
             </View>
-            <Text style={[styles.buttonText, { color: buttonTextBorderColor }]}>
-              Check for{'\n'}Conflicts
-            </Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[
-              styles.button, 
-              { borderColor: buttonTextBorderColor },
-              isEditMode && styles.disabledButton
-            ]} 
-            onPress={isEditMode ? undefined : onViewPastQuizits}
-            disabled={isEditMode}
-          >
-            <View style={[styles.buttonCircle, { backgroundColor: buttonCircleColor }]}>
-              <Ionicons name="refresh" size={16} color={headerColor} />
-            </View>
-            <Text style={[styles.buttonText, { color: buttonTextBorderColor }]}>
-              View Past{'\n'}Quizits
-            </Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -104,10 +142,11 @@ const styles = StyleSheet.create({
   },
   content: {
     flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
+    alignItems: 'stretch',
+    paddingHorizontal: 16,
     paddingVertical: 8,
     gap: 8,
+    height: 60,
   },
   backButton: {
     alignItems: 'center',
@@ -115,19 +154,40 @@ const styles = StyleSheet.create({
     opacity: 0.5,
     padding: 4,
   },
-  buttons: {
-    flexDirection: 'row',
+  progressContainer: {
     flex: 1,
     justifyContent: 'center',
-    gap: 12,
+    paddingLeft: 32,
+    paddingRight: 16,
+    height: '100%',
+  },
+  progressBar: {
+    borderRadius: 20,
+    overflow: 'hidden',
+    height: 5,
+    backgroundColor: 'rgba(0, 0, 0, 0.1)',
+    borderTopRightRadius: 2,
+    borderBottomRightRadius: 20,
+    borderTopLeftRadius: 20,
+    borderBottomLeftRadius: 20,
+  },
+  progressFill: {
+    height: '100%',
+    borderTopRightRadius: 2,
+    borderBottomRightRadius: 20,
+    borderTopLeftRadius: 20,
+    borderBottomLeftRadius: 20,
+  },
+  buttonGroup: {
+    flexDirection: 'row',
+    gap: 8,
   },
   button: {
-    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 1,
     borderRadius: 20,
     padding: 4,
-    paddingRight: 16,
   },
   disabledButton: {
     opacity: 0.2,
@@ -138,7 +198,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 4,
   },
   buttonText: {
     fontSize: 10,

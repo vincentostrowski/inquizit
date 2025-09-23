@@ -43,7 +43,7 @@ const styles = StyleSheet.create({
   container: {
     position: 'relative',
     paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingTop: 0,
     backgroundColor: 'white',
   },
   coverSection: {

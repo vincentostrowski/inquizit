@@ -135,7 +135,7 @@ export default function LibraryScreen() {
               Start Quizit{'\n'}Session
             </Text>
             <View style={styles.startQuizitButtonCircle}>
-              <Ionicons name="document-text" size={16} color="#FFFFFF" />
+              <Ionicons name="layers" size={16} color="#FFFFFF" />
             </View>
           </TouchableOpacity>
         )}
