@@ -11,9 +11,11 @@ export interface QuizitItem {
     status?: 'question' | 'empty' | 'checkmark';
     recognitionScore?: number; // 0.0-1.0 scale
     reasoningScore?: number;   // 0.0-1.0 scale
+    bookCover?: string;
   };
   quizitData?: {
-    quizit: string;
+    core: string[];
+    hint: string[];
     quizitId: string;
   };
 }
@@ -29,6 +31,7 @@ export interface CardData {
   banner: string;
   title: string;
   description: string;
+  bookCover: string;
 }
 
 export interface QuizitData {

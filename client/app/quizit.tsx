@@ -11,6 +11,9 @@ import { getNextQuizit } from '../services/getNextQuizitService';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
+// Mock mode for styling development - set to false when done
+const MOCK_MODE = false;
+
 export default function QuizitScreen() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -56,6 +59,13 @@ function QuizitScreenContent() {
     
     setIsLoadingNext(true);
     
+    // Skip API calls when in mock mode
+    if (MOCK_MODE) {
+      console.log('Mock mode enabled - skipping proactive loading');
+      setIsLoadingNext(false);
+      return;
+    }
+    
     try {
       console.log('Loading next quizit for session:', sessionId);
       console.log('Current card IDs to exclude:', latestCardIds);
@@ -94,6 +104,13 @@ function QuizitScreenContent() {
   // Load initial quizit and start proactive loading
   useEffect(() => {
     const loadInitialQuizit = async () => {
+      // Skip API calls when in mock mode
+      if (MOCK_MODE) {
+        console.log('Mock mode enabled - skipping API calls');
+        setQuizitItems([[]]); // Empty array for the map function
+        return;
+      }
+
       if (!sessionId) {
         console.error('No sessionId provided');
         return;
@@ -127,6 +144,7 @@ function QuizitScreenContent() {
     };
 
     loadInitialQuizit();
+    loadNextDeckProactively();
   }, [sessionId]);
   
   const handleBack = () => {
@@ -141,7 +159,7 @@ function QuizitScreenContent() {
   const handleCloseReasoning = () => {
     setShowReasoningSheet(false);
   };
-  
+
   // Real-time scroll detection for immediate response
   const handleScroll = (event: any) => {
     const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
@@ -153,68 +171,69 @@ function QuizitScreenContent() {
     }
   };
 
-  return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <QuizitHeader
-        onBack={handleBack}
+         return (
+           <View style={[styles.container, { paddingTop: insets.top }]}>
+             <QuizitHeader
+               onBack={handleBack}
         quizitTitle={sessionTitle as string}
-      />
-      <ScrollView
-        ref={scrollViewRef}
-        style={{ flex: 1, backgroundColor: '#f2f2f2'}}
-        scrollEnabled={verticalScrollEnabled}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{flexGrow: 1, backgroundColor: '#f2f2f2'}}
-        directionalLockEnabled
-        pagingEnabled
-        snapToInterval={availableHeight}
-        snapToAlignment="start"
-        decelerationRate="fast"
+             />
+             <ScrollView
+               ref={scrollViewRef}
+               style={{ flex: 1, backgroundColor: '#f2f2f2'}}
+               scrollEnabled={verticalScrollEnabled}
+               showsVerticalScrollIndicator={false}
+               contentContainerStyle={{flexGrow: 1, backgroundColor: '#f2f2f2'}}
+               directionalLockEnabled
+               pagingEnabled
+               snapToInterval={availableHeight}
+               snapToAlignment="start"
+               decelerationRate="fast"
         onScroll={handleScroll}
-      >
-        
-        {
-          quizitItems.map((items, index) => (
-            <View key={index} style={[styles.deckContainer, {height: availableHeight}]}>
-              <Deck 
-                quizitItems={items}
-                onGestureStart={() => setVerticalScrollEnabled(false)} // Lock scroll for each deck
-                onGestureEnd={() => setVerticalScrollEnabled(true)} // Unlock scroll for each deck
-                onViewReasoning={() => {
-                  // Find the reasoning from the current deck's concept cards
-                  const conceptCard = items.find(item => item.faceType === 'concept' && item.conceptData);
-                  if (conceptCard?.conceptData?.reasoning) {
-                    handleViewReasoning(conceptCard.conceptData.reasoning);
-                  }
-                }}
+             >
+               
+               {
+                 quizitItems.map((items, index) => (
+                   <View key={index} style={[styles.deckContainer, {height: availableHeight}]}>
+                     <Deck 
+                       quizitItems={items}
+                       onGestureStart={() => setVerticalScrollEnabled(false)} // Lock scroll for each deck
+                       onGestureEnd={() => setVerticalScrollEnabled(true)} // Unlock scroll for each deck
+                       onViewReasoning={() => {
+                         // Find the reasoning from the current deck's concept cards
+                  const conceptCard = items.find((item: any) => item.faceType === 'concept' && item.conceptData);
+                         if (conceptCard?.conceptData?.reasoning) {
+                           handleViewReasoning(conceptCard.conceptData.reasoning);
+                         }
+                       }}
                 fadeIn={true} // Fade in first deck and newly loaded decks
                 sessionId={sessionId as string}
-              />
-            </View>
-          ))
-        }
+                mockMode={MOCK_MODE} // Use the mock mode constant
+                     />
+                   </View>
+                 ))
+               }
         {/* Skeleton deck only when loading */}
         {(quizitItems.length === 0 || reachedBottom) && (
-          <View style={[styles.deckContainer, {height: availableHeight}]}>
-            <SkeletonLoadingDeck 
-              quizitItems={[]}
-              onGestureStart={() => setVerticalScrollEnabled(false)}
-              onGestureEnd={() => setVerticalScrollEnabled(true)}
-              onViewReasoning={() => {}}
-            />
-          </View>
+                 <View style={[styles.deckContainer, {height: availableHeight}]}>
+                   <SkeletonLoadingDeck 
+                     quizitItems={[]}
+                     onGestureStart={() => setVerticalScrollEnabled(false)}
+                     onGestureEnd={() => setVerticalScrollEnabled(true)}
+                     onViewReasoning={() => {}}
+                   />
+                 </View>
         )}
-        
-      </ScrollView>
-      
-      {/* Reasoning Bottom Sheet */}
-      <ReasoningBottomSheet
-        visible={showReasoningSheet}
-        reasoning={currentReasoning}
-        onClose={handleCloseReasoning}
-      />
-    </View>
-  );
+               
+             </ScrollView>
+             
+             {/* Reasoning Bottom Sheet */}
+             <ReasoningBottomSheet
+               visible={showReasoningSheet}
+               reasoning={currentReasoning}
+               onClose={handleCloseReasoning}
+             />
+           </View>
+         );
 }
 
 const styles = StyleSheet.create({

@@ -37,14 +37,14 @@ export default function ThemeInputModal({
   // Calculate modal position based on keyboard height
   const getModalPosition = () => {
     const availableHeight = SCREEN_HEIGHT - keyboardHeight;
-    const modalBottom = availableHeight - MODAL_HEIGHT;
-    return Math.max(modalBottom, 50); // Minimum 50px from top
+    return availableHeight - MODAL_HEIGHT; // Position from bottom
   };
 
   useEffect(() => {
     if (visible) {
       setIsVisible(true);
       const position = getModalPosition();
+      console.log('Modal position:', position, 'keyboardHeight:', keyboardHeight);
       translateY.value = withTiming(position, { duration: 300 });
       backdropOpacity.value = withTiming(0.5, { duration: 300 });
     } else {

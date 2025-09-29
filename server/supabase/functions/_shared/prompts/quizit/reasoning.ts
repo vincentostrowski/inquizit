@@ -17,7 +17,7 @@ REASONING MUST BE EXPLANATORY-ONLY:
 Example:
 Input:
 scenario: You have currently gone over budget on your plan. After discussing with your contractor, you figure out that the structural issues will require even more money to fix, but you feel compelled to continue because you've already invested so much.
-card_idea: Continuing with a losing choice because you've already spent time/money on it, instead of judging only future costs and benefits, should not be a reason to continue
+card_idea: Continuing with a losing choice because you've already spent time/money on it, instead of judging only future costs and benefits
 considerations (reasoning components): The reader recognizes past investment is irrecoverable and irrelevant to the current choice, The reader evaluates expected future payoff rather than justifying prior effort
 
 Output:
@@ -25,8 +25,7 @@ You've already invested significant money in the renovation, but the discovery o
 
 The money already spent on the renovation cannot be recovered and should not influence whether to continue. You should evaluate whether the additional structural repairs will actually improve the home's value rather than continuing just to justify the previous investment.
 
-Get a second contractor's opinion on the structural issues and their repair costs, and if it's still worth it, continue the renovation. Don't continue just because you've already spent money on it.
-`;
+Get a second contractor's opinion on the structural issues and their repair costs, and if it's still worth it, continue the renovation. Don't continue just because you've already spent money on it.`;
 
 // ===== BUILDER FUNCTIONS =====
 

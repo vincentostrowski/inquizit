@@ -14,7 +14,9 @@ interface ConceptData {
 }
 
 interface QuizitData {
-  quizit: string;
+  core: string[];
+  hint: string[];
+  quizitId: string;
 }
 
 interface CardProps {
@@ -24,6 +26,7 @@ interface CardProps {
   onConceptTap?: () => void;
   onViewReasoning?: () => void;
   onScoreChange?: (type: 'recognition' | 'reasoning', score: number) => void;
+  displayText?: string;
 }
 
 export function CardComponent({
@@ -33,6 +36,7 @@ export function CardComponent({
   onConceptTap,
   onViewReasoning,
   onScoreChange,
+  displayText,
 }: CardProps) {
   // Preload banner image when component mounts
   useEffect(() => {
@@ -63,7 +67,7 @@ export function CardComponent({
     if (faceType === 'quizit' && quizitData) {
       return (
         <QuizitFace
-          quizit={quizitData.quizit}
+          quizit={displayText || quizitData.core?.join(' ') || ''}
         />
       );
     }

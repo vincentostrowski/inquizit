@@ -203,10 +203,14 @@ export async function getCardData(cardId: string): Promise<CardData> {
   const supabaseClient = getSupabaseClient();
   
   try {
-    // Get card data with all required columns
+    // Get card data with all required columns, including book cover
     const { data: cardData, error: cardError } = await supabaseClient
       .from('cards')
-      .select('id, card_idea, words_to_avoid, quizit_component_structure, quizit_valid_permutations, banner, title, description')
+      .select(`
+        id, card_idea, words_to_avoid, quizit_component_structure, 
+        quizit_valid_permutations, banner, title, description,
+        books!inner(cover)
+      `)
       .eq('id', cardId)
       .single();
 
@@ -224,6 +228,7 @@ export async function getCardData(cardId: string): Promise<CardData> {
         banner: cardData.banner || '',
         title: cardData.title || '',
         description: cardData.description || '',
+        bookCover: cardData.books.cover || '',
       };
   } catch (error) {
     console.error('Error getting card data:', error);
@@ -406,22 +411,32 @@ export async function getPermutation(permutations: string[], permutationIndex: n
   };
 }
 
-// Extract scenario components from card data using permutation order
-export function extractScenarioComponents(cardData: CardData, permutation: string): string {
+// Extract core scenario components from card data using permutation order
+export function extractCoreComponents(cardData: CardData, permutation: string): string[] {
   // Split permutation to get component IDs
   const permutationIds = permutation.split(' ');
   
-  // Find scenario components in permutation order
-  const scenarioComponents = permutationIds
+  // Find core scenario components in permutation order
+  const coreComponents = permutationIds
     .map(id => {
       const component = cardData.quizitComponentStructure.components
-        .find(comp => comp.id === id && comp.type === 'scenario');
+        .find(comp => comp.id === id && comp.type === 'scenario' && 
+               (comp.revelationGroup === 0 || comp.revelationGroup === undefined));
       return component ? component.text : '';
     })
-    .filter(text => text !== '')
-    .join(', ');
+    .filter(text => text !== '');
     
-  return scenarioComponents;
+  return coreComponents;
+}
+
+// Extract hint scenario components from card data (no permutation needed)
+export function extractHintComponents(cardData: CardData): string[] {
+  // Get ALL hint scenario components regardless of order
+  const hintComponents = cardData.quizitComponentStructure.components
+    .filter(component => component.type === 'scenario' && component.revelationGroup === 1)
+    .map(component => component.text);
+    
+  return hintComponents;
 }
 
 // Extract reasoning components from card data (no permutation needed)
@@ -460,11 +475,11 @@ export async function callOpenAI(messages: any[], model: string, temperature: nu
   }
 }
 
-// Generate scenario using OpenAI
-export async function generateScenario_SingleCard(scenarioComponents: string, wordsToAvoid: string, seedBundle: string[], theme?: string): Promise<string> {
+// Generate scenario using OpenAI with core/hint components
+export async function generateScenario_SingleCard(coreComponents: string[], hintComponents: string[], wordsToAvoid: string, seedBundle: string[], theme?: string): Promise<{core: string[], hint: string[]}> {
   try {
-    // Build the prompt using the prompts file
-    const userPrompt = buildScenarioUserPrompt(scenarioComponents, wordsToAvoid, seedBundle, theme);
+    // Build the prompt using the updated prompts file
+    const userPrompt = buildScenarioUserPrompt(coreComponents, hintComponents, wordsToAvoid, seedBundle, theme);
     
     // Call OpenAI API
     const messages = [
@@ -478,17 +493,41 @@ export async function generateScenario_SingleCard(scenarioComponents: string, wo
       throw new Error('No content generated from OpenAI');
     }
 
-    return generatedContent;
+    // Parse JSON response
+    try {
+      const parsed = JSON.parse(generatedContent);
+      return {
+        core: parsed.core || [],
+        hint: parsed.hint || []
+      };
+    } catch (parseError) {
+      console.error('Error parsing scenario JSON:', parseError);
+      console.error('Generated content:', generatedContent);
+      throw new Error('Failed to parse scenario JSON response');
+    }
   } catch (error) {
     console.error('Error generating scenario:', error);
     throw error;
   }
 }
 
-// Generate scenario using OpenAI
-export async function generateScenario_PairedCards(scenarioComponents1: string, wordsToAvoid1: string, scenarioComponents2: string, wordsToAvoid2: string, seedBundle: string[], theme?: string): Promise<string> {
+// Generate scenario using OpenAI with core/hint components for paired cards
+export async function generateScenario_PairedCards(
+  coreComponents1: string[], 
+  hintComponents1: string[], 
+  wordsToAvoid1: string, 
+  coreComponents2: string[], 
+  hintComponents2: string[], 
+  wordsToAvoid2: string, 
+  seedBundle: string[], 
+  theme?: string
+): Promise<{core: string[], hint: string[]}> {
   try {
-    const userPrompt = buildScenarioUserPromptPairedCards(scenarioComponents1, wordsToAvoid1, scenarioComponents2, wordsToAvoid2, seedBundle, theme);
+    const userPrompt = buildScenarioUserPromptPairedCards(
+      coreComponents1, hintComponents1, wordsToAvoid1, 
+      coreComponents2, hintComponents2, wordsToAvoid2, 
+      seedBundle, theme
+    );
 
     const messages = [
       { role: 'system', content: SCENARIO_SYSTEM_PROMPT },
@@ -497,7 +536,22 @@ export async function generateScenario_PairedCards(scenarioComponents1: string, 
 
     const generatedContent = await callOpenAI(messages, 'gpt-4', 0.7, 500);
     
-    return generatedContent;
+    if (!generatedContent) {
+      throw new Error('No content generated from OpenAI');
+    }
+
+    // Parse JSON response
+    try {
+      const parsed = JSON.parse(generatedContent);
+      return {
+        core: parsed.core || [],
+        hint: parsed.hint || []
+      };
+    } catch (parseError) {
+      console.error('Error parsing scenario JSON:', parseError);
+      console.error('Generated content:', generatedContent);
+      throw new Error('Failed to parse scenario JSON response');
+    }
   } catch (error) {
     console.error('Error generating scenario:', error);
     throw error;
@@ -505,10 +559,13 @@ export async function generateScenario_PairedCards(scenarioComponents1: string, 
 }
 
 // Generate reasoning using OpenAI
-export async function generateReasoning(scenarioComponents: string, reasoningComponents: string, cardIdea: string, generatedScenario: string): Promise<string> {
+export async function generateReasoning(scenarioComponents: string, reasoningComponents: string, cardIdea: string, generatedScenario: {core: string[], hint: string[]}): Promise<string> {
   try {
+    // Convert JSON scenario to string for reasoning
+    const scenarioText = [...generatedScenario.core, ...generatedScenario.hint].join(' ');
+    
     // Build the prompt using the prompts file
-    const userPrompt = buildReasoningUserPrompt(scenarioComponents, reasoningComponents, cardIdea, generatedScenario);
+    const userPrompt = buildReasoningUserPrompt(scenarioComponents, reasoningComponents, cardIdea, scenarioText);
     
     // Call OpenAI API
     const messages = [
@@ -530,17 +587,18 @@ export async function generateReasoning(scenarioComponents: string, reasoningCom
 }
 
 // Generate quizit content
-export async function generateQuizitContent_SingleCard(cardData: CardData, permutation: string, seedBundle: string[], theme?: string): Promise<{scenario: string, reasoning: string}> {
+export async function generateQuizitContent_SingleCard(cardData: CardData, permutation: string, seedBundle: string[], theme?: string): Promise<{scenario: {core: string[], hint: string[]}, reasoning: string}> {
   try {
     // Extract components from card data
-    const scenarioComponents = extractScenarioComponents(cardData, permutation); // Pass permutation
-    const reasoningComponents = extractReasoningComponents(cardData); // No permutation needed
+    const coreComponents = extractCoreComponents(cardData, permutation);
+    const hintComponents = extractHintComponents(cardData);
+    const reasoningComponents = extractReasoningComponents(cardData);
     
     // Generate scenario using OpenAI
-    const scenario = await generateScenario_SingleCard(scenarioComponents, cardData.wordsToAvoid, seedBundle, theme);
+    const scenario = await generateScenario_SingleCard(coreComponents, hintComponents, cardData.wordsToAvoid, seedBundle, theme);
     
     // Generate reasoning using OpenAI
-    const reasoning = await generateReasoning(scenarioComponents, reasoningComponents, cardData.cardIdea, scenario);
+    const reasoning = await generateReasoning([...coreComponents, ...hintComponents].join(', '), reasoningComponents, cardData.cardIdea, scenario);
     
     return {
       scenario,
@@ -552,20 +610,26 @@ export async function generateQuizitContent_SingleCard(cardData: CardData, permu
   }
 }
 
-export async function generateQuizitContent_PairedCards(cardData1: CardData, cardData2: CardData, permutation1: string, permutation2: string, seedBundle: string[], theme?: string): Promise<{scenario: string, reasoning1: string, reasoning2: string}> {
+export async function generateQuizitContent_PairedCards(cardData1: CardData, cardData2: CardData, permutation1: string, permutation2: string, seedBundle: string[], theme?: string): Promise<{scenario: {core: string[], hint: string[]}, reasoning1: string, reasoning2: string}> {
   try {
     // Extract components from card data
-    const scenarioComponents1 = extractScenarioComponents(cardData1, permutation1); // Pass permutation
-    const scenarioComponents2 = extractScenarioComponents(cardData2, permutation2); // Pass permutation
-    const reasoningComponents1 = extractReasoningComponents(cardData1); // No permutation needed
-    const reasoningComponents2 = extractReasoningComponents(cardData2); // No permutation needed
+    const coreComponents1 = extractCoreComponents(cardData1, permutation1);
+    const hintComponents1 = extractHintComponents(cardData1);
+    const coreComponents2 = extractCoreComponents(cardData2, permutation2);
+    const hintComponents2 = extractHintComponents(cardData2);
+    const reasoningComponents1 = extractReasoningComponents(cardData1);
+    const reasoningComponents2 = extractReasoningComponents(cardData2);
     
     // Generate scenario using OpenAI
-    const scenario = await generateScenario_PairedCards(scenarioComponents1, cardData1.wordsToAvoid, scenarioComponents2, cardData2.wordsToAvoid, seedBundle, theme);
+    const scenario = await generateScenario_PairedCards(
+      coreComponents1, hintComponents1, cardData1.wordsToAvoid,
+      coreComponents2, hintComponents2, cardData2.wordsToAvoid,
+      seedBundle, theme
+    );
     
     // Generate reasoning using OpenAI
-    const reasoning1 = await generateReasoning(scenarioComponents1, reasoningComponents1, cardData1.cardIdea, scenario);
-    const reasoning2 = await generateReasoning(scenarioComponents2, reasoningComponents2, cardData2.cardIdea, scenario);
+    const reasoning1 = await generateReasoning([...coreComponents1, ...hintComponents1].join(', '), reasoningComponents1, cardData1.cardIdea, scenario);
+    const reasoning2 = await generateReasoning([...coreComponents2, ...hintComponents2].join(', '), reasoningComponents2, cardData2.cardIdea, scenario);
     
     return {
       scenario,
@@ -636,11 +700,14 @@ export async function generateQuizitItems_SingleCard(cardId: string, sessionId?:
   const seedData = await getSeedForQuizit(cardId, indices.seedBundleIndex, sessionId, theme);
   const permutationData = await getPermutation(cardData.quizitValidPermutations, indices.permutationIndex);
   const content = await generateQuizitContent_SingleCard(cardData, permutationData.permutation, seedData.bundleItems, theme);
+  // Convert scenario to string for database storage
+  const scenarioText = [...content.scenario.core, ...content.scenario.hint].join(' ');
+  
   // Store in database
   const quizitId = await storeQuizit(
     cardId, 
     null,  // cardId2 for single card
-    content.scenario, 
+    scenarioText, 
     content.reasoning, 
     null,  // reasoning2 for single card
     permutationData.permutationIndex, 
@@ -653,7 +720,8 @@ export async function generateQuizitItems_SingleCard(cardId: string, sessionId?:
   return [{
     faceType: 'quizit',
     quizitData: {
-      quizit: content.scenario,  // Use scenario as the quizit text
+      core: content.scenario.core,  // Core scenario components
+      hint: content.scenario.hint,  // Hint scenario components
       quizitId: quizitId,
     },
   }, 
@@ -667,7 +735,8 @@ export async function generateQuizitItems_SingleCard(cardId: string, sessionId?:
       reasoning: content.reasoning,
       status: 'question',
       recognitionScore: 0.0,
-      reasoningScore: 0.0
+      reasoningScore: 0.0,
+      bookCover: cardData.bookCover
     }
   }];
 }
@@ -695,11 +764,14 @@ export async function generateQuizitItems_PairedCards(cardId1: string, cardId2: 
   // Use the chosen card's data for content generation
   const content = await generateQuizitContent_PairedCards(cardData1, cardData2, permutationData1.permutation, permutationData2.permutation, seedData.bundleItems, theme);
   
+  // Convert scenario to string for database storage
+  const scenarioText = [...content.scenario.core, ...content.scenario.hint].join(' ');
+  
   // Store quizit with both cards and correct chosen card for seed
   const quizitId = await storeQuizit(
     cardId1, 
     cardId2,  // cardId2 for paired cards
-    content.scenario, 
+    scenarioText, 
     content.reasoning1, 
     content.reasoning2,
     permutationData1.permutationIndex,  // Use permutation1 for primary card
@@ -713,7 +785,8 @@ export async function generateQuizitItems_PairedCards(cardId1: string, cardId2: 
   return [{
     faceType: 'quizit',
     quizitData: {
-      quizit: content.scenario,  // Use scenario as the quizit text
+      core: content.scenario.core,  // Core scenario components
+      hint: content.scenario.hint,  // Hint scenario components
       quizitId: quizitId,
     },
   }, 
@@ -727,7 +800,8 @@ export async function generateQuizitItems_PairedCards(cardId1: string, cardId2: 
       reasoning: content.reasoning1,
       status: 'question',
       recognitionScore: 0.0,
-      reasoningScore: 0.0
+      reasoningScore: 0.0,
+      bookCover: cardData1.bookCover
     }
   }, 
   {
@@ -740,7 +814,8 @@ export async function generateQuizitItems_PairedCards(cardId1: string, cardId2: 
       reasoning: content.reasoning2,
       status: 'question',
       recognitionScore: 0.0,
-      reasoningScore: 0.0
+      reasoningScore: 0.0,
+      bookCover: cardData2.bookCover
     }
   }
 ];

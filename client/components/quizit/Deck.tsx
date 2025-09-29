@@ -1,5 +1,5 @@
 import React, { useRef, useState, useMemo, useEffect } from 'react';
-import { View, StyleSheet, Animated, Dimensions, ScrollView, Pressable, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, Animated, Dimensions, ScrollView, Pressable, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { compareIds } from '../../utils/idUtils';
 import { Card } from './Card';
@@ -9,6 +9,47 @@ type CardViewState = 'unviewed' | 'viewed' | 'completed';
 
 // Memoized components for better performance
 const MemoizedCard = React.memo(Card);
+
+// Mock data for development/styling
+const MOCK_QUIZIT_ITEMS = [
+  {
+    faceType: 'quizit' as const,
+    quizitData: {
+      core: [
+        "You're renovating your kitchen and have already spent $15,000 on new cabinets.",
+        "The contractor discovers the electrical work needs a complete overhaul, costing an additional $8,000."
+      ],
+      hint: [
+        "You're tempted to continue because you've already invested so much.",
+        "You know that stopping now would mean all that money was 'wasted'.",
+        "The thought of walking away from your investment feels like admitting defeat."
+      ],
+      quizitId: 'mock-quizit-1'
+    }
+  },
+  {
+    faceType: 'concept' as const,
+    conceptData: {
+      id: 'mock-card-1',
+      banner: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=300&fit=crop',
+      title: 'Sunk Cost Fallacy',
+      description: 'People continue a course of action because of previously invested resources, even when quitting is better.',
+      reasoning: 'The reader recognizes past investment is irrecoverable and irrelevant to the current choice.',
+      bookCover: 'https://ewwmeflwxqnhbkhfjeuo.supabase.co/storage/v1/object/public/book-covers/books/4/cover.avif'
+    }
+  },
+  {
+    faceType: 'concept' as const,
+    conceptData: {
+      id: 'mock-card-2',
+      banner: 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&h=300&fit=crop',
+      title: 'Confirmation Bias',
+      description: 'The tendency to search for, interpret, and recall information in a way that confirms preexisting beliefs.',
+      reasoning: 'The reader sees how selective information gathering can reinforce existing viewpoints.',
+      bookCover: 'https://ewwmeflwxqnhbkhfjeuo.supabase.co/storage/v1/object/public/book-covers/books/14/cover.jpg'
+    }
+  },
+];
 
 type CardState = 'question' | 'empty' | 'checkmark';
 
@@ -24,9 +65,11 @@ interface DeckProps {
       status?: CardState;
       recognitionScore?: number;
       reasoningScore?: number;
+      bookCover?: string;
     };
     quizitData?: {
-      quizit: string;
+      core: string[];
+      hint: string[];
       quizitId: string;
     };
   }>;
@@ -35,12 +78,16 @@ interface DeckProps {
   onViewReasoning?: () => void;
   fadeIn?: boolean;
   sessionId?: string;
+  mockMode?: boolean;
 }
 
-export default function Deck({ quizitItems, onGestureStart, onGestureEnd, onViewReasoning, fadeIn = false, sessionId }: DeckProps) {
+export default function Deck({ quizitItems, onGestureStart, onGestureEnd, onViewReasoning, fadeIn = false, sessionId, mockMode = false }: DeckProps) {
+  // Use mock data when mockMode is true
+  const dataToUse = mockMode ? MOCK_QUIZIT_ITEMS : quizitItems;
+  
   // Enhanced deck state with all card data
   const [deck, setDeck] = useState(() => 
-    quizitItems.map(item => ({
+    dataToUse.map(item => ({
       ...item,
       conceptData: item.conceptData ? {
         ...item.conceptData,
@@ -61,7 +108,7 @@ export default function Deck({ quizitItems, onGestureStart, onGestureEnd, onView
   const debouncedUpdateScores = useMemo(() => {
     if (!sessionId || !quizitId) return null;
     
-    return createDebouncedUpdateScores(async (cardData) => {
+    return createDebouncedUpdateScores(async (cardData: { id: string; recognitionScore: number; reasoningScore: number }) => {
       try {
         await updateScores(sessionId, quizitId, cardData);
         console.log('Scores updated successfully for card:', cardData.id);
@@ -88,13 +135,44 @@ export default function Deck({ quizitItems, onGestureStart, onGestureEnd, onView
   // Single source of truth for card view states
   const [cardViewStates, setCardViewStates] = useState<CardViewState[]>([]);
   
+  // Track which cards have been revealed (show book cover instead of icon)
+  // This tracks by original position, not current deck position
+  const [revealedCards, setRevealedCards] = useState<Set<number>>(new Set());
+  const [revealedHints, setRevealedHints] = useState<number>(0);
+  const [currentDisplayText, setCurrentDisplayText] = useState('');
+  
+  // Function to update display text
+  const updateDisplayText = (quizitData: any, hintsRevealed: number) => {
+    if (!quizitData) {
+      setCurrentDisplayText('');
+      return;
+    }
+    
+    const coreText = quizitData.core?.join(' ') || '';
+    const revealedHintsArray = quizitData.hint?.slice(0, hintsRevealed) || [];
+    const hintText = revealedHintsArray.join(' ');
+    
+    const fullText = [coreText, hintText].filter(Boolean).join(' ');
+    const hasMoreHints = hintsRevealed < (quizitData.hint?.length || 0);
+    
+    const newText = hasMoreHints ? `${fullText}..` : fullText;
+    setCurrentDisplayText(newText);
+  };
+  
   // Animation timing constants
   const ANIMATION_DURATION = 350; // Total animation time in ms
 
   // Initialize all cards as unviewed
   useEffect(() => {
     setCardViewStates(deck.map((_, index) => index === 0 ? 'viewed' : 'unviewed'));
+    
+    // Initialize display text for quizit
+    const quizitData = dataToUse[0]?.quizitData;
+    if (quizitData) {
+      updateDisplayText(quizitData, 0); // Start with 0 hints revealed
+    }
   }, []);
+
 
   // Simple state transition functions
   const markAsViewed = (index: number) => {
@@ -105,6 +183,63 @@ export default function Deck({ quizitItems, onGestureStart, onGestureEnd, onView
       }
       return newStates;
     });
+  };
+  
+  // Reveal a card (show book cover instead of icon)
+  const revealCard = (index: number) => {
+    setRevealedCards(prev => new Set([...prev, index]));
+  };
+  
+  // Handle indicator tap - reveal if not revealed, navigate if already revealed
+  const handleIndicatorTap = (tappedIndex: number) => {
+    // Special handling for quizit indicator (index 0)
+    if (tappedIndex === 0 && currentIndex === 0) {
+      const quizitData = dataToUse[0]?.quizitData;
+      const totalHints = quizitData?.hint?.length || 0;
+      
+      if (revealedHints < totalHints) {
+        // Reveal next hint
+        const newRevealedHints = revealedHints + 1;
+        setRevealedHints(newRevealedHints);
+        // Update display text immediately
+        updateDisplayText(quizitData, newRevealedHints);
+      }
+      return;
+    }
+    
+    // If tapping current card, do nothing
+    if (tappedIndex === currentIndex) {
+      return;
+    }
+    
+    // Prevent rapid tapping during animations
+    if (isAnimating) {
+      return;
+    }
+    
+    const isRevealed = revealedCards.has(tappedIndex);
+    
+    if (!isRevealed) {
+      // Not revealed yet - just reveal it
+      revealCard(tappedIndex);
+    } else {
+      // Already revealed - navigate to it
+      // Handle special wrap-around cases first
+      if (currentIndex === 0 && tappedIndex === 2) {
+        // 0 -> 2: go forward
+        animateToPrev();
+      } else if (currentIndex === 2 && tappedIndex === 0) {
+        // 2 -> 0: go forward (wrap around)
+        animateToNext();
+      } else {
+        // All other cases: use simple difference logic
+        if (tappedIndex > currentIndex) {
+          animateToNext();
+        } else {
+          animateToPrev();
+        }
+      }
+    }
   };
   
   const markAsCompleted = (index: number) => {
@@ -215,6 +350,7 @@ export default function Deck({ quizitItems, onGestureStart, onGestureEnd, onView
   const animateToNext = () => {
     const newIndex = (currentIndex + 1) % deck.length;
     setCurrentIndex(newIndex);
+    revealCard(newIndex); // Reveal the card when navigating to it
     
     
     Animated.timing(position, {
@@ -250,6 +386,7 @@ export default function Deck({ quizitItems, onGestureStart, onGestureEnd, onView
     }).start(() => {
       const newIndex = (currentIndex - 1 + deck.length) % deck.length;
       setCurrentIndex(newIndex);
+      revealCard(newIndex); // Reveal the card when navigating to it
       
       
       Animated.timing(backOffScreenPosition, {
@@ -355,6 +492,7 @@ export default function Deck({ quizitItems, onGestureStart, onGestureEnd, onView
       ]}>
         <MemoizedCard 
           faceType="blank"
+          displayText=""
         />
       </Animated.View>
       {/* Fake Front Card to Render while transition jump occurs */}
@@ -366,7 +504,8 @@ export default function Deck({ quizitItems, onGestureStart, onGestureEnd, onView
             quizitData={deck[0].quizitData}
             onConceptTap={() => null}
           onViewReasoning={onViewReasoning}
-          onScoreChange={handleScoreChange}
+            onScoreChange={handleScoreChange}
+            displayText={currentDisplayText}
           />
         </View>
       )}
@@ -417,7 +556,8 @@ export default function Deck({ quizitItems, onGestureStart, onGestureEnd, onView
                 quizitData={deck[0].quizitData}
                 onConceptTap={() => handleConceptTap(0)}
                 onViewReasoning={onViewReasoning}
-          onScoreChange={handleScoreChange}
+            onScoreChange={handleScoreChange}
+            displayText={currentDisplayText}
               />
             </Pressable>
           </ScrollView>
@@ -480,6 +620,7 @@ export default function Deck({ quizitItems, onGestureStart, onGestureEnd, onView
               onConceptTap={index === 0 ? () => null : undefined}
               onViewReasoning={index === 0 ? onViewReasoning : undefined}
               onScoreChange={index === 0 ? handleScoreChange : undefined}
+              displayText={index === 0 ? currentDisplayText : ""}
             />
           </Animated.View>
         ))
@@ -502,7 +643,8 @@ export default function Deck({ quizitItems, onGestureStart, onGestureEnd, onView
             quizitData={deck[deck.length - 1].quizitData}
             onConceptTap={() => null}
           onViewReasoning={onViewReasoning}
-          onScoreChange={handleScoreChange}
+            onScoreChange={handleScoreChange}
+            displayText={currentDisplayText}
           />
         </Animated.View>
       )}
@@ -518,38 +660,100 @@ export default function Deck({ quizitItems, onGestureStart, onGestureEnd, onView
             quizitData={deck[0].quizitData}
             onConceptTap={() => null}
           onViewReasoning={onViewReasoning}
-          onScoreChange={handleScoreChange}
+            onScoreChange={handleScoreChange}
+            displayText={currentDisplayText}
           />
         </Animated.View>
       )}
       {/* Card Indicators and Navigation */}
       <Animated.View style={[styles.indicatorsAndNavigation, { opacity: fadeAnim }]}>
-        {/* Card Indicators */}
+        {/* Left Navigation Button */}
+        <View style={styles.leftNavContainer}>
+          <TouchableOpacity 
+            style={styles.navButtonHitZone} 
+            onPress={() => handleLeftTap()}
+            activeOpacity={0.7}
+          >
+            <View style={styles.navButton}>
+              <Ionicons name="chevron-back" size={16} color="#6b6b6b" />
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        {/* Card Indicators - Centered */}
         <View style={styles.cardIndicatorContainer}>
-          {deck.map((_: any, index: number) => {
+          {dataToUse.map((originalCard: any, index: number) => {
             const isActive = currentIndex === index;
             const viewState = cardViewStates[index];
+            const isRevealed = revealedCards.has(index);
             
             return (
-              <View
+              <TouchableOpacity
                 key={index}
                 style={[
                   styles.cardIndicator,
-                  (() => {
-                    if (viewState === 'completed') {
-                      return isActive ? styles.activeCompletedCardIndicator : styles.completedCardIndicator;
-                    }
-                    return isActive ? styles.activeCardIndicator : null;
-                  })(),
-                ]}
+                  isActive && styles.cardIndicatorActive,
+                 ]}
+                onPress={() => handleIndicatorTap(index)}
+                activeOpacity={0.7}
               >
                 {(() => {
+                  if (index === 0) {
+                    const quizitData = originalCard.quizitData;
+                    const totalHints = quizitData?.hint?.length || 0;
+                    const hasMoreHints = revealedHints < totalHints;
+                    
+                    if (hasMoreHints) {
+                      // Show add circle when more hints available
+                      return (
+                        <Ionicons 
+                          name="add-circle" 
+                          size={isActive ? 24 : 18} 
+                          color={'#8b8b8b'} 
+                        />
+                      );
+                    } else {
+                      // Show checkmark when all hints revealed
+                      return (
+                        <Ionicons 
+                          name="checkmark" 
+                          size={20} 
+                          color="#ffffff" 
+                        />
+                      );
+                    }
+                  }
+                  // If concept card and revealed, show book cover
+                  if (isRevealed && originalCard.conceptData?.bookCover) {
+                    return (
+                      <View style={styles.bookCoverContainer}>
+                        <Image 
+                          source={{ uri: originalCard.conceptData.bookCover }}
+                          style={styles.cardCoverImage}
+                          resizeMode="stretch"
+                        />
+                        {viewState === 'completed' && (
+                          <>
+                            <View style={styles.checkmarkOverlay} />
+                            <Ionicons 
+                              name="checkmark" 
+                              size={20} 
+                              color="white" 
+                              style={styles.checkmarkIcon}
+                            />
+                          </>
+                        )}
+                      </View>
+                    );
+                  }
+                  
+                  // Otherwise show current icon logic
                   switch (viewState) {
                     case 'completed':
                       return (
                         <Ionicons 
                           name="checkmark" 
-                          size={12} 
+                          size={20} 
                           color="#ffffff" 
                         />
                       );
@@ -557,38 +761,31 @@ export default function Deck({ quizitItems, onGestureStart, onGestureEnd, onView
                       return (
                         <Ionicons 
                           name="help-outline" 
-                          size={12} 
+                          size={20} 
                           color={isActive ? '#ffffff' : '#6b6b6b'} 
                         />
                       );
                     case 'viewed':
                     default:
-                      return null; // No icon for viewed but not completed
+                      return (
+                        <View style={styles.viewedIndicator} />
+                      );
                   }
                 })()}
-              </View>
+              </TouchableOpacity>
             );
           })}
         </View>
 
-        {/* Navigation Buttons */}
-        <View style={styles.navigationContainer}>
-          <TouchableOpacity 
-            style={styles.navButtonHitZone} 
-            onPress={() => handleLeftTap()}
-            activeOpacity={0.7}
-          >
-            <View style={styles.navButton}>
-              <Ionicons name="chevron-back" size={12} color="#6b6b6b" />
-            </View>
-          </TouchableOpacity>
+        {/* Right Navigation Button */}
+        <View style={styles.rightNavContainer}>
           <TouchableOpacity 
             style={styles.navButtonHitZone} 
             onPress={() => handleRightTap()}
             activeOpacity={0.7}
           >
             <View style={styles.navButton}>
-              <Ionicons name="chevron-forward" size={12} color="#6b6b6b" />
+              <Ionicons name="chevron-forward" size={16} color="#6b6b6b" />
             </View>
           </TouchableOpacity>
         </View>
@@ -618,22 +815,25 @@ const styles = StyleSheet.create({
     width: '100%',
     top: '84.5%', // Position right under the cards (80% + 2% gap)
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end', // Align to bottom baseline
-    paddingLeft: 20,
+    justifyContent: 'space-between', // Space between left nav, indicators, and right nav
+    alignItems: 'center',
+    paddingHorizontal: 0, // Increased padding for more space from nav buttons
     zIndex: 100,
+  },
+  leftNavContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  rightNavContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   cardIndicatorContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 8,
-    height: 24, // Match nav button height
-  },
-  navigationContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: 24, // Match indicator height
+    gap: 4, // Decreased gap between indicators
+    flex: 1, // Take up remaining space
   },
   navButtonHitZone: {
     width: 64,
@@ -642,29 +842,59 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   navButton: {
-    width: 32,
-    height: 32,
+    width: 40, // Increased from 32
+    height: 40, // Increased from 32
     borderRadius: 12,
-    backgroundColor: '#d6d6d6',
     justifyContent: 'center',
     alignItems: 'center',
   },
   cardIndicator: {
-    width: 18,
-    height: 24,
-    borderRadius: 2,
-    backgroundColor: '#d6d6d6',
-    marginHorizontal: 3,
+    width: 40,
+    height: 52,
+    borderRadius: 6,
+    marginHorizontal: 8,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#b5b5b5',
   },
-  activeCardIndicator: {
-    backgroundColor: '#8b8b8b',
+  cardIndicatorActive: {
+    width: 52,
+    height: 66,
+    borderRadius: 6,
+    marginHorizontal: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#b5b5b5',
   },
-  completedCardIndicator: {
-    backgroundColor: '#90EE90', // Light green
+  bookCoverContainer: {
+    width: '100%',
+    height: '100%',
+    position: 'relative',
   },
-  activeCompletedCardIndicator: {
-    backgroundColor: '#4CAF50', // Darker green
+  cardCoverImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 4, // Slightly smaller to account for padding
+  },
+  checkmarkOverlay: {
+    width: '100%',
+    height: '100%',
+    position: 'absolute',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'black',
+    opacity: 0.2,
+    borderRadius: 4,
+  },
+  checkmarkIcon: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: [{ translateX: -10 }, { translateY: -10 }], // Center the icon
+  },
+  viewedIndicator: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 4,
   },
 });

@@ -89,7 +89,7 @@ export default function ContentHeader({
         <TouchableOpacity onPress={onBack} style={[styles.backButton, { borderColor: buttonTextBorderColor }]}>
           <Ionicons name="chevron-back" size={24} color={buttonTextBorderColor} />
         </TouchableOpacity>
-        
+        {/*}
         <View style={styles.progressContainer}>
           <View style={[styles.progressBar, { 
             borderColor: buttonTextBorderColor,
@@ -98,7 +98,7 @@ export default function ContentHeader({
             <View style={[styles.progressFill, { width: '5%', backgroundColor: buttonCircleColor }]} />
           </View>
         </View>
-    
+        */}
         <View style={styles.buttonGroup}>
           <TouchableOpacity 
             style={[
@@ -143,6 +143,7 @@ const styles = StyleSheet.create({
   content: {
     flexDirection: 'row',
     alignItems: 'stretch',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 8,
     gap: 8,
@@ -187,7 +188,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1,
     borderRadius: 20,
-    padding: 4,
+    width: 36,
+    height: 36,
   },
   disabledButton: {
     opacity: 0.2,
