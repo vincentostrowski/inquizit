@@ -17,7 +17,7 @@ export const getNextQuizit = async (sessionId, currentCardIds = []) => {
       throw new Error(`Failed to get next quizit: ${error.message}`);
     }
 
-    console.log('Next quizit retrieved successfully:', data);
+    console.log('Quizit retrieved successfully:', data.quizitItems[0].quizitData.core[0]);
     return data;
   } catch (error) {
     console.error('Error in getNextQuizit:', error);

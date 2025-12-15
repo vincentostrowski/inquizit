@@ -37,7 +37,8 @@ function QuizitScreenContent() {
   const [verticalScrollEnabled, setVerticalScrollEnabled] = useState(true);
   const [showReasoningSheet, setShowReasoningSheet] = useState(false);
   const [currentReasoning, setCurrentReasoning] = useState('');
-  const [latestCardIds, setLatestCardIds] = useState<string[]>([]);
+  const latestCardIdsRef = useRef<string[]>([]);
+  const quizitCountRef = useRef(0);
   const [reachedBottom, setReachedBottom] = useState(false);
   const insets = useSafeAreaInsets();
   
@@ -54,7 +55,7 @@ function QuizitScreenContent() {
   };
 
   // Proactive loading function
-  const loadNextDeckProactively = async () => {
+  const loadNextDeckProactively = async (cardIdsToExclude?: string[]) => {
     if (isLoadingNext) return;
     
     setIsLoadingNext(true);
@@ -67,10 +68,11 @@ function QuizitScreenContent() {
     }
     
     try {
-      console.log('Loading next quizit for session:', sessionId);
-      console.log('Current card IDs to exclude:', latestCardIds);
+      // Use provided cardIds or fall back to latestCardIds from ref (always current)
+      const cardIds = cardIdsToExclude ?? latestCardIdsRef.current;
+      console.log('Loading next quizit', { excludedCardCount: cardIds.length });
       
-      const response = await getNextQuizit(sessionId as string, latestCardIds);
+      const response = await getNextQuizit(sessionId as string, cardIds);
 
       if (response.quizitItems && response.quizitItems.length > 0) {
         // Convert API response to the expected format
@@ -88,8 +90,9 @@ function QuizitScreenContent() {
         
         // Update current card IDs
         const newCardIds = extractConceptCardIds(formattedItems);
-        setLatestCardIds(newCardIds);
-        console.log('Next quizit loaded, new card IDs:', newCardIds);
+        latestCardIdsRef.current = newCardIds;
+        quizitCountRef.current += 1;
+        console.log(`Quizit ${quizitCountRef.current}: Next quizit loaded`, { cardIds: newCardIds });
         
         // Mark as loaded and reset reachedBottom
         setReachedBottom(false);
@@ -117,7 +120,7 @@ function QuizitScreenContent() {
       }
 
       try {
-        console.log('Loading initial quizit for session:', sessionId);
+        console.log('Loading initial quizit...');
         const response = await getNextQuizit(sessionId as string, []);
         
         if (response.quizitItems && response.quizitItems.length > 0) {
@@ -131,12 +134,20 @@ function QuizitScreenContent() {
             conceptData: item.conceptData
           }));
           
-          setQuizitItems([formattedItems]);
-          
-          // Extract and update current card IDs
+          // Extract and update current card IDs BEFORE setting state
           const cardIds = extractConceptCardIds(formattedItems);
-          setLatestCardIds(cardIds);
-          console.log('Initial quizit loaded, card IDs:', cardIds);
+          
+          // Set state atomically - initial quizit
+          setQuizitItems([formattedItems]);
+          latestCardIdsRef.current = cardIds;
+          quizitCountRef.current = 1;
+          console.log('Quizit 1: Initial quizit loaded', { 
+            cardIds,
+            quizitData: formattedItems[0]?.quizitData?.core?.[0] 
+          });
+          
+          // Now that initial is loaded, load the next one with the correct card IDs
+          loadNextDeckProactively(cardIds);
         }
       } catch (error) {
         console.error('Failed to load initial quizit:', error);
@@ -144,7 +155,6 @@ function QuizitScreenContent() {
     };
 
     loadInitialQuizit();
-    loadNextDeckProactively();
   }, [sessionId]);
   
   const handleBack = () => {
@@ -205,9 +215,9 @@ function QuizitScreenContent() {
                            handleViewReasoning(conceptCard.conceptData.reasoning);
                          }
                        }}
-                fadeIn={true} // Fade in first deck and newly loaded decks
-                sessionId={sessionId as string}
-                mockMode={MOCK_MODE} // Use the mock mode constant
+                      fadeIn={true} // Fade in first deck and newly loaded decks
+                      sessionId={sessionId as string}
+                      mockMode={MOCK_MODE} // Use the mock mode constant
                      />
                    </View>
                  ))
