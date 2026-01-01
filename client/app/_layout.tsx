@@ -1,6 +1,7 @@
 import { Stack } from 'expo-router';
 import { ViewModeProvider } from '../context/ViewModeContext';
 import { QuizitConfigProvider, useQuizitConfig } from '../context/QuizitConfigContext';
+import { AuthProvider } from '../context/AuthContext';
 import QuizitConfigModal from '../components/quizit/QuizitConfigModal';
 
 function RootLayoutContent() {
@@ -8,7 +9,14 @@ function RootLayoutContent() {
 
   return (
     <>
-      <Stack>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen 
+          name="login" 
+          options={{ 
+            headerShown: false,
+            animation: 'none' // Disable animation for login screen
+          }} 
+        />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen 
           name="quizit" 
@@ -31,10 +39,12 @@ function RootLayoutContent() {
 
 export default function RootLayout() {
   return (
-    <ViewModeProvider>
-      <QuizitConfigProvider>
-        <RootLayoutContent />
-      </QuizitConfigProvider>
-    </ViewModeProvider>
+    <AuthProvider>
+      <ViewModeProvider>
+        <QuizitConfigProvider>
+          <RootLayoutContent />
+        </QuizitConfigProvider>
+      </ViewModeProvider>
+    </AuthProvider>
   );
 }
