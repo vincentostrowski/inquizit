@@ -7,7 +7,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string, username: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -46,13 +46,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (error) throw error;
   };
 
-  const signUp = async (email: string, password: string) => {
+  const signUp = async (email: string, password: string, username: string) => {
+    if (!username || !username.trim()) {
+      throw new Error('Username is required');
+    }
+
+    // Store username in user metadata
+    const userMetadata = {
+      username: username.trim(),
+    };
+
     const { error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: userMetadata, // Store username in user metadata
+      },
     });
     if (error) throw error;
     // Auto-login after signup (Supabase handles this automatically)
+    // Profile will be created automatically by database trigger
   };
 
   const signOut = async () => {

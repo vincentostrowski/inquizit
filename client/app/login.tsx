@@ -1,16 +1,34 @@
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 import { router } from 'expo-router';
+import { profileService } from '../services/profileService';
 
 export default function LoginScreen() {
   const { signIn, signUp } = useAuth();
   const insets = useSafeAreaInsets();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [usernameError, setUsernameError] = useState<string | null>(null);
+
+  const handleUsernameChange = (text: string) => {
+    setUsername(text);
+    // Clear error when user starts typing
+    if (usernameError) {
+      setUsernameError(null);
+    }
+  };
+
+  const handleToggleSignUp = () => {
+    setIsSignUp(!isSignUp);
+    // Clear username and error when switching modes
+    setUsername('');
+    setUsernameError(null);
+  };
 
   const handleSubmit = async () => {
     if (!email || !password) {
@@ -18,10 +36,24 @@ export default function LoginScreen() {
       return;
     }
 
+    // Validate username if signing up (required)
+    if (isSignUp) {
+      if (!username.trim()) {
+        setUsernameError('Username is required');
+        return;
+      }
+      const validation = profileService.validateUsernameFormat(username);
+      if (!validation.valid) {
+        setUsernameError(validation.error);
+        return;
+      }
+    }
+
     setLoading(true);
     try {
       if (isSignUp) {
-        await signUp(email, password);
+        // Username is required for signup
+        await signUp(email, password, username.trim());
         // Auto-login happens automatically after signup
         router.replace('/(tabs)/home');
       } else {
@@ -37,61 +69,86 @@ export default function LoginScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.content}>
-        <Text style={styles.title}>Inquizit</Text>
-        <Text style={styles.subtitle}>
-          {isSignUp ? 'Create an account' : 'Sign in to continue'}
-        </Text>
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.content}>
+          <Text style={styles.title}>Inquizit</Text>
+          <Text style={styles.subtitle}>
+            {isSignUp ? 'Create an account' : 'Sign in to continue'}
+          </Text>
 
-        <View style={styles.form}>
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            keyboardType="email-address"
-            autoComplete="email"
-            editable={!loading}
-          />
+          <View style={styles.form}>
+            <TextInput
+              style={styles.input}
+              placeholder="Email"
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              autoComplete="email"
+              editable={!loading}
+            />
 
-          <TextInput
-            style={styles.input}
-            placeholder="Password"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            autoComplete={isSignUp ? 'password-new' : 'password'}
-            editable={!loading}
-          />
-
-          <TouchableOpacity
-            style={[styles.button, loading && styles.buttonDisabled]}
-            onPress={handleSubmit}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.buttonText}>
-                {isSignUp ? 'Sign Up' : 'Sign In'}
-              </Text>
+            {isSignUp && (
+              <>
+                <TextInput
+                  style={[
+                    styles.input,
+                    usernameError && styles.inputError
+                  ]}
+                  placeholder="Username"
+                  value={username}
+                  onChangeText={handleUsernameChange}
+                  autoCapitalize="none"
+                  autoComplete="username"
+                  editable={!loading}
+                />
+                {usernameError && (
+                  <Text style={styles.errorText}>{usernameError}</Text>
+                )}
+              </>
             )}
-          </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.switchButton}
-            onPress={() => setIsSignUp(!isSignUp)}
-            disabled={loading}
-          >
-            <Text style={styles.switchText}>
-              {isSignUp
-                ? 'Already have an account? Sign in'
-                : "Don't have an account? Sign up"}
-            </Text>
-          </TouchableOpacity>
+            <TextInput
+              style={styles.input}
+              placeholder="Password"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              autoComplete={isSignUp ? 'password-new' : 'password'}
+              editable={!loading}
+            />
+
+            <TouchableOpacity
+              style={[styles.button, loading && styles.buttonDisabled]}
+              onPress={handleSubmit}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.buttonText}>
+                  {isSignUp ? 'Sign Up' : 'Sign In'}
+                </Text>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.switchButton}
+              onPress={handleToggleSignUp}
+              disabled={loading}
+            >
+              <Text style={styles.switchText}>
+                {isSignUp
+                  ? 'Already have an account? Sign in'
+                  : "Don't have an account? Sign up"}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
+      </ScrollView>
     </View>
   );
 }
@@ -101,10 +158,14 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
+  scrollContent: {
+    flexGrow: 1,
+  },
   content: {
     flex: 1,
     justifyContent: 'center',
     paddingHorizontal: 24,
+    paddingVertical: 32,
   },
   title: {
     fontSize: 32,
@@ -128,8 +189,23 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 16,
     fontSize: 16,
-    marginBottom: 16,
+    marginBottom: 8,
     backgroundColor: '#F9FAFB',
+  },
+  inputError: {
+    borderColor: '#EF4444',
+  },
+  errorText: {
+    color: '#EF4444',
+    fontSize: 12,
+    marginBottom: 8,
+    marginLeft: 4,
+  },
+  helperText: {
+    color: '#6B7280',
+    fontSize: 12,
+    marginBottom: 8,
+    marginLeft: 4,
   },
   button: {
     backgroundColor: '#3B82F6',
