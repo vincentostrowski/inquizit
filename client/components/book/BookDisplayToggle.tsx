@@ -3,34 +3,33 @@ import { Ionicons } from '@expo/vector-icons';
 import { includesId } from '../../utils/idUtils';
 import { useViewMode } from '../../context/ViewModeContext';
 interface BookDisplayToggleProps {
-  filterMode: 'all' | 'main' | 'saved';
-  setFilterMode: (mode: 'all' | 'main' | 'saved') => void;
   isEditMode?: boolean;
   selectedCardIds?: string[];
   allCardIds?: string[];
   onSelectAll?: () => void;
   loading?: boolean;
   viewMode?: 'cards' | 'list';
+  filterMode?: 'all' | 'main' | 'saved';
   isAllSectionsExpanded?: boolean;
   onExpandAllSections?: () => void;
   onCollapseAllSections?: () => void;
 }
 
 export default function BookDisplayToggle({ 
-  filterMode, 
-  setFilterMode, 
   isEditMode = false, 
   selectedCardIds = [], 
   allCardIds = [], 
   onSelectAll,
   loading = false,
   viewMode: externalViewMode,
+  filterMode: externalFilterMode,
   isAllSectionsExpanded = false,
   onExpandAllSections,
   onCollapseAllSections
 }: BookDisplayToggleProps) {
-  const { viewMode: contextViewMode, setViewMode } = useViewMode();
+  const { viewMode: contextViewMode, setViewMode, filterMode: contextFilterMode, setFilterMode } = useViewMode();
   const viewMode = externalViewMode || contextViewMode;
+  const filterMode = externalFilterMode || contextFilterMode;
   
   // Check if all cards are selected
   const allCardsSelected = allCardIds.length > 0 && allCardIds.every(cardId => includesId(selectedCardIds, cardId));

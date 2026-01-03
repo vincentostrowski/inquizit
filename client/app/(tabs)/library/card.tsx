@@ -1,10 +1,13 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { useState, useEffect } from 'react';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useBookDetails } from '../../../hooks/useBookDetails';
 import { useQuizitConfig } from '../../../context/QuizitConfigContext';
+import { useAuth } from '../../../context/AuthContext';
 import { normalizeId, compareIds } from '../../../utils/idUtils';
+import { savedItemsService } from '../../../services/savedItemsService';
 import ContentHeader from '../../../components/common/ContentHeader';
+import ContentOptionsModal from '../../../components/common/ContentOptionsModal';
 import GradientBackground from '../../../components/common/GradientBackground';
 import Card from '../../../components/common/Card';
 import Content from '../../../components/card/Content';
@@ -24,8 +27,9 @@ export default function CardScreen() {
     buttonCircleColor 
   } = useLocalSearchParams();
   
-  const { bookDetails, loading, error } = useBookDetails(bookId);
+  const { bookDetails, loading, error, updateBookSavedStatus, updateCardSavedStatus } = useBookDetails(bookId);
   const { showQuizitConfig, pushToNavigationStack, popFromNavigationStack } = useQuizitConfig();
+  const { user } = useAuth();
 
   // Manage navigation stack
   useEffect(() => {
@@ -57,7 +61,8 @@ export default function CardScreen() {
           prompt: card.prompt || '',
           card_idea: card.card_idea || '',
           order: card.order || 0,
-          createdAt: card.created_at || 'Unknown'
+          createdAt: card.created_at || 'Unknown',
+          isSaved: card.isSaved || false
         };
       }
     }
@@ -101,9 +106,68 @@ export default function CardScreen() {
     console.log('View past quizits for card:', cardId);
   };
 
+  // Save/Unsave handlers
+  const handleEllipsisPress = () => {
+    setShowContentOptionsModal(true);
+  };
+
+  const handleSaveCard = async () => {
+    if (!user?.id || !cardId || !bookId) return;
+
+    try {
+      // Service will automatically save book if not already saved (cascade save)
+      const { error } = await savedItemsService.saveCard(user.id, Number(cardId), Number(bookId));
+      if (error) {
+        Alert.alert('Error', 'Failed to save card. Please try again.');
+        return;
+      }
+      // Update local state directly - save card
+      updateCardSavedStatus(Number(cardId), true);
+      // Also update book saved status (cascade save)
+      if (!bookDetails?.book?.isSaved) {
+        updateBookSavedStatus(true);
+      }
+    } catch (err) {
+      Alert.alert('Error', 'An unexpected error occurred.');
+      console.error('Error saving card:', err);
+    }
+  };
+
+  const handleUnsaveCard = async () => {
+    if (!user?.id || !cardId) return;
+
+    try {
+      const { error } = await savedItemsService.unsaveCard(user.id, Number(cardId));
+      if (error) {
+        Alert.alert('Error', 'Failed to unsave card. Please try again.');
+        return;
+      }
+      // Update local state directly
+      updateCardSavedStatus(Number(cardId), false);
+    } catch (err) {
+      Alert.alert('Error', 'An unexpected error occurred.');
+      console.error('Error unsaving card:', err);
+    }
+  };
+
+  const handleContentOptionsSave = () => {
+    if (cardData?.isSaved) {
+      handleUnsaveCard();
+    } else {
+      handleSaveCard();
+    }
+  };
+
+  const handleContentOptionsUnsave = () => {
+    handleUnsaveCard();
+  };
+
   // Get modal data for edit mode
   const { modalData } = useQuizitConfig();
   const isEditMode = modalData?.isEditMode || false;
+
+  // Modal state
+  const [showContentOptionsModal, setShowContentOptionsModal] = useState(false);
 
   return (
     <View style={styles.container}>
@@ -112,9 +176,20 @@ export default function CardScreen() {
         onStartQuizit={handleStartQuizit}
         onCheckConflicts={handleCheckConflicts}
         onViewPastQuizits={handleViewPastQuizits}
+        onEllipsisPress={handleEllipsisPress}
         headerColor={headerColor as string || (bookDetails && (bookDetails as any).book ? (bookDetails as any).book.header_color : undefined) || '#1D1D1F'}
         buttonTextBorderColor={buttonTextBorderColor as string || (bookDetails && (bookDetails as any).book ? (bookDetails as any).book.button_text_border_color : undefined) || '#FFFFFF'}
         buttonCircleColor={buttonCircleColor as string || (bookDetails && (bookDetails as any).book ? (bookDetails as any).book.button_circle_color : undefined) || '#FFFFFF'}
+      />
+
+      {/* Content Options Modal */}
+      <ContentOptionsModal
+        visible={showContentOptionsModal}
+        contentType="card"
+        isSaved={cardData?.isSaved || false}
+        onClose={() => setShowContentOptionsModal(false)}
+        onSave={handleContentOptionsSave}
+        onUnsave={handleContentOptionsUnsave}
       />
       
       <View style={[styles.growingArea, { backgroundColor: headerColor as string || (bookDetails && (bookDetails as any).book ? (bookDetails as any).book.header_color : undefined) || '#1D1D1F' }]} />

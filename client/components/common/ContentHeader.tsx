@@ -7,6 +7,7 @@ interface ContentHeaderProps {
   onStartQuizit: () => void;
   onCheckConflicts: () => void;
   onViewPastQuizits: () => void;
+  onEllipsisPress?: () => void;
   headerColor?: string;
   buttonTextBorderColor?: string;
   buttonCircleColor?: string;
@@ -18,6 +19,7 @@ export default function ContentHeader({
   onStartQuizit, 
   onCheckConflicts, 
   onViewPastQuizits,
+  onEllipsisPress,
   headerColor = 'green',
   buttonTextBorderColor = 'green',
   buttonCircleColor = 'green',
@@ -120,8 +122,8 @@ export default function ContentHeader({
               { borderColor: buttonTextBorderColor },
               isEditMode && styles.disabledButton
             ]} 
-            onPress={isEditMode ? undefined : () => {}}
-            disabled={isEditMode}
+            onPress={isEditMode ? undefined : onEllipsisPress}
+            disabled={isEditMode || !onEllipsisPress}
           >
             <View style={[styles.buttonCircle, { backgroundColor: buttonCircleColor }]}>
               <Ionicons name="ellipsis-horizontal" size={16} color={headerColor} />

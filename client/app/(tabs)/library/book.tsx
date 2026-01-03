@@ -1,11 +1,15 @@
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
-import { useState, useEffect } from 'react';
-import { useLocalSearchParams, router } from 'expo-router';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Alert } from 'react-native';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useLocalSearchParams, router, useFocusEffect } from 'expo-router';
 import { useBookDetails } from '../../../hooks/useBookDetails';
 import { useViewMode } from '../../../context/ViewModeContext';
 import { useQuizitConfig } from '../../../context/QuizitConfigContext';
+import { useAuth } from '../../../context/AuthContext';
 import { includesId } from '../../../utils/idUtils';
+import { savedItemsService } from '../../../services/savedItemsService';
 import ContentHeader from '../../../components/common/ContentHeader';
+import ContentOptionsModal from '../../../components/common/ContentOptionsModal';
+import UnsaveBookConfirmationModal from '../../../components/common/UnsaveBookConfirmationModal';
 import CoverDisplay from '../../../components/book/CoverDisplay';
 import ContentDescription from '../../../components/common/ContentDescription';
 import BookDisplayToggle from '../../../components/book/BookDisplayToggle';
@@ -24,11 +28,12 @@ export default function BookScreen() {
     headerColor, 
     backgroundEndColor,
     buttonTextBorderColor, 
-    buttonCircleColor 
+    buttonCircleColor
   } = useLocalSearchParams();
-  const { bookDetails, loading, error } = useBookDetails(bookId);
-  const { viewMode, setViewMode } = useViewMode();
+  const { bookDetails, loading, error, updateBookSavedStatus, updateAllCardsSavedStatus, updateCardSavedStatus } = useBookDetails(bookId);
+  const { viewMode, setViewMode, filterMode, setFilterMode } = useViewMode();
   const { showQuizitConfig, modalData, toggleCardSelection, pushToNavigationStack, popFromNavigationStack } = useQuizitConfig();
+  const { user } = useAuth();
   
   // Get edit mode and selections from modal data
   const isEditMode = modalData?.isEditMode || false;
@@ -47,9 +52,6 @@ export default function BookScreen() {
       };
     }
   }, [bookId, pushToNavigationStack, popFromNavigationStack]);
-  
-  // Local filter state
-  const [filterMode, setFilterMode] = useState<'all' | 'main' | 'saved'>('all');
 
   // Card filter states
   const [allCardIds, setAllCardIds] = useState<string[]>([]);
@@ -58,6 +60,11 @@ export default function BookScreen() {
 
   // Section expansion state
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
+
+  // Modal states
+  const [showContentOptionsModal, setShowContentOptionsModal] = useState(false);
+  const [showUnsaveConfirmationModal, setShowUnsaveConfirmationModal] = useState(false);
+  const [savedCardsCount, setSavedCardsCount] = useState(0);
 
   // Populate card IDs when book details load
   useEffect(() => {
@@ -68,8 +75,63 @@ export default function BookScreen() {
       setAllCardIds(allCards.map((card: any) => card.id));
       setMainCardIds(allCards.filter((card: any) => card.isMain).map((card: any) => card.id));
       setSavedCardIds(allCards.filter((card: any) => card.isSaved).map((card: any) => card.id));
+
+      // Initialize all sections as expanded
+      const allSectionIds = bookDetails.sections.map((section: any) => section.id);
+      setExpandedSections(new Set(allSectionIds));
     }
   }, [bookDetails]);
+
+  // Sync book and card saved statuses when screen comes into focus
+  // This ensures the saved status is up-to-date after returning from card screen
+  useFocusEffect(
+    useCallback(() => {
+      const syncSavedStatuses = async () => {
+        if (!user?.id || !bookId || !bookDetails) return;
+
+        try {
+          // Check book saved status
+          const isSaved = await savedItemsService.isBookSaved(user.id, Number(bookId));
+          // Only update if status changed
+          if (isSaved !== bookDetails.book?.isSaved) {
+            updateBookSavedStatus(isSaved);
+          }
+
+          // Check all cards saved statuses
+          if (bookDetails.sections && bookDetails.sections.length > 0) {
+            // Collect all card IDs
+            const allCardIds = bookDetails.sections.flatMap((section: any) => 
+              (section.cards || []).map((card: any) => Number(card.id))
+            );
+
+            if (allCardIds.length > 0) {
+              // Batch check saved status for all cards
+              const cardsStatusMap = await savedItemsService.getSavedStatusForCards(user.id, allCardIds);
+              
+              // Update each card's saved status if it changed
+              // Check all cards, not just the ones in the map
+              for (const section of bookDetails.sections) {
+                for (const card of (section.cards || [])) {
+                  const cardId = Number(card.id);
+                  const isCardSaved = cardsStatusMap.get(cardId) || false;
+                  const currentCardSaved = card.isSaved || false;
+                  
+                  // Only update if status changed
+                  if (isCardSaved !== currentCardSaved) {
+                    updateCardSavedStatus(cardId, isCardSaved);
+                  }
+                }
+              }
+            }
+          }
+        } catch (err) {
+          console.error('Error syncing saved statuses on focus:', err);
+        }
+      };
+
+      syncSavedStatuses();
+    }, [user?.id, bookId, bookDetails, updateBookSavedStatus, updateCardSavedStatus])
+  );
 
   const handleBack = () => {
     router.back();
@@ -104,6 +166,83 @@ export default function BookScreen() {
 
   const handleViewPastQuizits = () => {
     console.log('View past quizits');
+  };
+
+  // Save/Unsave handlers
+  const handleEllipsisPress = () => {
+    setShowContentOptionsModal(true);
+  };
+
+  const handleSaveBook = async () => {
+    if (!user?.id || !bookId) return;
+
+    try {
+      const { error } = await savedItemsService.saveBook(user.id, Number(bookId));
+      if (error) {
+        Alert.alert('Error', 'Failed to save book. Please try again.');
+        return;
+      }
+      // Update local state directly
+      updateBookSavedStatus(true);
+    } catch (err) {
+      Alert.alert('Error', 'An unexpected error occurred.');
+      console.error('Error saving book:', err);
+    }
+  };
+
+  const handleUnsaveBook = async () => {
+    if (!user?.id || !bookId) return;
+
+    try {
+      // Check if book has saved cards
+      const count = await savedItemsService.getSavedCardsCount(user.id, Number(bookId));
+      
+      if (count > 0) {
+        // Show confirmation modal
+        setSavedCardsCount(count);
+        setShowUnsaveConfirmationModal(true);
+      } else {
+        // No saved cards, proceed with unsave
+        await performUnsaveBook();
+      }
+    } catch (err) {
+      Alert.alert('Error', 'An unexpected error occurred.');
+      console.error('Error checking saved cards count:', err);
+    }
+  };
+
+  const performUnsaveBook = async () => {
+    if (!user?.id || !bookId) return;
+
+    try {
+      const { error } = await savedItemsService.unsaveBook(user.id, Number(bookId), { unsaveCards: true });
+      if (error) {
+        Alert.alert('Error', 'Failed to unsave book. Please try again.');
+        return;
+      }
+      // Update local state directly - unsave book and all cards
+      updateBookSavedStatus(false);
+      updateAllCardsSavedStatus(false);
+    } catch (err) {
+      Alert.alert('Error', 'An unexpected error occurred.');
+      console.error('Error unsaving book:', err);
+    }
+  };
+
+  const handleContentOptionsSave = () => {
+    if (bookDetails?.book?.isSaved) {
+      handleUnsaveBook();
+    } else {
+      handleSaveBook();
+    }
+  };
+
+  const handleContentOptionsUnsave = () => {
+    handleUnsaveBook();
+  };
+
+  const handleConfirmUnsave = () => {
+    performUnsaveBook();
   };
 
 
@@ -226,6 +365,34 @@ export default function BookScreen() {
   const isAllSectionsExpanded = bookDetails?.sections ? 
     bookDetails.sections.every((section: any) => expandedSections.has(section.id)) : false;
 
+  // Filter sections based on filterMode
+  const filteredSections = useMemo(() => {
+    if (!bookDetails?.sections) return [];
+
+    if (filterMode === 'all') {
+      // Show all cards
+      return bookDetails.sections;
+    } else if (filterMode === 'main') {
+      // Show only main cards
+      return bookDetails.sections
+        .map((section: any) => ({
+          ...section,
+          cards: (section.cards || []).filter((card: any) => card.isMain)
+        }))
+        .filter((section: any) => section.cards.length > 0);
+    } else if (filterMode === 'saved') {
+      // Show only saved cards
+      return bookDetails.sections
+        .map((section: any) => ({
+          ...section,
+          cards: (section.cards || []).filter((card: any) => card.isSaved)
+        }))
+        .filter((section: any) => section.cards.length > 0);
+    }
+    
+    return bookDetails.sections;
+  }, [bookDetails?.sections, filterMode]);
+
   const getFirstThreeCards = () => {
     if (!bookDetails?.sections) return [];
     
@@ -251,10 +418,29 @@ export default function BookScreen() {
         onStartQuizit={handleStartQuizit}
         onCheckConflicts={handleCheckConflicts}
         onViewPastQuizits={handleViewPastQuizits}
+        onEllipsisPress={handleEllipsisPress}
         headerColor={headerColor as string || bookDetails?.book?.header_color || 'green'}
         buttonTextBorderColor={buttonTextBorderColor as string || bookDetails?.book?.button_text_border_color || 'green'}
         buttonCircleColor={buttonCircleColor as string || bookDetails?.book?.button_circle_color || 'green'}
         isEditMode={isEditMode}
+      />
+
+      {/* Content Options Modal */}
+      <ContentOptionsModal
+        visible={showContentOptionsModal}
+        contentType="book"
+        isSaved={bookDetails?.book?.isSaved || false}
+        onClose={() => setShowContentOptionsModal(false)}
+        onSave={handleContentOptionsSave}
+        onUnsave={handleContentOptionsUnsave}
+      />
+
+      {/* Unsave Confirmation Modal */}
+      <UnsaveBookConfirmationModal
+        visible={showUnsaveConfirmationModal}
+        savedCardsCount={savedCardsCount}
+        onClose={() => setShowUnsaveConfirmationModal(false)}
+        onConfirm={handleConfirmUnsave}
       />  
       
       {/* Growing view that expands in bounce space */}
@@ -292,14 +478,13 @@ export default function BookScreen() {
 
             {/* Display Toggle - Always show */}
         <BookDisplayToggle
-          filterMode={filterMode}
-          setFilterMode={setFilterMode}
           isEditMode={isEditMode}
           selectedCardIds={selectedCardIds}
           allCardIds={allCardIds}
           onSelectAll={handleSelectAllCards}
           loading={loading}
           viewMode={viewMode}
+          filterMode={filterMode}
           isAllSectionsExpanded={isAllSectionsExpanded}
           onExpandAllSections={handleExpandAllSections}
           onCollapseAllSections={handleCollapseAllSections}
@@ -313,39 +498,51 @@ export default function BookScreen() {
                 <SkeletonListDisplay />
               )
             ) : bookDetails?.book ? (
-              viewMode === 'cards' ? (
-                <CardDisplay
-                  sections={bookDetails.sections}
-                  onCardPress={handleCardPress}
-                  bookId={bookId as string}
-                  bookTitle={bookTitle as string}
-                  bookCover={bookCover as string}
-                  headerColor={headerColor as string || bookDetails.book.header_color}
-                  backgroundEndColor={backgroundEndColor as string || bookDetails.book.background_end_color}
-                  buttonTextBorderColor={buttonTextBorderColor as string || bookDetails.book.button_text_border_color}
-                  buttonCircleColor={buttonCircleColor as string || bookDetails.book.button_circle_color}
-                  isEditMode={isEditMode}
-                  selectedCardIds={selectedCardIds}
-                  onCardSelection={handleCardSelection}
-                  onSelectAll={handleSelectAll}
-                />
+              filteredSections.length > 0 ? (
+                viewMode === 'cards' ? (
+                  <CardDisplay
+                    sections={filteredSections}
+                    onCardPress={handleCardPress}
+                    bookId={bookId as string}
+                    bookTitle={bookTitle as string}
+                    bookCover={bookCover as string}
+                    headerColor={headerColor as string || bookDetails.book.header_color}
+                    backgroundEndColor={backgroundEndColor as string || bookDetails.book.background_end_color}
+                    buttonTextBorderColor={buttonTextBorderColor as string || bookDetails.book.button_text_border_color}
+                    buttonCircleColor={buttonCircleColor as string || bookDetails.book.button_circle_color}
+                    isEditMode={isEditMode}
+                    selectedCardIds={selectedCardIds}
+                    onCardSelection={handleCardSelection}
+                    onSelectAll={handleSelectAll}
+                  />
+                ) : (
+                  <ListDisplay
+                    sections={filteredSections}
+                    onCardPress={handleCardPress}
+                    bookId={bookId as string}
+                    bookTitle={bookTitle as string}
+                    bookCover={bookCover as string}
+                    headerColor={headerColor as string || bookDetails.book.header_color}
+                    backgroundEndColor={backgroundEndColor as string || bookDetails.book.background_end_color}
+                    buttonTextBorderColor={buttonTextBorderColor as string || bookDetails.book.button_text_border_color}
+                    buttonCircleColor={buttonCircleColor as string || bookDetails.book.button_circle_color}
+                    isEditMode={isEditMode}
+                    selectedCardIds={selectedCardIds}
+                    onCardSelection={handleCardSelection}
+                    expandedSections={expandedSections}
+                    onToggleSection={handleToggleSection}
+                  />
+                )
               ) : (
-                <ListDisplay
-                  sections={bookDetails.sections}
-                  onCardPress={handleCardPress}
-                  bookId={bookId as string}
-                  bookTitle={bookTitle as string}
-                  bookCover={bookCover as string}
-                  headerColor={headerColor as string || bookDetails.book.header_color}
-                  backgroundEndColor={backgroundEndColor as string || bookDetails.book.background_end_color}
-                  buttonTextBorderColor={buttonTextBorderColor as string || bookDetails.book.button_text_border_color}
-                  buttonCircleColor={buttonCircleColor as string || bookDetails.book.button_circle_color}
-                  isEditMode={isEditMode}
-                  selectedCardIds={selectedCardIds}
-                  onCardSelection={handleCardSelection}
-                  expandedSections={expandedSections}
-                  onToggleSection={handleToggleSection}
-                />
+                <View style={styles.emptyContainer}>
+                  <Text style={styles.emptyText}>
+                    {filterMode === 'saved' 
+                      ? 'No saved cards' 
+                      : filterMode === 'main' 
+                      ? 'No main cards' 
+                      : 'No cards available'}
+                  </Text>
+                </View>
               )
             ) : null}
           </>
@@ -397,6 +594,17 @@ const styles = StyleSheet.create({
   errorText: {
     fontSize: 16,
     color: '#FF3B30',
+    textAlign: 'center',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#8E8E93',
     textAlign: 'center',
   },
 });

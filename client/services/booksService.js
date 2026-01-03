@@ -12,11 +12,26 @@ export const booksService = {
    */
   async fetchBooks(collectionId, offset = 0, limit = BOOKS_PER_PAGE) {
     try {
-      const { data, error, count } = await supabase
+      let query = supabase
         .from('books')
-        .select('id, title, cover, collection, header_color, background_end_color, button_text_border_color, button_circle_color')
-        .eq('collection', collectionId)
+        .select(`
+          id,
+          title,
+          cover,
+          collection,
+          header_color,
+          background_end_color,
+          button_text_border_color,
+          button_circle_color
+        `)
         .range(offset, offset + limit - 1);
+
+      // Filter by collection if provided
+      if (collectionId) {
+        query = query.eq('collection', collectionId);
+      }
+
+      const { data, error, count } = await query;
 
       if (error) {
         console.error('Error fetching books:', error);

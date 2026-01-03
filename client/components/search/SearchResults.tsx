@@ -56,8 +56,8 @@ export default function SearchResults({
     
     return (
       <View style={styles.footerLoader}>
-        <ActivityIndicator size="small" color="#007AFF" />
-        <Text style={styles.loadingText}>Loading more books...</Text>
+        {/* <ActivityIndicator size="small" color="#007AFF" />
+        <Text style={styles.loadingText}>Loading more books...</Text> */}
       </View>
     );
   };

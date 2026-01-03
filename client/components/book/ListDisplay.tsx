@@ -8,6 +8,7 @@ interface Card {
   description: string;
   banner?: string;
   sectionTitle?: string;
+  isSaved?: boolean;
 }
 
 interface Section {
@@ -69,10 +70,10 @@ export default function ListDisplay({
 
   // Transform real cards for display
   const transformCards = (section: Section) => {
-    return section.cards.map((card, index) => ({
+    return section.cards.map((card) => ({
       id: card.id,
       title: card.title,
-      isBookmarked: index > 0, // First card doesn't have bookmark, others do
+      isBookmarked: card.isSaved || false, // Show bookmark only for saved cards
     }));
   };
 

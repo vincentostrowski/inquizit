@@ -1,14 +1,27 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-export default function FilterGroup() {
+interface FilterGroupProps {
+  savedFilterActive?: boolean;
+  onSavedFilterToggle?: (active: boolean) => void;
+}
+
+export default function FilterGroup({ savedFilterActive = false, onSavedFilterToggle }: FilterGroupProps) {
+  const handleSavedFilterPress = () => {
+    const newActive = !savedFilterActive;
+    onSavedFilterToggle?.(newActive);
+  };
+
   return (
     <View style={styles.container}>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         <View style={styles.filterContainer}>
-          <TouchableOpacity style={[styles.filterButton, styles.activeFilter]}>
-            <Ionicons name="bookmark" size={16} color="#8E8E93" style={styles.filterIcon} />
-            <Text style={[styles.filterText, styles.activeFilterText]}>Saved</Text>
+          <TouchableOpacity 
+            style={[styles.filterButton, savedFilterActive && styles.activeFilter]}
+            onPress={handleSavedFilterPress}
+          >
+            <Ionicons name="bookmark" size={16} color={savedFilterActive ? "#1D1D1F" : "#8E8E93"} style={styles.filterIcon} />
+            <Text style={[styles.filterText, savedFilterActive && styles.activeFilterText]}>Saved</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.filterButton}>
             <Text style={styles.filterText}>Relationships</Text>
@@ -59,6 +72,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   activeFilterText: {
-    color: '#8E8E93',
+    color: '#1D1D1F',
+    fontWeight: '600',
   },
 });

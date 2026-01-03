@@ -4,7 +4,9 @@ import { useEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { useCollections } from '../../../hooks/useCollections';
 import { useSearch } from '../../../hooks/useSearch';
+import { useSavedBooks } from '../../../hooks/useSavedBooks';
 import { useQuizitConfig } from '../../../context/QuizitConfigContext';
+import { useViewMode } from '../../../context/ViewModeContext';
 import SearchBar from '../../../components/library/SearchBar';
 import FilterGroup from '../../../components/library/FilterGroup';
 import BookRow from '../../../components/library/BookRow';
@@ -12,6 +14,12 @@ import SearchResults from '../../../components/search/SearchResults';
 import SafeAreaWrapper from '../../../components/common/SafeAreaWrapper';
 
 export default function LibraryScreen() {
+  const { modalData, toggleEditMode, navigationStack, showQuizitConfig, pushToNavigationStack, popFromNavigationStack } = useQuizitConfig();
+  const { setFilterMode } = useViewMode();
+  const isEditMode = modalData?.isEditMode || false;
+  const [shouldShowBackButton, setShouldShowBackButton] = useState(false);
+  const [savedFilterActive, setSavedFilterActive] = useState(false);
+
   const { 
     collections, 
     loading, 
@@ -31,11 +39,17 @@ export default function LibraryScreen() {
     search,
     loadMoreResults,
     clearSearch
-  } = useSearch();
+  } = useSearch(savedFilterActive);
 
-  const { modalData, toggleEditMode, navigationStack, showQuizitConfig, pushToNavigationStack, popFromNavigationStack } = useQuizitConfig();
-  const isEditMode = modalData?.isEditMode || false;
-  const [shouldShowBackButton, setShouldShowBackButton] = useState(false);
+  const {
+    savedBooks,
+    loading: savedBooksLoading,
+    loadingMore: savedBooksLoadingMore,
+    error: savedBooksError,
+    hasMore: savedBooksHasMore,
+    loadMoreSavedBooks,
+    refreshSavedBooks
+  } = useSavedBooks();
 
   useEffect(() => {
     setShouldShowBackButton(navigationStack.length > 0);
@@ -51,6 +65,13 @@ export default function LibraryScreen() {
       };
     }
   }, []);
+
+  // Refresh saved books when filter is toggled on
+  useEffect(() => {
+    if (savedFilterActive) {
+      refreshSavedBooks();
+    }
+  }, [savedFilterActive, refreshSavedBooks]);
 
   const handleBackPress = () => {
     router.back();
@@ -84,7 +105,6 @@ export default function LibraryScreen() {
     return (
       <View style={styles.footerLoader}>
         <ActivityIndicator size="small" color="#007AFF" />
-        <Text style={styles.loadingText}>Loading more collections...</Text>
       </View>
     );
   };
@@ -157,9 +177,34 @@ export default function LibraryScreen() {
             onClear={clearSearch}
           />
         </View>
-        <FilterGroup />
+        <FilterGroup 
+          savedFilterActive={savedFilterActive}
+          onSavedFilterToggle={(active) => {
+            setSavedFilterActive(active);
+            // Set filterMode in context when Saved filter is active
+            setFilterMode(active ? 'saved' : 'all');
+          }}
+        />
         
-        {isSearching ? (
+        {/* Display Logic:
+            - If Saved filter active + searching → Show SearchResults with saved-only search results
+            - If Saved filter active + not searching → Show SearchResults with all saved books
+            - If Saved filter not active → Show normal collections FlatList
+        */}
+        {savedFilterActive ? (
+          // Saved filter is active - show saved books (either from search or all saved books)
+          <SearchResults
+            results={isSearching ? searchResults : savedBooks}
+            loading={isSearching ? searchLoading : savedBooksLoading}
+            loadingMore={isSearching ? searchLoadingMore : savedBooksLoadingMore}
+            error={isSearching ? searchError : savedBooksError}
+            hasMore={isSearching ? hasMoreResults : savedBooksHasMore}
+            onLoadMore={isSearching ? loadMoreResults : loadMoreSavedBooks}
+            onBookPress={handleBookPress}
+            isEditMode={isEditMode}
+          />
+        ) : isSearching ? (
+          // Normal search (Saved filter not active)
           <SearchResults
             results={searchResults}
             loading={searchLoading}
@@ -171,6 +216,7 @@ export default function LibraryScreen() {
             isEditMode={isEditMode}
           />
         ) : (
+          // Normal collections view (no filter, no search)
           <FlatList
             data={collections}
             renderItem={renderCollectionRow}

@@ -1,7 +1,8 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { searchService } from '../services/searchService';
+import { useAuth } from '../context/AuthContext';
 
-export const useSearch = () => {
+export const useSearch = (savedOnly = false) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -9,6 +10,7 @@ export const useSearch = () => {
   const [searchError, setSearchError] = useState(null);
   const [hasMoreResults, setHasMoreResults] = useState(true);
   const [isSearching, setIsSearching] = useState(false);
+  const { user } = useAuth();
   
   const debounceTimeoutRef = useRef(null);
 
@@ -28,7 +30,8 @@ export const useSearch = () => {
     setIsSearching(true);
     
     try {
-      const { data, error, hasMore } = await searchService.searchInitialBooks(query);
+      const userId = user?.id || null;
+      const { data, error, hasMore } = await searchService.searchInitialBooks(query, userId, savedOnly);
       
       if (error) {
         setSearchError(error.message || 'Failed to search books');
@@ -43,7 +46,7 @@ export const useSearch = () => {
     } finally {
       setSearchLoading(false);
     }
-  }, []);
+  }, [savedOnly, user?.id]);
 
   /**
    * Debounced search function
@@ -71,7 +74,8 @@ export const useSearch = () => {
     setSearchLoadingMore(true);
     
     try {
-      const { data, error, hasMore } = await searchService.searchMoreBooks(searchQuery, searchResults.length);
+      const userId = user?.id || null;
+      const { data, error, hasMore } = await searchService.searchMoreBooks(searchQuery, searchResults.length, userId, savedOnly);
       
       if (error) {
         setSearchError(error.message || 'Failed to load more results');
@@ -91,7 +95,7 @@ export const useSearch = () => {
     } finally {
       setSearchLoadingMore(false);
     }
-  }, [searchQuery, searchResults.length, searchLoadingMore, hasMoreResults]);
+  }, [searchQuery, savedOnly, searchResults.length, searchLoadingMore, hasMoreResults, user?.id]);
 
   /**
    * Clear search
@@ -108,6 +112,20 @@ export const useSearch = () => {
       clearTimeout(debounceTimeoutRef.current);
     }
   }, []);
+
+  // Re-run search when savedOnly changes (if there's an active search query)
+  useEffect(() => {
+    if (searchQuery && searchQuery.trim().length > 0) {
+      // Clear any pending debounced search
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+      // Re-run search immediately with new savedOnly value
+      performSearch(searchQuery);
+    }
+    // Only depend on savedOnly - we don't want to re-run when searchQuery changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [savedOnly]);
 
   return {
     searchQuery,
