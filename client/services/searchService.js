@@ -84,32 +84,32 @@ export const searchService = {
       } else {
         // Normal search query from books table
         const searchQuery = supabase
-          .from('books')
-          .select(`
+        .from('books')
+        .select(`
+          id,
+          title,
+          cover,
+          collection,
+          header_color,
+          background_end_color,
+          button_text_border_color,
+          button_circle_color,
+          created_at,
+          collections!inner(
             id,
-            title,
-            cover,
-            collection,
-            header_color,
-            background_end_color,
-            button_text_border_color,
-            button_circle_color,
-            created_at,
-            collections!inner(
-              id,
-              title
-            )
-          `)
-          .ilike('title', `%${query.trim()}%`)
-          .order('created_at', { ascending: false })
-          .range(offset, offset + limit - 1);
+            title
+          )
+        `)
+        .ilike('title', `%${query.trim()}%`)
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1);
 
         const result = await searchQuery;
 
         if (result.error) {
           console.error('Error searching books:', result.error);
           return { data: null, error: result.error };
-        }
+      }
 
         data = result.data;
         count = result.count;
@@ -133,11 +133,11 @@ export const searchService = {
           }));
         } else {
           transformedData = data.map(book => ({
-            ...book,
+        ...book,
             isSaved: false,
-            collection_title: book.collections?.title || 'Unknown Collection',
-            collection_id: book.collections?.id || book.collection
-          }));
+        collection_title: book.collections?.title || 'Unknown Collection',
+        collection_id: book.collections?.id || book.collection
+      }));
         }
       }
 

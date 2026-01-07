@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient';
+import { spacedRepetitionService } from './spacedRepetitionService';
 
 export const savedItemsService = {
   /**
@@ -108,6 +109,7 @@ export const savedItemsService = {
   /**
    * Save a card (insert into user_cards)
    * Business Rule: If book is not saved, automatically save the book first
+   * Also initializes spaced repetition fields (queue, ease_factor, etc.)
    * @param {string} userId - User ID
    * @param {number} cardId - Card ID
    * @param {number} bookId - Book ID (required for cascade save)
@@ -127,20 +129,51 @@ export const savedItemsService = {
         }
       }
 
-      // Now save the card
+      // Check if card already exists (to avoid resetting spaced repetition data)
+      const { data: existingCard } = await supabase
+        .from('user_cards')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('card_id', cardId)
+        .maybeSingle();
+
+      if (existingCard) {
+        // Card already exists, return existing data without resetting spaced repetition fields
+        return { data: existingCard, error: null };
+      }
+
+      // Initialize spaced repetition fields
+      const spacedRepetitionData = await spacedRepetitionService.initializeCardForSpacedRepetition(userId);
+
+      // Now save the card with spaced repetition fields
       const { data, error } = await supabase
         .from('user_cards')
         .insert({
           user_id: userId,
           card_id: cardId,
+          queue: spacedRepetitionData.queue,
+          due: spacedRepetitionData.due,
+          ease_factor: spacedRepetitionData.ease_factor,
+          interval_days: spacedRepetitionData.interval_days,
+          repetitions: spacedRepetitionData.repetitions,
+          last_reviewed_at: spacedRepetitionData.last_reviewed_at,
         })
         .select()
         .single();
 
       if (error) {
-        // If error is due to duplicate (already saved), return success
+        // If error is due to duplicate (race condition), fetch existing card
         if (error.code === '23505') {
-          return { data: { id: 'existing', user_id: userId, card_id: cardId }, error: null };
+          const { data: existing } = await supabase
+            .from('user_cards')
+            .select('*')
+            .eq('user_id', userId)
+            .eq('card_id', cardId)
+            .single();
+          
+          if (existing) {
+            return { data: existing, error: null };
+          }
         }
         console.error('Error saving card:', error);
         return { data: null, error };
