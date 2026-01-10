@@ -11,6 +11,16 @@ interface ConceptData {
   reasoning: string;
   recognitionScore?: number;
   reasoningScore?: number;
+  bookCover?: string;
+  isNewCard?: boolean;
+  initialCardState?: {  // NEW: Initial spaced repetition state
+    ease_factor: number | null;
+    interval_days: number | null;
+    repetitions: number | null;
+    due: string | null;
+    last_reviewed_at: string | null;
+    queue: number | null;
+  };
 }
 
 interface QuizitData {

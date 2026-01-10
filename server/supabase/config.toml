@@ -29,3 +29,11 @@ import_map = "./functions/create-quizit-from-paired-cards/deno.json"
 [functions.update-scores]
 verify_jwt = false
 import_map = "./functions/update-scores/deno.json"
+
+[functions.create-spaced-repetition-session]
+verify_jwt = false
+import_map = "./functions/create-spaced-repetition-session/deno.json"
+
+[functions.get-next-spaced-repetition-quizit]
+verify_jwt = false
+import_map = "./functions/get-next-spaced-repetition-quizit/deno.json"

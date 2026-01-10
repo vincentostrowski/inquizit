@@ -56,6 +56,11 @@ export const spacedRepetitionService = {
    */
   async getNewConceptQueue(userId, limit, offset = 0) {
     try {
+      // If limit is explicitly 0, return empty array (daily limit reached)
+      if (limit === 0) {
+        return { data: [], error: null };
+      }
+
       let query = supabase
         .from('user_cards')
         .select(`
@@ -256,35 +261,72 @@ export const spacedRepetitionService = {
   },
 
   /**
+   * Update spaced repetition data using Recognition/Reasoning scores
+   * Converts scores to Anki rating and calls reviewCard
+   * @param {string} userId - User ID
+   * @param {number} cardId - Card ID
+   * @param {number} recognitionScore - Recognition score (0.0-1.0)
+   * @param {number} reasoningScore - Reasoning score (0.0-1.0)
+   * @param {object} initialCardState - REQUIRED initial card state for calculation (baseline for all recalculations)
+   * @returns {Promise<{data: any, error: any}>}
+   */
+  async updateSpacedRepetitionScores(userId, cardId, recognitionScore, reasoningScore, initialCardState) {
+    try {
+      // Validate initial state is provided
+      if (!initialCardState) {
+        return { data: null, error: new Error('Initial card state is required for calculation') };
+      }
+
+      // Convert scores to Anki rating (1-4)
+      // Average of both scores, then map to rating
+      const averageScore = (recognitionScore + reasoningScore) / 2;
+      let rating;
+      if (averageScore <= 0.25) {
+        rating = 1; // Again
+      } else if (averageScore <= 0.5) {
+        rating = 2; // Hard
+      } else if (averageScore <= 0.75) {
+        rating = 3; // Good
+      } else {
+        rating = 4; // Easy
+      }
+
+      console.log(`Converting scores to Anki rating: Recognition=${recognitionScore}, Reasoning=${reasoningScore}, Average=${averageScore}, Rating=${rating}`);
+
+      // Call reviewCard with converted rating and initial state
+      // ALWAYS uses initial state for calculation (ensures consistent recalculation baseline)
+      return await this.reviewCard(userId, cardId, rating, initialCardState);
+    } catch (error) {
+      console.error('Error updating spaced repetition scores:', error);
+      return { data: null, error };
+    }
+  },
+
+  /**
    * Review a card and update spaced repetition data using Anki algorithm
    * @param {string} userId - User ID
    * @param {number} cardId - Card ID
    * @param {number} rating - Rating: 1 (Again), 2 (Hard), 3 (Good), 4 (Easy)
+   * @param {object} initialCardState - REQUIRED initial card state for calculation (baseline for all recalculations)
+   *                                    ALWAYS uses this state for calculation, never fetches from database
    * @returns {Promise<{data: any, error: any}>}
    */
-  async reviewCard(userId, cardId, rating) {
+  async reviewCard(userId, cardId, rating, initialCardState) {
     try {
       // Validate rating
       if (![1, 2, 3, 4].includes(rating)) {
         return { data: null, error: new Error('Invalid rating. Must be 1, 2, 3, or 4') };
       }
 
-      // Fetch current card data
-      const { data: currentCard, error: fetchError } = await supabase
-        .from('user_cards')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('card_id', cardId)
-        .single();
-
-      if (fetchError) {
-        console.error('Error fetching card for review:', fetchError);
-        return { data: null, error: fetchError };
+      // Validate initial state is provided
+      if (!initialCardState) {
+        return { data: null, error: new Error('Initial card state is required for calculation') };
       }
 
-      if (!currentCard) {
-        return { data: null, error: new Error('Card not found') };
-      }
+      // ALWAYS use initial state for calculation (ensures consistent recalculation baseline)
+      // Never fetch from database - all calculations use the same baseline
+      console.log('🔄 Using initial card state for calculation (baseline):', initialCardState);
+      const currentCard = initialCardState;
 
       const isFirstReview = currentCard.queue !== null && currentCard.due === null;
       const currentEaseFactor = currentCard.ease_factor ?? 2.5;

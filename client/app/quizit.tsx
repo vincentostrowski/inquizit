@@ -6,6 +6,7 @@ import QuizitHeader from '../components/quizit/QuizitHeader';
 import Deck from '../components/quizit/Deck';
 import SkeletonLoadingDeck from '../components/quizit/SkeletonLoadingDeck';
 import ReasoningBottomSheet from '../components/quizit/ReasoningBottomSheet';
+import SessionComplete from '../components/quizit/SessionComplete';
 import { useEffect, useState, useRef } from 'react';
 import { getNextQuizit } from '../services/getNextQuizitService';
 
@@ -30,7 +31,7 @@ export default function QuizitScreen() {
 }
 
 function QuizitScreenContent() {
-  const { sessionTitle, sessionId } = useLocalSearchParams();
+  const { sessionTitle, sessionId, sessionType } = useLocalSearchParams();
   const scrollViewRef = useRef(null);
   const [quizitItems, setQuizitItems] = useState<any[]>([]);
   const [isLoadingNext, setIsLoadingNext] = useState(false);
@@ -40,7 +41,16 @@ function QuizitScreenContent() {
   const latestCardIdsRef = useRef<string[]>([]);
   const quizitCountRef = useRef(0);
   const [reachedBottom, setReachedBottom] = useState(false);
+  const [sessionComplete, setSessionComplete] = useState(false);
+  const [sessionStats, setSessionStats] = useState<{
+    totalCards: number;
+    newCardsReviewed: number;
+    reviewCardsReviewed: number;
+  } | null>(null);
   const insets = useSafeAreaInsets();
+  
+  // Determine if this is a spaced repetition session
+  const isSpacedRepetitionSession = sessionType === 'spaced-repetition';
   
   // Calculate available height for full screen modal with top safe area only
   const headerHeight = 60;
@@ -72,7 +82,18 @@ function QuizitScreenContent() {
       const cardIds = cardIdsToExclude ?? latestCardIdsRef.current;
       console.log('Loading next quizit', { excludedCardCount: cardIds.length });
       
-      const response = await getNextQuizit(sessionId as string, cardIds);
+      const response = await getNextQuizit(sessionId as string, cardIds, isSpacedRepetitionSession ? 'spaced-repetition' : 'regular');
+
+      // Check for explicit session completion (spaced repetition sessions)
+      if (response.sessionComplete === true) {
+        console.log('✅ Session complete!', response.sessionStats);
+        setSessionComplete(true);
+        if (response.sessionStats) {
+          setSessionStats(response.sessionStats);
+        }
+        setIsLoadingNext(false);
+        return;
+      }
 
       if (response.quizitItems && response.quizitItems.length > 0) {
         // Convert API response to the expected format
@@ -121,7 +142,7 @@ function QuizitScreenContent() {
 
       try {
         console.log('Loading initial quizit...');
-        const response = await getNextQuizit(sessionId as string, []);
+        const response = await getNextQuizit(sessionId as string, [], isSpacedRepetitionSession ? 'spaced-repetition' : 'regular');
         
         if (response.quizitItems && response.quizitItems.length > 0) {
           // Convert API response to the expected format
@@ -155,7 +176,7 @@ function QuizitScreenContent() {
     };
 
     loadInitialQuizit();
-  }, [sessionId]);
+  }, [sessionId, isSpacedRepetitionSession]);
   
   const handleBack = () => {
     router.back();
@@ -217,24 +238,35 @@ function QuizitScreenContent() {
                        }}
                       fadeIn={true} // Fade in first deck and newly loaded decks
                       sessionId={sessionId as string}
+                      sessionType={isSpacedRepetitionSession ? 'spaced-repetition' : 'regular'}
                       mockMode={MOCK_MODE} // Use the mock mode constant
                      />
                    </View>
-                 ))
-               }
-        {/* Skeleton deck only when loading */}
-        {(quizitItems.length === 0 || reachedBottom) && (
-                 <View style={[styles.deckContainer, {height: availableHeight}]}>
-                   <SkeletonLoadingDeck 
-                     quizitItems={[]}
-                     onGestureStart={() => setVerticalScrollEnabled(false)}
-                     onGestureEnd={() => setVerticalScrollEnabled(true)}
-                     onViewReasoning={() => {}}
-                   />
-                 </View>
+                ))
+              }
+        
+        {/* Session Complete Screen */}
+        {sessionComplete && (
+          <View style={[styles.deckContainer, {height: availableHeight}]}>
+            <SessionComplete
+              stats={sessionStats || { totalCards: quizitItems.length, newCardsReviewed: 0, reviewCardsReviewed: 0 }}
+            />
+          </View>
         )}
-               
-             </ScrollView>
+
+        {/* Skeleton deck only when loading (not when session complete) */}
+        {!sessionComplete && (quizitItems.length === 0 || reachedBottom) && (
+                <View style={[styles.deckContainer, {height: availableHeight}]}>
+                  <SkeletonLoadingDeck 
+                    quizitItems={[]}
+                    onGestureStart={() => setVerticalScrollEnabled(false)}
+                    onGestureEnd={() => setVerticalScrollEnabled(true)}
+                    onViewReasoning={() => {}}
+                  />
+                </View>
+        )}
+              
+            </ScrollView>
              
              {/* Reasoning Bottom Sheet */}
              <ReasoningBottomSheet

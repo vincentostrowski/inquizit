@@ -24,3 +24,29 @@ export const createQuizitSession = async (config) => {
     throw error;
   }
 };
+
+export const createSpacedRepetitionSession = async (config) => {
+  try {
+    console.log('Creating spaced repetition session with config:', config);
+    
+    const { data, error } = await supabase.functions.invoke('create-spaced-repetition-session', {
+      body: { 
+        theme: config.biasText || '',
+        isPairedMode: config.isPairedMode || false,
+        reviewCardOrder: config.reviewCardOrder || 'ordered',
+        cardInterleaving: config.cardInterleaving || 'review-first'
+      }
+    });
+
+    if (error) {
+      console.error('Error creating spaced repetition session:', error);
+      throw new Error(`Failed to create spaced repetition session: ${error.message}`);
+    }
+
+    console.log('Spaced repetition session created successfully:', data);
+    return data;
+  } catch (error) {
+    console.error('Error in createSpacedRepetitionSession:', error);
+    throw error;
+  }
+};

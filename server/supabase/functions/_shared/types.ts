@@ -12,6 +12,15 @@ export interface QuizitItem {
     recognitionScore?: number; // 0.0-1.0 scale
     reasoningScore?: number;   // 0.0-1.0 scale
     bookCover?: string;
+    isNewCard?: boolean; // Already exists
+    initialCardState?: {  // NEW: Initial spaced repetition state
+      ease_factor: number | null;
+      interval_days: number | null;
+      repetitions: number | null;
+      due: string | null;  // YYYY-MM-DD format
+      last_reviewed_at: string | null;
+      queue: number | null;
+    };
   };
   quizitData?: {
     core: string[];

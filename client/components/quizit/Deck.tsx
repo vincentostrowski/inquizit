@@ -4,6 +4,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { compareIds } from '../../utils/idUtils';
 import { Card } from './Card';
 import { createDebouncedUpdateScores, updateScores } from '../../services/updateScoresService';
+import { spacedRepetitionService } from '../../services/spacedRepetitionService';
+import { useAuth } from '../../context/AuthContext';
+import { getDateKey } from '../../utils/dateUtils';
 
 type CardViewState = 'unviewed' | 'viewed' | 'completed';
 
@@ -66,6 +69,15 @@ interface DeckProps {
       recognitionScore?: number;
       reasoningScore?: number;
       bookCover?: string;
+      isNewCard?: boolean; // Flag indicating if card is new (for spaced repetition sessions)
+      initialCardState?: {  // NEW: Initial spaced repetition state (fetched in edge function)
+        ease_factor: number | null;
+        interval_days: number | null;
+        repetitions: number | null;
+        due: string | null;
+        last_reviewed_at: string | null;
+        queue: number | null;
+      };
     };
     quizitData?: {
       core: string[];
@@ -78,14 +90,19 @@ interface DeckProps {
   onViewReasoning?: () => void;
   fadeIn?: boolean;
   sessionId?: string;
+  sessionType?: 'regular' | 'spaced-repetition';
   mockMode?: boolean;
 }
 
-export default function Deck({ quizitItems, onGestureStart, onGestureEnd, onViewReasoning, fadeIn = false, sessionId, mockMode = false }: DeckProps) {
+export default function Deck({ quizitItems, onGestureStart, onGestureEnd, onViewReasoning, fadeIn = false, sessionId, sessionType = 'regular', mockMode = false }: DeckProps) {
+  const { user } = useAuth();
+  const userId = user?.id;
+
   // Use mock data when mockMode is true
   const dataToUse = mockMode ? MOCK_QUIZIT_ITEMS : quizitItems;
   
   // Enhanced deck state with all card data
+  
   const [deck, setDeck] = useState(() => 
     dataToUse.map(item => ({
       ...item,
@@ -101,12 +118,17 @@ export default function Deck({ quizitItems, onGestureStart, onGestureEnd, onView
   const [isTransitioningPrev, setIsTransitioningPrev] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
-  // Extract the specific value we care abou
+  
+  // Track which cards have had their daily review recorded (for spaced repetition sessions)
+  // Prevents duplicate daily review records if user changes scores multiple times
+  const [recordedCardsToday, setRecordedCardsToday] = useState<Set<string>>(new Set());
+  
+  // Extract the specific value we care about
   const quizitId = quizitItems.find(item => item.quizitData)?.quizitData?.quizitId;
 
-  // Create debounced update function for scores (created once, never changes)
+  // Create debounced update function for regular quizit sessions
   const debouncedUpdateScores = useMemo(() => {
-    if (!sessionId || !quizitId) return null;
+    if (!sessionId || !quizitId || sessionType !== 'regular') return null;
     
     return createDebouncedUpdateScores(async (cardData: { id: string; recognitionScore: number; reasoningScore: number }) => {
       try {
@@ -116,7 +138,56 @@ export default function Deck({ quizitItems, onGestureStart, onGestureEnd, onView
         console.error('Failed to update scores:', error);
       }
     }, 2000); // 2 second debounce
-  }, []); // Empty dependency array - create once and never change
+  }, [sessionId, quizitId, sessionType]);
+
+  // Create debounced update function for spaced repetition sessions
+  // ALWAYS uses initial card state for calculation (required, not optional)
+  const debouncedUpdateSpacedRepetitionScores = useMemo(() => {
+    if (sessionType !== 'spaced-repetition' || !userId) return null;
+    
+    return createDebouncedUpdateScores(async (cardData: { id: string; recognitionScore: number; reasoningScore: number; isNewCard?: boolean; initialCardState?: any }) => {
+      try {
+        // Get initial card state from cardData (passed directly from handleScoreChange)
+        const initialState = cardData.initialCardState;
+        
+        if (!initialState) {
+          console.error('❌ Initial card state not found for card:', cardData.id, '- Cannot update scores');
+          // Don't proceed if initial state is not available
+          return;
+        }
+
+        console.log('🔄 Calculating from initial state (baseline) for card:', cardData.id);
+
+        const { data, error } = await spacedRepetitionService.updateSpacedRepetitionScores(
+          userId,
+          parseInt(cardData.id),
+          cardData.recognitionScore,
+          cardData.reasoningScore,
+          initialState // REQUIRED: Always pass initial state
+        );
+
+        if (error) {
+          console.error('Failed to update spaced repetition scores:', error);
+          return;
+        }
+
+        console.log('✅ Spaced repetition scores updated successfully for card:', cardData.id);
+
+        // Update daily review tracking incrementally (only once per card per session)
+        const today = getDateKey(new Date());
+        if (today && !recordedCardsToday.has(cardData.id)) {
+          const isNewCard = cardData.isNewCard || false;
+          await spacedRepetitionService.recordDailyReview(userId, today, 1, isNewCard ? 1 : 0);
+          setRecordedCardsToday(prev => new Set([...prev, cardData.id]));
+          console.log('📊 Daily review recorded:', { cardId: cardData.id, isNewCard });
+        } else if (recordedCardsToday.has(cardData.id)) {
+          console.log('⏭️ Skipping daily review - already recorded for card:', cardData.id);
+        }
+      } catch (error) {
+        console.error('Failed to update spaced repetition scores:', error);
+      }
+    }, 2000); // 2 second debounce
+  }, [sessionType, userId, recordedCardsToday]);
   
   // Fade-in animation for navigation and indicators
   const fadeAnim = useRef(new Animated.Value(fadeIn ? 0 : 1)).current;
@@ -291,9 +362,10 @@ export default function Deck({ quizitItems, onGestureStart, onGestureEnd, onView
     });
   };
 
+
   const handleScoreChange = (type: 'recognition' | 'reasoning', score: number) => {
     // Calculate updated deck locally
-    console.log('type: ', type, 'score: ', score, 'quizitId: ', quizitId);
+    console.log('type: ', type, 'score: ', score, 'quizitId: ', quizitId, 'sessionType: ', sessionType);
     const updatedDeck = [...deck];
     if (updatedDeck[0].conceptData) {
       updatedDeck[0] = {
@@ -325,14 +397,31 @@ export default function Deck({ quizitItems, onGestureStart, onGestureEnd, onView
     // This only occurs for concept cards that just completed, check quizit card too
     checkAndMarkCompleted(0, updatedDeck);
 
-    // Call debounced API update if we have the required data
-    if (debouncedUpdateScores && updatedDeck[0].conceptData) {
-      const cardData = {
-        id: updatedDeck[0].conceptData.id,
-        recognitionScore: updatedDeck[0].conceptData.recognitionScore || 0.0,
-        reasoningScore: updatedDeck[0].conceptData.reasoningScore || 0.0
-      };
-      debouncedUpdateScores(cardData);
+    // Call appropriate debounced API update based on session type
+    // Only proceed if both scores are set (Issue 1 fix)
+    if (updatedDeck[0].conceptData) {
+      const recognition = updatedDeck[0].conceptData.recognitionScore;
+      const reasoning = updatedDeck[0].conceptData.reasoningScore;
+      
+      // Only call update if BOTH scores are defined (Issue 1: prevent incomplete updates)
+      if (recognition !== undefined && reasoning !== undefined) {
+        const cardData = {
+          id: updatedDeck[0].conceptData.id,
+          recognitionScore: recognition,
+          reasoningScore: reasoning,
+          isNewCard: updatedDeck[0].conceptData.isNewCard || false, // From conceptData (set by edge function)
+          initialCardState: updatedDeck[0].conceptData.initialCardState, // Pass initial state directly (fetched in edge function)
+        };
+
+        if (sessionType === 'spaced-repetition' && debouncedUpdateSpacedRepetitionScores) {
+          // Spaced repetition: convert scores to Anki rating and update card
+          debouncedUpdateSpacedRepetitionScores(cardData);
+        } else if (sessionType === 'regular' && debouncedUpdateScores) {
+          // Regular quizit: update scores in Redis and quizits table
+          debouncedUpdateScores(cardData);
+        }
+      }
+      // If only one score is set, just update local state (no API call)
     }
   };
 

@@ -1,11 +1,14 @@
 import { Stack } from 'expo-router';
 import { ViewModeProvider } from '../context/ViewModeContext';
 import { QuizitConfigProvider, useQuizitConfig } from '../context/QuizitConfigContext';
+import { SpacedRepetitionConfigProvider, useSpacedRepetitionConfig } from '../context/SpacedRepetitionConfigContext';
 import { AuthProvider } from '../context/AuthContext';
 import QuizitConfigModal from '../components/quizit/QuizitConfigModal';
+import SpacedRepetitionConfigModal from '../components/schedule/SpacedRepetitionConfigModal';
 
 function RootLayoutContent() {
   const { showModal, modalData, hideQuizitConfig } = useQuizitConfig();
+  const { showModal: showSpacedRepetitionModal, hideSpacedRepetitionConfig } = useSpacedRepetitionConfig();
 
   return (
     <>
@@ -33,6 +36,12 @@ function RootLayoutContent() {
         title={modalData?.title || ''}
         onClose={hideQuizitConfig}
       />
+      
+      {/* Global Spaced Repetition Config Modal */}
+      <SpacedRepetitionConfigModal
+        visible={showSpacedRepetitionModal}
+        onClose={hideSpacedRepetitionConfig}
+      />
     </>
   );
 }
@@ -42,7 +51,9 @@ export default function RootLayout() {
     <AuthProvider>
       <ViewModeProvider>
         <QuizitConfigProvider>
-          <RootLayoutContent />
+          <SpacedRepetitionConfigProvider>
+            <RootLayoutContent />
+          </SpacedRepetitionConfigProvider>
         </QuizitConfigProvider>
       </ViewModeProvider>
     </AuthProvider>

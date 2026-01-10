@@ -1,11 +1,11 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl, Alert } from 'react-native';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useFocusEffect } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, withSequence } from 'react-native-reanimated';
 import SafeAreaWrapper from '../../../components/common/SafeAreaWrapper';
 import { useAuth } from '../../../context/AuthContext';
 import { spacedRepetitionService } from '../../../services/spacedRepetitionService';
+import { useSpacedRepetitionConfig } from '../../../context/SpacedRepetitionConfigContext';
 import ConsistencyGraph from '../../../components/schedule/ConsistencyGraph';
 import NewQueueModal from '../../../components/schedule/NewQueueModal';
 import ReviewQueueModal from '../../../components/schedule/ReviewQueueModal';
@@ -55,6 +55,7 @@ function AnimatedNumber({ value, children, style }: { value: number; children?: 
 
 export default function ScheduleScreen() {
   const { user } = useAuth();
+  const { showSpacedRepetitionConfig } = useSpacedRepetitionConfig();
   const [queueStats, setQueueStats] = useState<QueueStats | null>(null);
   const [loading, setLoading] = useState(true); // Only true on initial load
   const [refreshing, setRefreshing] = useState(false); // For pull-to-refresh
@@ -128,14 +129,28 @@ export default function ScheduleScreen() {
     }
   }, [user?.id]);
 
-  const handleStartQuizitSession = () => {
-    // TODO: Implement in Phase 4
-    console.log('Start Quizit Session for spaced repetition');
-  };
-
   const totalCardsForSession = queueStats 
     ? Math.min(queueStats.newCardsLeftToday, queueStats.newCards) + queueStats.cardsDueToday 
     : 0;
+
+  const handleStartQuizitSession = useCallback(() => {
+    if (!user?.id) {
+      Alert.alert('Error', 'You must be logged in to start a session');
+      return;
+    }
+
+    // Check if there are any cards available
+    if (totalCardsForSession === 0) {
+      Alert.alert(
+        'No Cards Available',
+        'You don\'t have any cards available for review right now. Check back later!'
+      );
+      return;
+    }
+
+    // Show configuration modal
+    showSpacedRepetitionConfig();
+  }, [user?.id, totalCardsForSession, showSpacedRepetitionConfig]);
 
   return (
     <SafeAreaWrapper backgroundColor="white">
@@ -224,7 +239,7 @@ export default function ScheduleScreen() {
                 <View style={styles.headerRight}>
                   {queueStats ? (
                     <AnimatedNumber value={queueStats.newCards} style={styles.countText}>
-                      {' '}New Cards
+                      {' '}Cards
                     </AnimatedNumber>
                   ) : (
                     <Text style={styles.countText}>0 New Cards</Text>
@@ -363,11 +378,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#1D1D1F',
     textAlign: 'center',
-  },
-  queueText: {
-    fontSize: 16,
-    color: '#1D1D1F',
-    fontWeight: '500',
   },
   queueLabel: {
     fontSize: 16,

@@ -156,7 +156,7 @@ export default function ConsistencyGraph({ userId }: ConsistencyGraphProps) {
         const weekDate = new Date(current);
         weekDate.setDate(current.getDate() + i);
         const dateKey = getDateKey(weekDate) || '';
-        const isPast = dateKey < todayKey; // Only show previous days
+                const isPast = dateKey <= todayKey; // Include today and previous days
         
         week.push({
           date: weekDate,
@@ -174,12 +174,12 @@ export default function ConsistencyGraph({ userId }: ConsistencyGraphProps) {
 
   // Get color intensity based on review count
   const getColorIntensity = (count: number): string => {
-    if (count === 0) return '#EBEDF0'; // Light grey (no activity)
-    if (count >= 10) return '#9CA3AF'; // Medium-dark grey (high activity, not too dark)
-    if (count >= 5) return '#D1D5DB'; // Medium grey
-    if (count >= 3) return '#E5E7EB'; // Light-medium grey
-    if (count >= 1) return '#F3F4F6'; // Very light grey
-    return '#EBEDF0'; // Default (no activity)
+    if (count === 0) return '#F8F9FA'; // Very light grey (no activity)
+    if (count >= 10) return '#6B7280'; // Dark grey (high activity)
+    if (count >= 5) return '#9CA3AF'; // Medium-dark grey
+    if (count >= 3) return '#B8BFC7'; // Medium grey
+    if (count >= 1) return '#D1D5DB'; // Visible grey (starting point)
+    return '#F8F9FA'; // Default (no activity)
   };
 
   // Generate month labels aligned with weeks

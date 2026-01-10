@@ -73,23 +73,23 @@ export default function LoginScreen() {
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={styles.content}>
-          <Text style={styles.title}>Inquizit</Text>
-          <Text style={styles.subtitle}>
-            {isSignUp ? 'Create an account' : 'Sign in to continue'}
-          </Text>
+      <View style={styles.content}>
+        <Text style={styles.title}>Inquizit</Text>
+        <Text style={styles.subtitle}>
+          {isSignUp ? 'Create an account' : 'Sign in to continue'}
+        </Text>
 
-          <View style={styles.form}>
-            <TextInput
-              style={styles.input}
-              placeholder="Email"
-              value={email}
-              onChangeText={setEmail}
-              autoCapitalize="none"
-              keyboardType="email-address"
-              autoComplete="email"
-              editable={!loading}
-            />
+        <View style={styles.form}>
+          <TextInput
+            style={styles.input}
+            placeholder="Email"
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            autoComplete="email"
+            editable={!loading}
+          />
 
             {isSignUp && (
               <>
@@ -111,43 +111,43 @@ export default function LoginScreen() {
               </>
             )}
 
-            <TextInput
-              style={styles.input}
-              placeholder="Password"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              autoComplete={isSignUp ? 'password-new' : 'password'}
-              editable={!loading}
-            />
+          <TextInput
+            style={styles.input}
+            placeholder="Password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            autoComplete={isSignUp ? 'password-new' : 'password'}
+            editable={!loading}
+          />
 
-            <TouchableOpacity
-              style={[styles.button, loading && styles.buttonDisabled]}
-              onPress={handleSubmit}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.buttonText}>
-                  {isSignUp ? 'Sign Up' : 'Sign In'}
-                </Text>
-              )}
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.switchButton}
-              onPress={handleToggleSignUp}
-              disabled={loading}
-            >
-              <Text style={styles.switchText}>
-                {isSignUp
-                  ? 'Already have an account? Sign in'
-                  : "Don't have an account? Sign up"}
+          <TouchableOpacity
+            style={[styles.button, loading && styles.buttonDisabled]}
+            onPress={handleSubmit}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.buttonText}>
+                {isSignUp ? 'Sign Up' : 'Sign In'}
               </Text>
-            </TouchableOpacity>
-          </View>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.switchButton}
+              onPress={handleToggleSignUp}
+            disabled={loading}
+          >
+            <Text style={styles.switchText}>
+              {isSignUp
+                ? 'Already have an account? Sign in'
+                : "Don't have an account? Sign up"}
+            </Text>
+          </TouchableOpacity>
         </View>
+      </View>
       </ScrollView>
     </View>
   );
