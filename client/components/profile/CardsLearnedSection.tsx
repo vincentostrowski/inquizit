@@ -32,7 +32,6 @@ export default function CardsLearnedSection({ userId }: CardsLearnedSectionProps
 
   const loadData = async () => {
     if (USE_MOCK_DATA) {
-      // Use mock data for styling
       setData(MOCK_CARDS_LEARNED_DATA);
       setLoading(false);
       return;
@@ -53,15 +52,13 @@ export default function CardsLearnedSection({ userId }: CardsLearnedSectionProps
 
   const topCategories = data?.categories?.slice(0, 5) || [];
 
-  // Don't render if loading or no cards learned
+  // Don't render if loading
   if (loading) {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
-          <View style={styles.titleRow}>
-            <Ionicons name="school" size={20} color="#3B82F6" />
-            <Text style={styles.title}>Cards Learned</Text>
-          </View>
+          <Text style={styles.title}>Studied Content</Text>
+          <View style={styles.headerLine} />
         </View>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="small" color="#8E8E93" />
@@ -74,6 +71,16 @@ export default function CardsLearnedSection({ userId }: CardsLearnedSectionProps
     return null;
   }
 
+  // Build rows: Total first, then categories - 2 columns
+  const allItems = [
+    { name: 'Total', count: data.totalUniqueCards, isTotal: true },
+    ...topCategories.map(c => ({ name: c.categoryName, count: c.count, isTotal: false }))
+  ];
+
+  // Split into left and right columns
+  const leftColumn = allItems.filter((_, i) => i % 2 === 0);
+  const rightColumn = allItems.filter((_, i) => i % 2 === 1);
+
   return (
     <>
       <TouchableOpacity 
@@ -82,29 +89,32 @@ export default function CardsLearnedSection({ userId }: CardsLearnedSectionProps
         activeOpacity={0.7}
       >
         <View style={styles.header}>
-          <View style={styles.titleRow}>
-            <Ionicons name="school" size={20} color="#3B82F6" />
-            <Text style={styles.title}>Cards Learned</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={20} color="#C7C7CC" />
+          <Text style={styles.title}>Studied Content</Text>
+          <View style={styles.headerLine} />
         </View>
 
-        <View style={styles.grid}>
-          {/* Total Cards - Top Left */}
-          <View style={styles.gridItem}>
-            <Text style={styles.totalCount}>{data.totalUniqueCards}</Text>
-            <Text style={styles.totalLabel}>Total Cards</Text>
+        <View style={styles.columnsContainer}>
+          {/* Left Column */}
+          <View style={styles.column}>
+            {leftColumn.map((item, index) => (
+              <View key={`left-${index}`} style={styles.row}>
+                <Text style={styles.categoryName}>{item.name}</Text>
+                <Text style={[styles.categoryCount, item.isTotal && styles.totalCount]}>
+                  {item.count}
+                </Text>
+              </View>
+            ))}
           </View>
 
-          {/* Top 5 Categories */}
-          {topCategories.map((category) => (
-            <View key={category.categoryId} style={styles.gridItem}>
-              <Text style={styles.categoryCount}>{category.count}</Text>
-              <Text style={styles.categoryName} numberOfLines={1}>
-                {category.categoryName}
-              </Text>
-            </View>
-          ))}
+          {/* Right Column */}
+          <View style={styles.column}>
+            {rightColumn.map((item, index) => (
+              <View key={`right-${index}`} style={styles.row}>
+                <Text style={styles.categoryName}>{item.name}</Text>
+                <Text style={styles.categoryCount}>{item.count}</Text>
+              </View>
+            ))}
+          </View>
         </View>
       </TouchableOpacity>
 
@@ -138,7 +148,7 @@ function CardsLearnedModal({ visible, onClose, data }: CardsLearnedModalProps) {
           <View style={modalStyles.handleBar} />
           
           <View style={modalStyles.header}>
-            <Text style={modalStyles.title}>Cards Learned</Text>
+            <Text style={modalStyles.title}>Studied Content</Text>
             <TouchableOpacity onPress={onClose} style={modalStyles.closeButton}>
               <Ionicons name="close" size={24} color="#8E8E93" />
             </TouchableOpacity>
@@ -147,7 +157,7 @@ function CardsLearnedModal({ visible, onClose, data }: CardsLearnedModalProps) {
           {/* Total Summary */}
           <View style={modalStyles.totalSection}>
             <Text style={modalStyles.totalCount}>{data.totalUniqueCards}</Text>
-            <Text style={modalStyles.totalLabel}>Total Unique Cards</Text>
+            <Text style={modalStyles.totalLabel}>Total Cards Studied</Text>
           </View>
 
           {/* Category Breakdown */}
@@ -176,62 +186,55 @@ function CardsLearnedModal({ visible, onClose, data }: CardsLearnedModalProps) {
 const styles = StyleSheet.create({
   container: {
     backgroundColor: '#FFFFFF',
-    paddingVertical: 20,
+    paddingVertical: 12,
     paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E5EA',
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
-  },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+    marginBottom: 8,
   },
   title: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1D1D1F',
-  },
-  loadingContainer: {
-    height: 150,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  gridItem: {
-    width: '50%',
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-  },
-  totalCount: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#3B82F6',
-    marginBottom: 4,
-  },
-  totalLabel: {
     fontSize: 13,
     fontWeight: '500',
     color: '#8E8E93',
+    marginRight: 12,
   },
-  categoryCount: {
-    fontSize: 22,
-    fontWeight: '600',
-    color: '#1D1D1F',
-    marginBottom: 4,
+  headerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#E5E5EA',
+  },
+  loadingContainer: {
+    height: 100,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  columnsContainer: {
+    flexDirection: 'row',
+  },
+  column: {
+    flex: 1,
+  },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 3,
+    paddingRight: 16,
   },
   categoryName: {
     fontSize: 13,
     fontWeight: '500',
-    color: '#8E8E93',
+    color: '#1D1D1F',
+  },
+  categoryCount: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#1D1D1F',
+  },
+  totalCount: {
+    fontWeight: '600',
   },
 });
 
@@ -286,7 +289,7 @@ const modalStyles = StyleSheet.create({
   totalCount: {
     fontSize: 48,
     fontWeight: '700',
-    color: '#3B82F6',
+    color: '#1D1D1F',
   },
   totalLabel: {
     fontSize: 15,
@@ -334,7 +337,7 @@ const modalStyles = StyleSheet.create({
   categoryCount: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#3B82F6',
+    color: '#1D1D1F',
   },
   footnote: {
     fontSize: 12,
@@ -346,4 +349,3 @@ const modalStyles = StyleSheet.create({
     fontStyle: 'italic',
   },
 });
-

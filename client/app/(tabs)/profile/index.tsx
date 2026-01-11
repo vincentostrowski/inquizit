@@ -6,6 +6,7 @@ import SafeAreaWrapper from '../../../components/common/SafeAreaWrapper';
 import ExpertSection from '../../../components/profile/ExpertSection';
 import CardsLearnedSection from '../../../components/profile/CardsLearnedSection';
 import ConsistencyGraph from '../../../components/schedule/ConsistencyGraph';
+import ActivitySection from '../../../components/profile/ActivitySection';
 import { useAuth } from '../../../context/AuthContext';
 import { profileService } from '../../../services/profileService';
 import { supabase } from '../../../services/supabaseClient';
@@ -229,8 +230,8 @@ export default function ProfileScreen() {
       <ScrollView style={styles.container}>
         <View style={styles.header}>
           <Text style={styles.title}>Inquizit</Text>
-          <TouchableOpacity style={styles.settingsButton}>
-            <Ionicons name="settings" size={20} color="#1D1D1F" />
+          <TouchableOpacity style={styles.settingsButton} onPress={handleEditPress}>
+            <Ionicons name="settings-outline" size={20} color="#1D1D1F" />
             <Text style={styles.settingsText}>Settings</Text>
           </TouchableOpacity>
         </View>
@@ -259,15 +260,12 @@ export default function ProfileScreen() {
           <Text style={styles.username}>
             {profile?.username || 'No username'}
           </Text>
-
-          {/* Edit Button */}
-          <TouchableOpacity 
-            style={styles.editButton}
-            onPress={handleEditPress}
-          >
-            <Text style={styles.editButtonText}>Edit Profile</Text>
-          </TouchableOpacity>
         </View>
+
+        {/* Cards Learned Section */}
+        {user?.id && (
+          <CardsLearnedSection userId={user.id} />
+        )}
 
         {/* Expert Section */}
         {user?.id && (
@@ -280,17 +278,20 @@ export default function ProfileScreen() {
           />
         )}
 
-        {/* Cards Learned Section */}
-        {user?.id && (
-          <CardsLearnedSection userId={user.id} />
-        )}
-
         {/* Consistency Graph Section */}
         {user?.id && (
           <View style={styles.consistencySection}>
-            <Text style={styles.consistencySectionTitle}>Review Activity</Text>
+            <View style={styles.consistencyHeader}>
+              <Text style={styles.consistencySectionTitle}>Consistency</Text>
+              <View style={styles.consistencyHeaderLine} />
+            </View>
             <ConsistencyGraph userId={user.id} />
           </View>
+        )}
+
+        {/* Activity Section */}
+        {user?.id && (
+          <ActivitySection userId={user.id} />
         )}
        
       </ScrollView>
@@ -430,10 +431,8 @@ const styles = StyleSheet.create({
   },
   profileSection: {
     alignItems: 'center',
-    paddingVertical: 32,
+    paddingVertical: 20,
     backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E5EA',
   },
   avatarContainer: {
     marginBottom: 16,
@@ -464,18 +463,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     color: '#1D1D1F',
-    marginBottom: 16,
-  },
-  editButton: {
-    backgroundColor: '#3B82F6',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  editButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
   },
   // Modal Styles
   modalOverlay: {
@@ -595,13 +582,21 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     paddingVertical: 20,
     paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E5EA',
+  },
+  consistencyHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
   },
   consistencySectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1D1D1F',
-    marginBottom: 16,
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#8E8E93',
+    marginRight: 12,
+  },
+  consistencyHeaderLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#E5E5EA',
   },
 });

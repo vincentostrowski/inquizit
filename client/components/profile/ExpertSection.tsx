@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator, ScrollView } from 'react-native';
 import { expertiseService } from '../../services/expertiseService';
 
 interface ExpertBook {
@@ -48,11 +47,8 @@ export default function ExpertSection({ userId, onBookPress }: ExpertSectionProp
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <View style={styles.titleRow}>
-          <Ionicons name="trophy" size={20} color="#F59E0B" />
-          <Text style={styles.title}>Expert In</Text>
-        </View>
-        <Text style={styles.count}>{expertBooks.length}</Text>
+        <Text style={styles.title}>Expert</Text>
+        <View style={styles.headerLine} />
       </View>
 
       {loading ? (
@@ -60,7 +56,11 @@ export default function ExpertSection({ userId, onBookPress }: ExpertSectionProp
           <ActivityIndicator size="small" color="#8E8E93" />
         </View>
       ) : (
-        <View style={styles.booksGrid}>
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.booksRow}
+        >
           {expertBooks.map((item) => (
             <TouchableOpacity
               key={item.book_id}
@@ -73,12 +73,9 @@ export default function ExpertSection({ userId, onBookPress }: ExpertSectionProp
                 style={styles.bookCover}
                 resizeMode="cover"
               />
-              <View style={styles.expertBadge}>
-                <Ionicons name="checkmark" size={10} color="#FFFFFF" />
-              </View>
             </TouchableOpacity>
           ))}
-        </View>
+        </ScrollView>
       )}
     </View>
   );
@@ -89,61 +86,39 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     paddingVertical: 20,
     paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E5EA',
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 16,
   },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
   title: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1D1D1F',
-  },
-  count: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '500',
     color: '#8E8E93',
+    marginRight: 12,
+  },
+  headerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#E5E5EA',
   },
   loadingContainer: {
-    height: 80,
+    height: 120,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  booksGrid: {
+  booksRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: 12,
   },
   bookItem: {
-    position: 'relative',
+    // No extra styling needed
   },
   bookCover: {
-    width: 60,
-    height: 90,
-    borderRadius: 6,
+    width: 56,
+    height: 84,
+    borderRadius: 4,
     backgroundColor: '#F3F4F6',
   },
-  expertBadge: {
-    position: 'absolute',
-    bottom: -4,
-    right: -4,
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: '#10B981',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
-  },
 });
-
