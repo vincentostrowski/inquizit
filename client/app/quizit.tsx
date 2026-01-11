@@ -7,8 +7,10 @@ import Deck from '../components/quizit/Deck';
 import SkeletonLoadingDeck from '../components/quizit/SkeletonLoadingDeck';
 import ReasoningBottomSheet from '../components/quizit/ReasoningBottomSheet';
 import SessionComplete from '../components/quizit/SessionComplete';
+import ExpertiseAchievementModal from '../components/achievements/ExpertiseAchievementModal';
 import { useEffect, useState, useRef } from 'react';
 import { getNextQuizit } from '../services/getNextQuizitService';
+import { achievementEmitter, ACHIEVEMENT_EVENTS } from '../utils/achievementEvents';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -47,10 +49,32 @@ function QuizitScreenContent() {
     newCardsReviewed: number;
     reviewCardsReviewed: number;
   } | null>(null);
+  
+  // Expertise achievement modal state
+  const [showExpertiseModal, setShowExpertiseModal] = useState(false);
+  const [achievedBook, setAchievedBook] = useState<{
+    bookId: number;
+    bookTitle: string;
+    bookCover: string;
+  } | null>(null);
+  
   const insets = useSafeAreaInsets();
   
   // Determine if this is a spaced repetition session
   const isSpacedRepetitionSession = sessionType === 'spaced-repetition';
+
+  // Subscribe to expertise achievement events
+  useEffect(() => {
+    const unsubscribe = achievementEmitter.on(ACHIEVEMENT_EVENTS.EXPERTISE_ACHIEVED, (data) => {
+      console.log('🎉 Expertise achievement received:', data);
+      setAchievedBook(data);
+      setShowExpertiseModal(true);
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
   
   // Calculate available height for full screen modal with top safe area only
   const headerHeight = 60;
@@ -273,6 +297,17 @@ function QuizitScreenContent() {
                visible={showReasoningSheet}
                reasoning={currentReasoning}
                onClose={handleCloseReasoning}
+             />
+
+             {/* Expertise Achievement Modal */}
+             <ExpertiseAchievementModal
+               visible={showExpertiseModal}
+               bookTitle={achievedBook?.bookTitle || ''}
+               bookCover={achievedBook?.bookCover || ''}
+               onClose={() => {
+                 setShowExpertiseModal(false);
+                 setAchievedBook(null);
+               }}
              />
            </View>
          );

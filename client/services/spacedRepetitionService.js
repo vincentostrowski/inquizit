@@ -1,4 +1,6 @@
 import { supabase } from './supabaseClient';
+import { expertiseService } from './expertiseService';
+import { achievementEmitter, ACHIEVEMENT_EVENTS } from '../utils/achievementEvents';
 
 /**
  * Spaced Repetition Service
@@ -402,6 +404,49 @@ export const spacedRepetitionService = {
       if (updateError) {
         console.error('Error updating card after review:', updateError);
         return { data: null, error: updateError };
+      }
+
+      // Check if expertise needs to be updated
+      // Only matters if interval crossed the 7-day threshold (>= 7 counts toward expertise)
+      const previousInterval = currentInterval || 0;
+      const crossedUp = previousInterval < 7 && newInterval >= 7;    // Gaining expertise (crossed into >= 7)
+      const crossedDown = previousInterval >= 7 && newInterval < 7;  // Losing expertise (dropped below 7)
+
+      if (crossedUp || crossedDown) {
+        // Get card's book ID and is_main flag to determine if expertise update is needed
+        try {
+          const { data: cardData, error: cardError } = await supabase
+            .from('cards')
+            .select('book, is_main')
+            .eq('id', cardId)
+            .single();
+
+          if (!cardError && cardData && cardData.is_main) {
+            // This is a main card - update expertise for the book
+            const expertiseResult = await expertiseService.checkAndUpdateExpertise(userId, cardData.book);
+            
+            if (expertiseResult.updated && expertiseResult.isExpert && crossedUp) {
+              // Fetch book details for the achievement popup
+              const { data: bookData, error: bookError } = await supabase
+                .from('books')
+                .select('id, title, cover')
+                .eq('id', cardData.book)
+                .single();
+              
+              if (!bookError && bookData) {
+                // Emit achievement event for UI to show popup
+                achievementEmitter.emit(ACHIEVEMENT_EVENTS.EXPERTISE_ACHIEVED, {
+                  bookId: bookData.id,
+                  bookTitle: bookData.title,
+                  bookCover: bookData.cover,
+                });
+              }
+            }
+          }
+        } catch (expertiseError) {
+          // Don't fail the card review if expertise update fails
+          console.error('Error updating expertise (non-fatal):', expertiseError);
+        }
       }
 
       return { data: updatedCard, error: null };

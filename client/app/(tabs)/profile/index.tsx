@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIn
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import SafeAreaWrapper from '../../../components/common/SafeAreaWrapper';
+import ExpertSection from '../../../components/profile/ExpertSection';
 import { useAuth } from '../../../context/AuthContext';
 import { profileService } from '../../../services/profileService';
 import { supabase } from '../../../services/supabaseClient';
@@ -266,6 +267,16 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* Expert Section */}
+        {user?.id && (
+          <ExpertSection 
+            userId={user.id}
+            onBookPress={(bookId) => {
+              // TODO: Navigate to book details
+              console.log('Navigate to book:', bookId);
+            }}
+          />
+        )}
        
       </ScrollView>
 
