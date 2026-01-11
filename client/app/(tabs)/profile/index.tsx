@@ -4,6 +4,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import SafeAreaWrapper from '../../../components/common/SafeAreaWrapper';
 import ExpertSection from '../../../components/profile/ExpertSection';
+import CardsLearnedSection from '../../../components/profile/CardsLearnedSection';
 import { useAuth } from '../../../context/AuthContext';
 import { profileService } from '../../../services/profileService';
 import { supabase } from '../../../services/supabaseClient';
@@ -276,6 +277,11 @@ export default function ProfileScreen() {
               console.log('Navigate to book:', bookId);
             }}
           />
+        )}
+
+        {/* Cards Learned Section */}
+        {user?.id && (
+          <CardsLearnedSection userId={user.id} />
         )}
        
       </ScrollView>
