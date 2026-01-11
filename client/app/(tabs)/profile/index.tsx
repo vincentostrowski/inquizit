@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import SafeAreaWrapper from '../../../components/common/SafeAreaWrapper';
 import ExpertSection from '../../../components/profile/ExpertSection';
 import CardsLearnedSection from '../../../components/profile/CardsLearnedSection';
+import ConsistencyGraph from '../../../components/schedule/ConsistencyGraph';
 import { useAuth } from '../../../context/AuthContext';
 import { profileService } from '../../../services/profileService';
 import { supabase } from '../../../services/supabaseClient';
@@ -282,6 +283,14 @@ export default function ProfileScreen() {
         {/* Cards Learned Section */}
         {user?.id && (
           <CardsLearnedSection userId={user.id} />
+        )}
+
+        {/* Consistency Graph Section */}
+        {user?.id && (
+          <View style={styles.consistencySection}>
+            <Text style={styles.consistencySectionTitle}>Review Activity</Text>
+            <ConsistencyGraph userId={user.id} />
+          </View>
         )}
        
       </ScrollView>
@@ -581,5 +590,18 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
+  },
+  consistencySection: {
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 20,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E5EA',
+  },
+  consistencySectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1D1D1F',
+    marginBottom: 16,
   },
 });
