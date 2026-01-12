@@ -1,7 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, Pressable, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, Pressable, ActivityIndicator, Dimensions } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withDelay,
+  runOnJS,
+} from 'react-native-reanimated';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { cardsLearnedService, MOCK_CARDS_LEARNED_DATA } from '../../services/cardsLearnedService';
+
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 // Set to true to use mock data for styling, false for real data
 const USE_MOCK_DATA = false;
@@ -135,16 +146,58 @@ interface CardsLearnedModalProps {
 }
 
 function CardsLearnedModal({ visible, onClose, data }: CardsLearnedModalProps) {
+  const insets = useSafeAreaInsets();
+  const translateY = useSharedValue(SCREEN_HEIGHT);
+  const backdropOpacity = useSharedValue(0);
+  const [isVisible, setIsVisible] = useState(false);
+
+  const handleClose = () => {
+    setIsVisible(false);
+    onClose();
+  };
+
+  useEffect(() => {
+    if (visible) {
+      setIsVisible(true);
+      // Backdrop fades in first
+      backdropOpacity.value = withTiming(0.5, { duration: 200 });
+      // Then sheet slides up
+      translateY.value = withDelay(100, withTiming(0, { duration: 300 }));
+    } else {
+      // Both animations happen simultaneously on close
+      translateY.value = withTiming(SCREEN_HEIGHT, { duration: 300 });
+      backdropOpacity.value = withTiming(0, { duration: 300 }, () => {
+        runOnJS(handleClose)();
+      });
+    }
+  }, [visible]);
+
+  const animatedSheetStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ translateY: translateY.value }],
+    };
+  });
+
+  const animatedBackdropStyle = useAnimatedStyle(() => {
+    return {
+      opacity: backdropOpacity.value,
+    };
+  });
+
+  if (!isVisible) return null;
+
   return (
     <Modal
-      visible={visible}
+      visible={isVisible}
       transparent
-      animationType="slide"
+      animationType="none"
       onRequestClose={onClose}
     >
-      <View style={modalStyles.container}>
-        <Pressable style={modalStyles.backdrop} onPress={onClose} />
-        <View style={modalStyles.sheet}>
+      <GestureHandlerRootView style={modalStyles.container}>
+        <Animated.View style={[modalStyles.backdrop, animatedBackdropStyle]}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+        </Animated.View>
+        <Animated.View style={[modalStyles.sheet, { paddingBottom: insets.bottom + 34 }, animatedSheetStyle]}>
           <View style={modalStyles.handleBar} />
           
           <View style={modalStyles.header}>
@@ -177,8 +230,8 @@ function CardsLearnedModal({ visible, onClose, data }: CardsLearnedModalProps) {
           <Text style={modalStyles.footnote}>
             Note: Cards can appear in multiple categories if their book belongs to multiple categories.
           </Text>
-        </View>
-      </View>
+        </Animated.View>
+      </GestureHandlerRootView>
     </Modal>
   );
 }
@@ -248,10 +301,13 @@ const modalStyles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   sheet: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    paddingBottom: 34,
     maxHeight: '80%',
   },
   handleBar: {
