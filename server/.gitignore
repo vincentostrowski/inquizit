@@ -1,0 +1,3 @@
+.supabase/           # This is created when running `supabase start` locally
+supabase/.output/    # Build output of edge functions (safe to ignore)
+.env

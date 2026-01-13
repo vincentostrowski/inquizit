@@ -12,14 +12,18 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.vincentostrowski.client",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSPhotoLibraryUsageDescription": "We need access to your photo library to set your profile picture.",
+        "NSPhotoLibraryAddUsageDescription": "We need access to save your profile picture to your photo library.",
+        "NSCameraUsageDescription": "We need access to your camera to take a photo for your profile picture."
       }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.vincentostrowski.client"
     },
     "web": {
       "bundler": "metro",

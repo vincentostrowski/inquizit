@@ -1,0 +1,39 @@
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+[functions.create-quizit-session]
+verify_jwt = false
+import_map = "./functions/create-quizit-session/deno.json"
+
+[functions.get-next-quizit]
+verify_jwt = false
+import_map = "./functions/get-next-quizit/deno.json"
+
+[functions.create-quizit-from-single-card]
+verify_jwt = false
+import_map = "./functions/create-quizit-from-single-card/deno.json"
+
+[functions.create-quizit-from-paired-cards]
+verify_jwt = false
+import_map = "./functions/create-quizit-from-paired-cards/deno.json"
+
+[functions.update-scores]
+verify_jwt = false
+import_map = "./functions/update-scores/deno.json"
+
+[functions.create-spaced-repetition-session]
+verify_jwt = false
+import_map = "./functions/create-spaced-repetition-session/deno.json"
+
+[functions.get-next-spaced-repetition-quizit]
+verify_jwt = false
+import_map = "./functions/get-next-spaced-repetition-quizit/deno.json"
